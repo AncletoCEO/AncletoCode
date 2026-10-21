@@ -10,9 +10,15 @@ El sistema SHALL ejecutar cada sesión de agente dentro de un pseudo-terminal co
 - **THEN** el sistema lanza el proceso del CLI en un PTY con el `cwd` del proyecto
 - **AND** la sesión queda asociada al proyecto con estado `starting`
 
-#### Scenario: Cierre ordenado de la aplicación
+#### Scenario: Cierre de la interfaz con sesiones activas
 
-- **WHEN** el usuario cierra la aplicación con sesiones activas
+- **WHEN** el usuario cierra la app de escritorio o AncletoCMD con sesiones activas
+- **THEN** el sistema hace detach de las sesiones y sus procesos siguen vivos en el host
+- **AND** al reabrir la interfaz las sesiones se reenganchan con su buffer reciente
+
+#### Scenario: Terminación explícita de todas las sesiones
+
+- **WHEN** el usuario confirma la acción de matar todas las sesiones o detiene el host
 - **THEN** el sistema termina todos los procesos PTY hijos
 - **AND** no quedan procesos huérfanos
 
