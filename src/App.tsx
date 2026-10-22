@@ -34,6 +34,12 @@ import {
 } from "./stores/sessionsStore";
 import { defaultShell } from "./lib/shell";
 
+type FileEntry = {
+  name: string;
+  path: string;
+  isDir: boolean;
+};
+
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
@@ -41,6 +47,9 @@ export default function App() {
   const [writerOpen, setWriterOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [uiScale, setUiScaleValue] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FileEntry[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const selected = projects.projects.find((project) => project.id === projects.selectedId);
@@ -198,6 +207,45 @@ export default function App() {
         {selected ? (
           <>
             <p className="project-path">{selected.rootPath}</p>
+            <form
+              className="file-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setSearchError(null);
+                if (!searchQuery.trim()) {
+                  setSearchResults([]);
+                  return;
+                }
+                void invoke<FileEntry[]>("project_search", {
+                  id: selected.id,
+                  query: searchQuery,
+                  limit: 40,
+                })
+                  .then(setSearchResults)
+                  .catch((error: unknown) =>
+                    setSearchError(error instanceof Error ? error.message : String(error)),
+                  );
+              }}
+            >
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="buscar archivos…"
+                aria-label="Buscar archivos en el proyecto"
+              />
+              <button type="submit">buscar</button>
+            </form>
+            {searchError ? <p className="error">{searchError}</p> : null}
+            {searchResults.length > 0 ? (
+              <ul className="search-results">
+                {searchResults.map((entry) => (
+                  <li key={entry.path}>
+                    {entry.isDir ? "▸ " : "· "}
+                    {entry.path}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <ProjectActions projectId={selected.id} />
             {specOpen ? <SpecPanel projectId={selected.id} /> : null}
             {writerOpen ? <WriterPanel projectId={selected.id} /> : null}

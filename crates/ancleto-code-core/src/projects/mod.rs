@@ -1,11 +1,32 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use uuid::Uuid;
 
 use crate::domain::{CoreError, FileNode, Project, Result};
 use crate::persistence::Store;
+
+#[allow(clippy::unwrap_used)]
+#[path = "../../../../third_party/pandacode/src-tauri/src/workspace/file_search.rs"]
+mod file_search;
+
+fn resolve_scoped_path(root: &Path, relative: &str) -> std::result::Result<PathBuf, ()> {
+    let candidate = root.join(relative).canonicalize().map_err(|_| ())?;
+    if candidate.starts_with(root) {
+        Ok(candidate)
+    } else {
+        Err(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileEntry {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+}
 
 const MAX_ENTRIES: usize = 5_000;
 const MAX_DEPTH: usize = 6;
@@ -65,6 +86,12 @@ impl ProjectService {
 
     pub fn remove(&self, id: &str) -> Result<bool> {
         self.store.remove_project(id)
+    }
+
+    pub fn search(&self, id: &str, query: &str, limit: Option<usize>) -> Result<Vec<FileEntry>> {
+        let project = self.get(id)?;
+        file_search::search_files(Path::new(&project.root_path), query.to_owned(), limit)
+            .map_err(CoreError::Process)
     }
 
     pub fn get(&self, id: &str) -> Result<Project> {

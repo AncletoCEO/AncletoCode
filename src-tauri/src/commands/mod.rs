@@ -9,7 +9,7 @@ use ancleto_code_core::providers::{
     SpecsCheck, WriterCheck, WriterConfig, WriterProvider, WriterState,
 };
 use ancleto_code_core::{
-    Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, HostClient,
+    Conversation, ConversationState, DriverRegistry, DriverStatus, FileEntry, FileNode, HostClient,
     Orchestrator, Project, ProjectService, SavedSession, SessionBackend, SessionInfo, SessionSpec,
     StartConversation, Turn,
 };
@@ -541,4 +541,17 @@ pub fn appearance_native_effect(
         }
         other => Err(format!("efecto de ventana desconocido: {other}")),
     }
+}
+
+#[tauri::command]
+pub fn project_search(
+    state: State<'_, AppState>,
+    id: String,
+    query: String,
+    limit: Option<usize>,
+) -> Result<Vec<FileEntry>, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service
+        .search(&id, &query, limit)
+        .map_err(|error| error.to_string())
 }

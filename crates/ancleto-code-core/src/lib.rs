@@ -18,7 +18,7 @@ pub use drivers::{
 pub use host::{HostClient, HostPaths};
 pub use orch::{ConversationEvent, Orchestrator, StartConversation};
 pub use persistence::{SavedSession, Store};
-pub use projects::ProjectService;
+pub use projects::{FileEntry, ProjectService};
 pub use providers::Providers;
 pub use session::{
     SessionBackend, SessionEvent, SessionInfo, SessionManager, SessionSpec, SessionStatus,

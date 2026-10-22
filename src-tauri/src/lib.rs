@@ -176,6 +176,7 @@ pub fn run() {
             commands::project_remove,
             commands::project_open,
             commands::project_tree,
+            commands::project_search,
             commands::session_create,
             commands::session_write,
             commands::session_resize,

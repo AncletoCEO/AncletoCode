@@ -7,6 +7,7 @@ license.workspace = true
 description = "Núcleo compartido de AncletoCode"
 
 [dependencies]
+ignore.workspace = true
 interprocess.workspace = true
 portable-pty.workspace = true
 rusqlite.workspace = true
