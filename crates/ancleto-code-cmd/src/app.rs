@@ -48,11 +48,18 @@ enum UserEvent {
     Wakeup,
 }
 
-struct PaneRender {
+struct LineRender {
+    text: String,
     buffer: Buffer,
+}
+
+struct PaneRender {
+    lines: Vec<LineRender>,
     revision: u64,
     columns: usize,
-    lines: usize,
+    screen_lines: usize,
+    width: f32,
+    height: f32,
     selection: Option<Selection>,
 }
 
@@ -2342,24 +2349,31 @@ impl AppState {
         if overlay_geometry.is_none() {
             for pane in &text_areas {
                 if let Some(render) = self.renders.get(&pane.pane_id) {
-                    areas.push(TextArea {
-                        buffer: &render.buffer,
-                        left: pane.left,
-                        top: pane.top,
-                        scale: 1.0,
-                        bounds: TextBounds {
-                            left: pane.left as i32,
-                            top: pane.top as i32,
-                            right: pane.right,
-                            bottom: pane.bottom,
-                        },
-                        default_color: Color::rgb(
-                            self.theme.foreground.0,
-                            self.theme.foreground.1,
-                            self.theme.foreground.2,
-                        ),
-                        custom_glyphs: &[],
-                    });
+                    let line_height = self.cell_height * self.scale_factor as f32;
+                    for (index, line) in render.lines.iter().enumerate() {
+                        let top = pane.top + index as f32 * line_height;
+                        if top >= pane.bottom as f32 {
+                            break;
+                        }
+                        areas.push(TextArea {
+                            buffer: &line.buffer,
+                            left: pane.left,
+                            top,
+                            scale: 1.0,
+                            bounds: TextBounds {
+                                left: pane.left as i32,
+                                top: top as i32,
+                                right: pane.right,
+                                bottom: (top + line_height).min(pane.bottom as f32) as i32,
+                            },
+                            default_color: Color::rgb(
+                                self.theme.foreground.0,
+                                self.theme.foreground.1,
+                                self.theme.foreground.2,
+                            ),
+                            custom_glyphs: &[],
+                        });
+                    }
                 }
             }
         }
@@ -2473,46 +2487,26 @@ impl AppState {
             };
             let revision = session.revision();
             let columns = session.columns();
-            let lines = session.lines();
+            let screen_lines = session.lines();
             let Some(snapshot) = session.snapshot() else {
                 continue;
             };
-            let needs_update = self
-                .renders
-                .get(&pane.pane_id)
-                .map(|render| {
-                    render.revision != revision
-                        || render.columns != columns
-                        || render.lines != lines
-                })
-                .unwrap_or(true);
-            if !needs_update {
-                continue;
-            }
-
-            let text = snapshot
-                .rows
-                .iter()
-                .map(|row| row.text.as_str())
-                .collect::<Vec<_>>()
-                .join("\n");
-            let (width, height) = (
-                (pane.width - PADDING * 2.0) * self.scale_factor as f32,
-                (pane.height - PADDING * 2.0) * self.scale_factor as f32,
-            );
             let scale = self.scale_factor as f32;
+            let width = (pane.width - PADDING * 2.0) * scale;
+            let height = (pane.height - PADDING * 2.0) * scale;
+            let line_height = self.cell_height * scale;
+            let desired: Vec<String> = snapshot.rows.iter().map(|row| row.text.clone()).collect();
+
             if !self.renders.contains_key(&pane.pane_id) {
-                let buffer = Buffer::new(
-                    &mut self.font_system,
-                    Metrics::new(self.font_size * scale, self.cell_height * scale),
-                );
                 self.renders.insert(
                     pane.pane_id.clone(),
                     PaneRender {
-                        buffer,
-                        revision: 0,
+                        lines: Vec::new(),
+                        revision: u64::MAX,
                         columns: 0,
-                        lines: 0,
+                        screen_lines: 0,
+                        width: 0.0,
+                        height: 0.0,
                         selection: None,
                     },
                 );
@@ -2520,23 +2514,45 @@ impl AppState {
             let Some(entry) = self.renders.get_mut(&pane.pane_id) else {
                 continue;
             };
-            entry.buffer.set_metrics(Metrics::new(
-                self.font_size * scale,
-                self.cell_height * scale,
-            ));
-            entry.buffer.set_size(Some(width), Some(height));
-            entry.buffer.set_text(
-                &text,
-                &Attrs::new().family(Family::Name("IBM Plex Mono")),
-                Shaping::Basic,
-                None,
-            );
-            entry
-                .buffer
-                .shape_until_scroll(&mut self.font_system, false);
-            entry.revision = revision;
+            let resized = (entry.width - width).abs() > 0.5 || (entry.height - height).abs() > 0.5;
+            let metrics = Metrics::new(self.font_size * scale, line_height);
+
+            while entry.lines.len() < desired.len() {
+                let mut buffer = Buffer::new(&mut self.font_system, metrics);
+                buffer.set_wrap(glyphon::Wrap::None);
+                buffer.set_size(Some(width), Some(line_height));
+                entry.lines.push(LineRender {
+                    text: String::new(),
+                    buffer,
+                });
+            }
+            entry.lines.truncate(desired.len());
+
+            let mut changed = false;
+            for (index, text) in desired.iter().enumerate() {
+                let line = &mut entry.lines[index];
+                if line.text == *text && !resized {
+                    continue;
+                }
+                line.buffer.set_metrics(metrics);
+                line.buffer.set_size(Some(width), Some(line_height));
+                line.buffer.set_text(
+                    text,
+                    &Attrs::new().family(Family::Name("IBM Plex Mono")),
+                    Shaping::Basic,
+                    None,
+                );
+                line.buffer.shape_until_scroll(&mut self.font_system, false);
+                line.text = text.clone();
+                changed = true;
+            }
+            if changed || resized {
+                entry.revision = revision;
+            }
             entry.columns = columns;
-            entry.lines = lines;
+            entry.screen_lines = screen_lines;
+            entry.width = width;
+            entry.height = height;
         }
     }
 
