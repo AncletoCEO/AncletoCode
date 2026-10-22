@@ -91,7 +91,7 @@ Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
 - [ ] 3B.6 Adaptar `src/theme.ts`, `src/preferences.ts`, `src/appearance.ts` y `src-tauri/src/appearance.rs` (Nivel B) a nuestro store y bridge; sumar Mica/Acrylic en Windows.
 - [ ] 3B.7 Adaptar `src/terminal.ts` y `src/terminal-panel.ts` (Nivel B) a xterm.js, tabs y eventos de sesión.
 - [ ] 3B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
-- [ ] 3B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
+- [x] 3B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
 - [ ] 3B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
 - [x] 3B.11 Crear `scripts/sync-pandacode.mjs` para descargar los archivos fijados y mostrar el diff contra `third_party/pandacode/`.
 - [x] 3B.12 Verificar que cada archivo vendorizado tiene cabecera, entrada en `docs/provenance.md` y figura en `UPSTREAM.md`; integrar la verificación en CI.
@@ -115,7 +115,7 @@ Issue: [#6](https://github.com/AncletoCEO/AncletoCode/issues/6)
 
 - [x] 5.1 Acción de proyecto "abrir en Antigravity" usando el IDE instalado.
 - [x] 5.2 Sincronizar assets de host vía `@ancleto/spec --agent antigravity` (`.agents/skills`, `.agents/agents`, `.agents/mcp_config.json` no destructivo).
-- [ ] 5.3 Tests del comando de apertura y del merge no destructivo del MCP de workspace.
+- [x] 5.3 Tests del comando de apertura y del merge no destructivo del MCP de workspace.
 
 ## Fase 6 — Tabs por proyecto y por agente
 
@@ -171,7 +171,7 @@ Issue: [#10](https://github.com/AncletoCEO/AncletoCode/issues/10)
 
 Issue: [#11](https://github.com/AncletoCEO/AncletoCode/issues/11)
 
-- [ ] 10.1 Definir la identidad CLI: tipografía monoespaciada empaquetada, densidad, glifos de prompt y statusline.
+- [x] 10.1 Definir la identidad CLI: tipografía monoespaciada empaquetada, densidad, glifos de prompt y statusline.
 - [x] 10.2 Implementar el sistema de tokens semánticos y derivar la paleta ANSI de xterm desde el tema activo.
 - [x] 10.3 Incluir temas preset (Ancleto Dark, Carbon, Solarized, Nord, Dracula, Light) como manifiestos JSON con preview en vivo.
 - [x] 10.4 Editor de temas: crear, duplicar, importar y exportar `theme.json`.
@@ -247,7 +247,7 @@ Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
 - [ ] 14.8 Smoke test de `npm i -g @ancleto/code` y `npm i -g @ancleto/cmd` en Windows (`cmd`/PowerShell) y Linux; abrir AncletoCMD y ejecutar `acode doctor`.
 - [x] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
 - [ ] 14.10 Empaquetar la app de escritorio (MSI/NSIS, DMG, AppImage/DEB) y verificar `acode ui`.
-- [ ] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
+- [x] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
 - [ ] 14.12 Revisión legal de la convivencia AGPL-3.0 + condición de atribución antes del primer release público.
 
 ## Fase 15 — Hardening y cierre
