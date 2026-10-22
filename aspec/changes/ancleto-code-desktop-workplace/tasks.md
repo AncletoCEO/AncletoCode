@@ -101,13 +101,13 @@ Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
 
 Issue: [#5](https://github.com/AncletoCEO/AncletoCode/issues/5)
 
-- [ ] 4.1 Contrato `AgentDriver` con capacidades (`interactivePty`, `oneShotPrompt`, `structuredOutput`, `resumeSession`), `DriverRegistry` y fallback `raw`.
-- [ ] 4.2 Driver `claude`: detección (`claude --version`), arranque interactivo y one-shot (`-p`) con salida JSON.
-- [ ] 4.3 Driver `opencode`: detección (`opencode --version`), arranque interactivo y one-shot (`run`).
-- [ ] 4.4 Driver `agy` (Antigravity CLI): detección (`agy --version`), TUI interactiva y headless (`agy -p ... --output-format json`), con `--continue`/`--conversation` cuando aplique.
-- [ ] 4.5 Driver `cmd` (Command Code): detección (bin `cmd` del paquete `command-code`), TUI interactiva y headless (`cmd -p ... --output-format json`), con `--continue`/`--resume` y `--max-turns` cuando aplique.
-- [ ] 4.6 Comando `drivers_list` con estado `available`/`missing`/`error` y versión, reflejado en la UI.
-- [ ] 4.7 Tests de registry, detección, construcción de comandos y parser de señales (incluido NDJSON de `cmd` y JSON de `agy`).
+- [x] 4.1 Contrato `AgentDriver` con capacidades (`interactivePty`, `oneShotPrompt`, `structuredOutput`, `resumeSession`), `DriverRegistry` y fallback `raw`.
+- [x] 4.2 Driver `claude`: detección (`claude --version`), arranque interactivo y one-shot (`-p`) con salida JSON.
+- [x] 4.3 Driver `opencode`: detección (`opencode --version`), arranque interactivo y one-shot (`run`).
+- [x] 4.4 Driver `agy` (Antigravity CLI): detección (`agy --version`), TUI interactiva y headless (`agy -p ... --output-format json`), con `--continue`/`--conversation` cuando aplique.
+- [x] 4.5 Driver `cmd` (Command Code): detección (bin `cmd` del paquete `command-code`), TUI interactiva y headless (`cmd -p ... --output-format json`), con `--continue`/`--resume` y `--max-turns` cuando aplique.
+- [x] 4.6 Comando `drivers_list` con estado `available`/`missing`/`error` y versión, reflejado en la UI.
+- [x] 4.7 Tests de registry, detección, construcción de comandos y parser de señales (incluido NDJSON de `cmd` y JSON de `agy`).
 
 ## Fase 5 — Integración con Antigravity IDE
 
