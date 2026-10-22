@@ -1,49 +1,21 @@
 import { useState, useSyncExternalStore } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import AboutDialog from "./components/AboutDialog";
+import AgentTabs from "./components/AgentTabs";
+import ProjectTabs from "./components/ProjectTabs";
 import ProjectTree from "./components/ProjectTree";
 import Sidebar from "./components/Sidebar";
 import TerminalView from "./components/TerminalView";
-import { defaultShell } from "./lib/shell";
-import { getSnapshot, subscribe } from "./stores/projectsStore";
-
-type SessionInfo = {
-  id: string;
-};
+import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
+import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./stores/sessionsStore";
 
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const state = useSyncExternalStore(subscribe, getSnapshot);
-  const selected = state.projects.find((project) => project.id === state.selectedId);
-
-  async function openTerminal() {
-    if (!selected || sessionId) {
-      return;
-    }
-    const shell = defaultShell();
-    const info = await invoke<SessionInfo>("session_create", {
-      spec: {
-        projectId: selected.id,
-        driverId: "shell",
-        program: shell.program,
-        args: shell.args,
-        cwd: selected.rootPath,
-        env: [],
-        cols: 80,
-        rows: 24,
-      },
-    });
-    setSessionId(info.id);
-  }
-
-  async function closeTerminal() {
-    if (!sessionId) {
-      return;
-    }
-    await invoke("session_kill", { id: sessionId });
-    setSessionId(null);
-  }
+  const projects = useSyncExternalStore(subscribeProjects, getProjects);
+  const sessions = useSyncExternalStore(subscribeSessions, getSessions);
+  const selected = projects.projects.find((project) => project.id === projects.selectedId);
+  const active = sessions.sessions.find(
+    (session) => session.id === sessions.activeId && session.projectId === projects.selectedId,
+  );
 
   return (
     <main className="layout">
@@ -51,33 +23,20 @@ export default function App() {
       <section className="workspace">
         <header className="workspace-header">
           <span className="prompt">❯ AncletoCode</span>
-          <span className="actions">
-            {selected ? (
-              <button
-                type="button"
-                onClick={() => void openTerminal()}
-                disabled={sessionId !== null}
-              >
-                terminal
-              </button>
-            ) : null}
-            {sessionId ? (
-              <button type="button" onClick={() => void closeTerminal()}>
-                cerrar terminal
-              </button>
-            ) : null}
-            <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
-              About
-            </button>
-          </span>
+          <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
+            About
+          </button>
         </header>
+        <ProjectTabs />
         {selected ? (
           <>
             <p className="project-path">{selected.rootPath}</p>
-            {sessionId ? <TerminalView sessionId={sessionId} /> : null}
-            {state.tree ? (
+            <AgentTabs project={selected} />
+            {active ? (
+              <TerminalView key={active.id} sessionId={active.id} />
+            ) : projects.tree ? (
               <ul className="tree">
-                <ProjectTree node={state.tree} />
+                <ProjectTree node={projects.tree} />
               </ul>
             ) : (
               <p className="muted">cargando árbol…</p>

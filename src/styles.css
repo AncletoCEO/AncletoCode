@@ -4,6 +4,8 @@
   --fg: #e6edf3;
   --fg-muted: #8b949e;
   --accent: #58a6ff;
+  --success: #3fb950;
+  --warning: #d29922;
   --danger: #f85149;
   --border: #30363d;
   font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
@@ -201,25 +203,6 @@ body {
   color: var(--fg-muted);
 }
 
-.actions {
-  display: flex;
-  gap: 0.375rem;
-}
-
-.actions button {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.actions button:disabled {
-  color: var(--fg-muted);
-  cursor: default;
-}
-
 .terminal {
   height: 20rem;
   margin-bottom: 0.75rem;
@@ -252,7 +235,7 @@ body {
 }
 
 .driver.available .driver-glyph {
-  color: var(--success, #3fb950);
+  color: var(--success);
 }
 
 .driver.error .driver-glyph,
@@ -263,4 +246,113 @@ body {
 .driver-version {
   color: var(--fg-muted);
   font-size: 0.6875rem;
+}
+
+.project-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.project-tab {
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.project-tab.active {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+}
+
+.tab-activity {
+  color: var(--success);
+}
+
+.tab-warning {
+  color: var(--warning);
+}
+
+.agent-tabs {
+  margin-bottom: 0.5rem;
+}
+
+.agent-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.agent-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.agent-tab.active {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--fg-muted);
+}
+
+.status-dot.ready {
+  background: var(--success);
+}
+
+.status-dot.busy,
+.status-dot.starting {
+  background: var(--accent);
+}
+
+.status-dot.waiting_input {
+  background: var(--warning);
+}
+
+.status-dot.crashed {
+  background: var(--danger);
+}
+
+.agent-create {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.agent-create select,
+.agent-create button,
+.tab-actions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
 }
