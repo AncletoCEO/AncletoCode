@@ -144,14 +144,14 @@ Issue: [#8](https://github.com/AncletoCEO/AncletoCode/issues/8)
 
 Issue: [#9](https://github.com/AncletoCEO/AncletoCode/issues/9)
 
-- [ ] 8.1 `NodeRuntime` y resolución de binarios en orden local → global → sidecar, con chequeo de Node ≥ 24.
-- [ ] 8.2 Comandos de proyecto: `init` (`--agent`, `--tier`, `--lang`, `--exclude`, `--profile`), `install --project`, `update`, `upgrade`, `check`, `doctor`.
-- [ ] 8.3 Lectura de `.ancletorc` (host, tier, `language`, `discovery.exclude`) y de `aspec/changes` activos.
-- [ ] 8.4 Memoria del proyecto vía CLI (`ancleto memory list --json`, `ancleto memory context`); sin acceso directo a `memory.db`.
-- [ ] 8.5 Estado de discovery (`ancleto discovery --check`) con `impact` y regeneración sólo con aprobación.
-- [ ] 8.6 `specs check --json` y `doctor` en el `SpecPanel`.
-- [ ] 8.7 Settings por proyecto: host, tier (`normal`/`minimo`/`gratis`) e idioma (`auto`/`es`/`en`/`pt`).
-- [ ] 8.8 Tests de adapter con fixtures de `.ancletorc`, cambios, discovery y salidas JSON.
+- [x] 8.1 `NodeRuntime` y resolución de binarios en orden local → global → sidecar, con chequeo de Node ≥ 24.
+- [x] 8.2 Comandos de proyecto: `init` (`--agent`, `--tier`, `--lang`, `--exclude`, `--profile`), `install --project`, `update`, `upgrade`, `check`, `doctor`.
+- [x] 8.3 Lectura de `.ancletorc` (host, tier, `language`, `discovery.exclude`) y de `aspec/changes` activos.
+- [x] 8.4 Memoria del proyecto vía CLI (`ancleto memory list --json`, `ancleto memory context`); sin acceso directo a `memory.db`.
+- [x] 8.5 Estado de discovery (`ancleto discovery --check`) con `impact` y regeneración sólo con aprobación.
+- [x] 8.6 `specs check --json` y `doctor` en el `SpecPanel`.
+- [x] 8.7 Settings por proyecto: host, tier (`normal`/`minimo`/`gratis`) e idioma (`auto`/`es`/`en`/`pt`).
+- [x] 8.8 Tests de adapter con fixtures de `.ancletorc`, cambios, discovery y salidas JSON.
 
 ## Fase 9 — Proveedor `@ancleto/writer`
 
