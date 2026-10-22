@@ -1,6 +1,7 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import AboutDialog from "./components/AboutDialog";
 import AgentTabs from "./components/AgentTabs";
+import AppearancePanel from "./components/AppearancePanel";
 import ConversationPanel from "./components/ConversationPanel";
 import ProjectActions from "./components/ProjectActions";
 import ProjectTabs from "./components/ProjectTabs";
@@ -9,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import SpecPanel from "./components/SpecPanel";
 import TerminalView from "./components/TerminalView";
 import WriterPanel from "./components/WriterPanel";
+import { loadAppearance } from "./stores/appearanceStore";
 import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
 import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./stores/sessionsStore";
 
@@ -17,12 +19,17 @@ export default function App() {
   const [conversationOpen, setConversationOpen] = useState(false);
   const [specOpen, setSpecOpen] = useState(false);
   const [writerOpen, setWriterOpen] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const selected = projects.projects.find((project) => project.id === projects.selectedId);
   const active = sessions.sessions.find(
     (session) => session.id === sessions.activeId && session.projectId === projects.selectedId,
   );
+
+  useEffect(() => {
+    void loadAppearance(projects.selectedId ?? null);
+  }, [projects.selectedId]);
 
   return (
     <main className="layout">
@@ -58,6 +65,13 @@ export default function App() {
                 writer
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => setAppearanceOpen((open) => !open)}
+              aria-pressed={appearanceOpen}
+            >
+              apariencia
+            </button>
             <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
               About
             </button>
@@ -70,6 +84,7 @@ export default function App() {
             <ProjectActions projectId={selected.id} />
             {specOpen ? <SpecPanel projectId={selected.id} /> : null}
             {writerOpen ? <WriterPanel projectId={selected.id} /> : null}
+            {appearanceOpen ? <AppearancePanel projectId={selected.id} /> : null}
             <AgentTabs project={selected} />
             {conversationOpen ? <ConversationPanel project={selected} /> : null}
             {active ? (

@@ -14,6 +14,7 @@ use ancleto_code_core::{
 use tauri::State;
 
 pub struct AppState {
+    pub config_dir: std::path::PathBuf,
     pub projects: Mutex<ProjectService>,
     pub sessions: SessionManager,
     pub drivers: DriverRegistry,
@@ -456,4 +457,71 @@ fn with_writer<T>(
     let root = project_root(state, id)?;
     let provider = WriterProvider::detect(Path::new(&root));
     run(&provider, Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn settings_get(state: State<'_, AppState>, key: String) -> Result<Option<String>, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service.get_setting(&key).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn settings_put(state: State<'_, AppState>, key: String, value: String) -> Result<(), String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service
+        .set_setting(&key, &value)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn appearance_save_image(
+    state: State<'_, AppState>,
+    extension: String,
+    bytes: Vec<u8>,
+) -> Result<String, String> {
+    const ALLOWED: [&str; 5] = ["png", "jpg", "jpeg", "webp", "gif"];
+    let extension = extension.trim_start_matches('.').to_ascii_lowercase();
+    if !ALLOWED.contains(&extension.as_str()) {
+        return Err(format!("extensión de imagen no permitida: {extension}"));
+    }
+
+    let directory = state.config_dir.join("appearance");
+    std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    let path = directory.join(format!("{}.{extension}", uuid::Uuid::new_v4()));
+    std::fs::write(&path, bytes).map_err(|error| error.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn appearance_native_effect(
+    window: tauri::WebviewWindow,
+    effect: String,
+    dark: Option<bool>,
+) -> Result<(), String> {
+    match effect.as_str() {
+        "none" => Ok(()),
+        "mica" => window_vibrancy::apply_mica(&window, dark).map_err(|error| error.to_string()),
+        "acrylic" => window_vibrancy::apply_acrylic(&window, Some((18, 18, 18, 160)))
+            .map_err(|error| error.to_string()),
+        "blur" => window_vibrancy::apply_blur(&window, Some((18, 18, 18, 160)))
+            .map_err(|error| error.to_string()),
+        "vibrancy" => {
+            #[cfg(target_os = "macos")]
+            {
+                window_vibrancy::apply_vibrancy(
+                    &window,
+                    window_vibrancy::NSVisualEffectMaterial::HudWindow,
+                    Some(window_vibrancy::NSVisualEffectState::Active),
+                    Some(12.0),
+                )
+                .map_err(|error| error.to_string())
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = dark;
+                Err("vibrancy solo está disponible en macOS".to_owned())
+            }
+        }
+        other => Err(format!("efecto de ventana desconocido: {other}")),
+    }
 }

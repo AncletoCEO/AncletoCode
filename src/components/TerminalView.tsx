@@ -1,9 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
+import {
+  getSnapshot as getAppearance,
+  subscribe as subscribeAppearance,
+  terminalTheme,
+} from "../stores/appearanceStore";
 
 type OutputPayload = {
   data: number[];
@@ -15,6 +20,14 @@ type TerminalViewProps = {
 
 export default function TerminalView({ sessionId }: TerminalViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<Terminal | null>(null);
+  const appearance = useSyncExternalStore(subscribeAppearance, getAppearance);
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = terminalTheme(appearance.resolved);
+    }
+  }, [appearance.resolved]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -27,13 +40,9 @@ export default function TerminalView({ sessionId }: TerminalViewProps) {
       fontSize: 13,
       cursorBlink: true,
       scrollback: 10_000,
-      theme: {
-        background: "#0d1117",
-        foreground: "#e6edf3",
-        cursor: "#58a6ff",
-        selectionBackground: "#264f78",
-      },
+      theme: terminalTheme(getAppearance().resolved),
     });
+    terminalRef.current = terminal;
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(container);
@@ -81,6 +90,7 @@ export default function TerminalView({ sessionId }: TerminalViewProps) {
       disposed = true;
       unlisten?.();
       observer.disconnect();
+      terminalRef.current = null;
       terminal.dispose();
     };
   }, [sessionId]);

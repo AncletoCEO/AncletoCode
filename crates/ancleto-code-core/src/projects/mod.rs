@@ -79,6 +79,14 @@ impl ProjectService {
             .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))
     }
 
+    pub fn get_setting(&self, key: &str) -> Result<Option<String>> {
+        self.store.get_setting(key)
+    }
+
+    pub fn set_setting(&self, key: &str, value: &str) -> Result<()> {
+        self.store.set_setting(key, value)
+    }
+
     pub fn tree(&self, id: &str, limit: Option<usize>) -> Result<FileNode> {
         let project = self
             .store

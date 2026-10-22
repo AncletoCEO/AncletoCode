@@ -94,6 +94,7 @@ pub fn run() {
                 sessions,
                 drivers,
                 orchestrator,
+                config_dir: config_directory,
             });
             Ok(())
         })
@@ -142,7 +143,11 @@ pub fn run() {
             commands::writer_doctor,
             commands::writer_set_language_pack,
             commands::writer_agent_doc,
-            commands::writer_open_human
+            commands::writer_open_human,
+            commands::settings_get,
+            commands::settings_put,
+            commands::appearance_save_image,
+            commands::appearance_native_effect
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");
