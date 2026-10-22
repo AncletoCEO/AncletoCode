@@ -8,7 +8,9 @@ pub mod session;
 pub mod vendored;
 
 pub use domain::{CoreError, FileNode, Project, Result};
-pub use drivers::DriverRegistry;
+pub use drivers::{
+    AgentDriver, AgentDriverDescriptor, Capabilities, DriverRegistry, DriverStatus, ToolStatus,
+};
 pub use orch::Orchestrator;
 pub use persistence::Store;
 pub use projects::ProjectService;

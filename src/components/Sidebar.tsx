@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
+import DriversList from "./DriversList";
 import {
   addProject,
   getSnapshot,
@@ -74,6 +75,7 @@ export default function Sidebar() {
           </li>
         ))}
       </ul>
+      <DriversList />
     </aside>
   );
 }

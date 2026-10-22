@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::{Arc, Mutex};
 
-use ancleto_code_core::{ProjectService, SessionEvent, SessionManager};
+use ancleto_code_core::{DriverRegistry, ProjectService, SessionEvent, SessionManager};
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
@@ -55,6 +55,7 @@ pub fn run() {
             app.manage(AppState {
                 projects: Mutex::new(service),
                 sessions,
+                drivers: DriverRegistry::new(),
             });
             Ok(())
         })
@@ -70,7 +71,8 @@ pub fn run() {
             commands::session_resize,
             commands::session_kill,
             commands::session_snapshot,
-            commands::session_list
+            commands::session_list,
+            commands::drivers_list
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");

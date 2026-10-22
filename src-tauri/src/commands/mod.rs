@@ -1,13 +1,15 @@
 use std::sync::Mutex;
 
 use ancleto_code_core::{
-    FileNode, Project, ProjectService, SessionInfo, SessionManager, SessionSpec,
+    DriverRegistry, DriverStatus, FileNode, Project, ProjectService, SessionInfo, SessionManager,
+    SessionSpec,
 };
 use tauri::State;
 
 pub struct AppState {
     pub projects: Mutex<ProjectService>,
     pub sessions: SessionManager,
+    pub drivers: DriverRegistry,
 }
 
 fn lock_error() -> String {
@@ -101,4 +103,9 @@ pub fn session_snapshot(state: State<'_, AppState>, id: String) -> Result<Vec<u8
 #[tauri::command]
 pub fn session_list(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, String> {
     state.sessions.list().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn drivers_list(state: State<'_, AppState>) -> Vec<DriverStatus> {
+    state.drivers.detect_all()
 }

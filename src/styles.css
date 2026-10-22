@@ -228,3 +228,39 @@ body {
   background: var(--bg-base);
   overflow: hidden;
 }
+
+.drivers {
+  margin-top: 1rem;
+}
+
+.driver-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.driver {
+  display: grid;
+  grid-template-columns: 1rem 1fr auto;
+  gap: 0.25rem;
+  align-items: baseline;
+  line-height: 1.6;
+}
+
+.driver-glyph {
+  color: var(--fg-muted);
+}
+
+.driver.available .driver-glyph {
+  color: var(--success, #3fb950);
+}
+
+.driver.error .driver-glyph,
+.driver.incompatible .driver-glyph {
+  color: var(--danger);
+}
+
+.driver-version {
+  color: var(--fg-muted);
+  font-size: 0.6875rem;
+}
