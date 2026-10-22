@@ -2,7 +2,7 @@
 
 Workspace de agentes de código con **dos versiones**: la app de escritorio **AncletoCode** (Tauri 2) y **AncletoCMD**, un emulador de terminal nativo, rápido y GPU-acelerado que además funciona como gestor de proyectos y sesiones. Ambas comparten el mismo núcleo, la misma configuración y las mismas sesiones, junto con una CLI headless para automatización.
 
-> **Estado:** implementación en curso. El núcleo, el host de sesiones, la app de escritorio y la CLI `acode` ya existen; AncletoCMD y el empaquetado están en desarrollo. El plan vive en [`aspec/changes/ancleto-code-desktop-workplace/`](aspec/changes/ancleto-code-desktop-workplace/).
+> **Estado:** `0.0.1`, primer release de prueba para Linux y Windows. La revisión legal de licencias sigue pendiente antes de un release público estable. Ver [`docs/release-plan.md`](docs/release-plan.md) y [`docs/release-notes/0.0.1.md`](docs/release-notes/0.0.1.md).
 
 ## Qué va a hacer
 
@@ -132,12 +132,28 @@ npm install
 npm run tauri dev
 ```
 
-CLI y AncletoCMD instalados desde npm (cuando se publique el paquete):
+### Instalación 0.0.1
+
+| Plataforma | Artefacto |
+|---|---|
+| Debian/Ubuntu | `AncletoCode_0.0.1_amd64.deb` |
+| Arch/EndeavourOS | `PKGBUILD` de `ancleto-code-bin` / tarball |
+| Windows x64 | instalador NSIS, MSI (si está disponible) o ZIP portable |
+| CLI | `npm install -g @ancleto/code@0.0.1` |
+| AncletoCMD | `npm install -g @ancleto/cmd@0.0.1` |
 
 ```bash
-npm install -g @ancleto/code   # acode + ancleto-code-host
-npm install -g @ancleto/cmd    # acmd
+# Debian/Ubuntu
+sudo apt install ./AncletoCode_0.0.1_amd64.deb
+
+# CLI + host (necesario para sesiones persistentes)
+npm install -g @ancleto/code@0.0.1
 ```
+
+La app de escritorio incluye fallback in-process si el host no está disponible;
+para detach/attach entre superficies instalá el paquete npm de la CLI.
+En Arch, el `PKGBUILD` generado instala el host como dependencia.
+El checklist de Windows está en [`docs/windows-testing.md`](docs/windows-testing.md).
 
 Actualización y desinstalación:
 
