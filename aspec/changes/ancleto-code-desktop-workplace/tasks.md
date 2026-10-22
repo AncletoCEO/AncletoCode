@@ -113,8 +113,8 @@ Issue: [#5](https://github.com/AncletoCEO/AncletoCode/issues/5)
 
 Issue: [#6](https://github.com/AncletoCEO/AncletoCode/issues/6)
 
-- [ ] 5.1 Acción de proyecto "abrir en Antigravity" usando el IDE instalado.
-- [ ] 5.2 Sincronizar assets de host vía `@ancleto/spec --agent antigravity` (`.agents/skills`, `.agents/agents`, `.agents/mcp_config.json` no destructivo).
+- [x] 5.1 Acción de proyecto "abrir en Antigravity" usando el IDE instalado.
+- [x] 5.2 Sincronizar assets de host vía `@ancleto/spec --agent antigravity` (`.agents/skills`, `.agents/agents`, `.agents/mcp_config.json` no destructivo).
 - [ ] 5.3 Tests del comando de apertura y del merge no destructivo del MCP de workspace.
 
 ## Fase 6 — Tabs por proyecto y por agente
