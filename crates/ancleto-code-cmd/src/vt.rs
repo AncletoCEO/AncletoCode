@@ -320,6 +320,15 @@ impl TerminalState {
         matches
     }
 
+    pub fn text_between(&self, start_line: i32, end_line: i32) -> String {
+        self.selection_text(&Selection {
+            start_line,
+            start_column: 0,
+            end_line,
+            end_column: self.columns.saturating_sub(1),
+        })
+    }
+
     pub fn incremental_search(
         &mut self,
         query: &str,

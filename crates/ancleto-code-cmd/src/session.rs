@@ -98,6 +98,20 @@ impl TerminalSession {
         self.state.lock().map(|state| state.revision()).unwrap_or(0)
     }
 
+    pub fn marks(&self) -> Vec<crate::vt::ShellMark> {
+        self.state
+            .lock()
+            .map(|state| state.marks().to_vec())
+            .unwrap_or_default()
+    }
+
+    pub fn text_between(&self, start_line: i32, end_line: i32) -> String {
+        self.state
+            .lock()
+            .map(|state| state.text_between(start_line, end_line))
+            .unwrap_or_default()
+    }
+
     pub fn mark_count(&self) -> usize {
         self.state
             .lock()

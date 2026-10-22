@@ -617,6 +617,21 @@ impl AppState {
             self.window.request_redraw();
             return;
         }
+        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::ArrowUp)) {
+            self.navigate_command(true);
+            return;
+        }
+        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::ArrowDown)) {
+            self.navigate_command(false);
+            return;
+        }
+        if control
+            && shift
+            && matches!(&event.logical_key, Key::Character(text) if text.eq_ignore_ascii_case("o"))
+        {
+            self.copy_command_output();
+            return;
+        }
         if control && shift && self.modifiers.alt_key() {
             let axis = match event.logical_key {
                 Key::Named(NamedKey::ArrowLeft) | Key::Named(NamedKey::ArrowRight) => {
@@ -823,6 +838,91 @@ impl AppState {
         }
     }
 
+    fn navigate_command(&mut self, previous: bool) {
+        let Some(pane_id) = self.focused_pane_id() else {
+            return;
+        };
+        let Some(session) = self.sessions.get(&pane_id) else {
+            return;
+        };
+        let bottom = session
+            .snapshot()
+            .and_then(|snapshot| snapshot.rows.last().map(|row| row.line))
+            .unwrap_or(0);
+        let marks = session.marks();
+        let mut lines: Vec<i32> = marks
+            .iter()
+            .filter(|mark| {
+                matches!(
+                    mark.kind,
+                    crate::vt::ShellMarkKind::CommandFinished
+                        | crate::vt::ShellMarkKind::CommandStart
+                )
+            })
+            .map(|mark| mark.line)
+            .collect();
+        if lines.is_empty() {
+            if let Some(snapshot) = session.snapshot() {
+                lines = snapshot
+                    .rows
+                    .iter()
+                    .filter(|row| {
+                        let text = row.text.trim_end();
+                        text.ends_with('$') || text.ends_with('#') || text.ends_with('❯')
+                    })
+                    .map(|row| row.line)
+                    .collect();
+            }
+        }
+        if lines.is_empty() {
+            session.scroll(if previous { 10 } else { -10 });
+        } else {
+            let target = if previous {
+                *lines.last().unwrap_or(&bottom)
+            } else {
+                *lines.first().unwrap_or(&bottom)
+            };
+            session.scroll(bottom - target);
+        }
+        self.window.request_redraw();
+    }
+
+    fn copy_command_output(&mut self) {
+        let Some(pane_id) = self.focused_pane_id() else {
+            return;
+        };
+        let Some(session) = self.sessions.get(&pane_id) else {
+            return;
+        };
+        let marks = session.marks();
+        let finished = marks
+            .iter()
+            .rev()
+            .find(|mark| matches!(mark.kind, crate::vt::ShellMarkKind::CommandFinished));
+        let Some(finished) = finished else {
+            return;
+        };
+        let start = marks
+            .iter()
+            .rev()
+            .find(|mark| {
+                mark.line < finished.line
+                    && matches!(
+                        mark.kind,
+                        crate::vt::ShellMarkKind::CommandStart
+                            | crate::vt::ShellMarkKind::PromptStart
+                    )
+            })
+            .map(|mark| mark.line)
+            .unwrap_or(finished.line);
+        let text = session.text_between(start, finished.line);
+        if !text.is_empty() {
+            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                let _ = clipboard.set_text(text);
+            }
+        }
+    }
+
     fn scroll_focus(&mut self, delta: i32) {
         if let Some(pane_id) = self.focused_pane_id() {
             if let Some(session) = self.sessions.get(&pane_id) {
@@ -989,9 +1089,17 @@ impl AppState {
             .map(|name| name.to_string_lossy().into_owned())
             .unwrap_or_else(|| self.project_root.clone());
         let panes = self.panes.len();
+        let exit = self.focused_pane_id().and_then(|pane_id| {
+            self.sessions
+                .get(&pane_id)
+                .and_then(|session| session.last_exit_code())
+        });
         let status = self.status.clone().unwrap_or_else(|| {
+            let exit = exit
+                .map(|code| format!(" · exit {code}"))
+                .unwrap_or_default();
             format!(
-                "{} · {} panes · {} pt · Ctrl+Shift+T nueva tab · Q salir",
+                "{} · {} panes · {} pt{exit} · Ctrl+Shift+T nueva tab · Q salir",
                 project, panes, self.font_size
             )
         });
