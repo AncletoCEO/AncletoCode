@@ -30,11 +30,11 @@ const definitions = {
     provides: ["ancleto-code"],
     conflicts: ["ancleto-code"],
     install: `
-  install -Dm755 "\${srcdir}/ancleto-code-desktop" "\$pkgdir/usr/bin/ancleto-code-desktop"
-  install -Dm644 "\${srcdir}/ancleto-code.desktop" "\$pkgdir/usr/share/applications/ancleto-code.desktop"
-  install -Dm644 "\${srcdir}/icons/32x32.png" "\$pkgdir/usr/share/icons/hicolor/32x32/apps/ancleto-code.png"
-  install -Dm644 "\${srcdir}/icons/128x128.png" "\$pkgdir/usr/share/icons/hicolor/128x128/apps/ancleto-code.png"
-  install -Dm644 "\${srcdir}/icons/256x256.png" "\$pkgdir/usr/share/icons/hicolor/256x256/apps/ancleto-code.png"
+  install -Dm755 "\${srcdir}/ancleto-code-desktop" "$pkgdir/usr/bin/ancleto-code-desktop"
+  install -Dm644 "\${srcdir}/ancleto-code.desktop" "$pkgdir/usr/share/applications/ancleto-code.desktop"
+  install -Dm644 "\${srcdir}/icons/32x32.png" "$pkgdir/usr/share/icons/hicolor/32x32/apps/ancleto-code.png"
+  install -Dm644 "\${srcdir}/icons/128x128.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/ancleto-code.png"
+  install -Dm644 "\${srcdir}/icons/256x256.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/ancleto-code.png"
 `,
   },
   "ancleto-cmd-bin": {
@@ -53,8 +53,8 @@ const definitions = {
     provides: ["ancleto-cmd"],
     conflicts: ["ancleto-cmd"],
     install: `
-  install -Dm755 "\${srcdir}/acmd" "\$pkgdir/usr/bin/acmd"
-  install -Dm755 "\${srcdir}/ancleto-cmd" "\$pkgdir/usr/bin/ancleto-cmd"
+  install -Dm755 "\${srcdir}/acmd" "$pkgdir/usr/bin/acmd"
+  install -Dm755 "\${srcdir}/ancleto-cmd" "$pkgdir/usr/bin/ancleto-cmd"
 `,
   },
   "ancleto-code-cli-bin": {
@@ -65,9 +65,9 @@ const definitions = {
     provides: ["acode", "ancleto-code-cli"],
     conflicts: ["ancleto-code-cli"],
     install: `
-  install -Dm755 "\${srcdir}/acode" "\$pkgdir/usr/bin/acode"
-  install -Dm755 "\${srcdir}/ancleto-code" "\$pkgdir/usr/bin/ancleto-code"
-  install -Dm755 "\${srcdir}/ancleto-code-host" "\$pkgdir/usr/bin/ancleto-code-host"
+  install -Dm755 "\${srcdir}/acode" "$pkgdir/usr/bin/acode"
+  install -Dm755 "\${srcdir}/ancleto-code" "$pkgdir/usr/bin/ancleto-code"
+  install -Dm755 "\${srcdir}/ancleto-code-host" "$pkgdir/usr/bin/ancleto-code-host"
 `,
   },
 };
@@ -120,8 +120,8 @@ options=('!strip')
 
 package() {
 ${definition.install.trimEnd()}
-  install -Dm644 "\${srcdir}/LICENSE" "\$pkgdir/usr/share/licenses/\${pkgname}/LICENSE"
-  install -Dm644 "\${srcdir}/THIRD_PARTY_NOTICES.md" "\$pkgdir/usr/share/licenses/\${pkgname}/THIRD_PARTY_NOTICES.md"
+  install -Dm644 "\${srcdir}/LICENSE" "$pkgdir/usr/share/licenses/\${pkgname}/LICENSE"
+  install -Dm644 "\${srcdir}/THIRD_PARTY_NOTICES.md" "$pkgdir/usr/share/licenses/\${pkgname}/THIRD_PARTY_NOTICES.md"
 }
 `;
 
