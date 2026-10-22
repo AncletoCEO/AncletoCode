@@ -21,7 +21,7 @@ esta tabla. La columna "Estado" pasa a `vendorizado` cuando el archivo existe ba
 | `third_party/pandacode/src-tauri/src/providers/windows_job.rs` | `src-tauri/src/providers/windows_job.rs` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src-tauri/src/providers/text_stream.rs` | `src-tauri/src/providers/text_stream.rs` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src-tauri/src/providers/support.rs` | `src-tauri/src/providers.rs` | B | MIT | PandaCode contributors | Extracción de `Preview` y `limited` | vendorizado |
-| `third_party/pandacode/src-tauri/src/terminal.rs` | `src-tauri/src/terminal.rs` | B | MIT | PandaCode contributors | Reimplementado en `SessionManager` nativo (PTY, eventos, cierre); no copiado | reimplementado |
+| `third_party/pandacode/src-tauri/src/terminal.rs` | `src-tauri/src/terminal.rs` | B | MIT | PandaCode contributors | Reimplementado en `SessionManager` (PTY, eventos, cierre) e integrado con `windows_job` en Windows | reimplementado + windows_job |
 | `third_party/pandacode/src-tauri/src/workspace.rs` | `src-tauri/src/workspace.rs` | B | MIT | PandaCode contributors | Rutas canónicas, árbol acotado y limpieza reimplementados; búsqueda vendorizada | reimplementado |
 | `third_party/pandacode/src-tauri/src/workspace/file_search.rs` | `src-tauri/src/workspace/file_search.rs` | B | MIT | PandaCode contributors | `FileEntry` del core; sin prueba de worktrees | vendorizado |
 | `third_party/pandacode/src-tauri/src/appearance.rs` | `src-tauri/src/appearance.rs` | B | MIT | PandaCode contributors | Reimplementado con `window-vibrancy` y fallback CSS | reimplementado |

@@ -108,6 +108,8 @@ struct SessionEntry {
     writer: Box<dyn Write + Send>,
     killer: Box<dyn ChildKiller + Send + Sync>,
     buffer: RingBuffer,
+    #[cfg(windows)]
+    _job: Option<crate::vendored::windows_job::Job>,
 }
 
 struct Inner {
@@ -154,6 +156,10 @@ impl SessionManager {
         let reader = pair.master.try_clone_reader().map_err(pty_error)?;
         let writer = pair.master.take_writer().map_err(pty_error)?;
         let killer = child.clone_killer();
+        #[cfg(windows)]
+        let job = child
+            .process_id()
+            .and_then(crate::vendored::windows_job::Job::attach);
         let id = Uuid::new_v4().to_string();
         let info = SessionInfo {
             id: id.clone(),
@@ -171,6 +177,8 @@ impl SessionManager {
             writer,
             killer,
             buffer: RingBuffer::new(DEFAULT_SCROLLBACK_BYTES),
+            #[cfg(windows)]
+            _job: job,
         };
 
         self.sessions()?.insert(id.clone(), entry);
