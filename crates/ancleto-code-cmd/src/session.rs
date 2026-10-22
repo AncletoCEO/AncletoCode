@@ -9,6 +9,8 @@ use serde_json::Value;
 
 use crate::vt::{Selection, TerminalSnapshot, TerminalState, UiEvent};
 
+pub type Wake = Arc<dyn Fn() + Send + Sync>;
+
 pub struct TerminalSession {
     client: Arc<HostClient>,
     session_id: String,
@@ -23,6 +25,16 @@ impl TerminalSession {
         session_id: impl Into<String>,
         columns: usize,
         lines: usize,
+    ) -> Result<Self> {
+        Self::attach_with_wake(client, session_id, columns, lines, None)
+    }
+
+    pub fn attach_with_wake(
+        client: Arc<HostClient>,
+        session_id: impl Into<String>,
+        columns: usize,
+        lines: usize,
+        wake: Option<Wake>,
     ) -> Result<Self> {
         let session_id = session_id.into();
         let mut state = TerminalState::new(columns, lines);
@@ -51,6 +63,9 @@ impl TerminalSession {
                                     if let Ok(mut state) = reader_state.lock() {
                                         state.feed(&data);
                                     }
+                                    if let Some(wake) = &wake {
+                                        wake();
+                                    }
                                 }
                             }
                             "session.exit" => break,
@@ -60,6 +75,9 @@ impl TerminalSession {
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
                 }
+            }
+            if let Some(wake) = &wake {
+                wake();
             }
         });
 
@@ -74,6 +92,32 @@ impl TerminalSession {
 
     pub fn session_id(&self) -> &str {
         &self.session_id
+    }
+
+    pub fn revision(&self) -> u64 {
+        self.state.lock().map(|state| state.revision()).unwrap_or(0)
+    }
+
+    pub fn mark_count(&self) -> usize {
+        self.state
+            .lock()
+            .map(|state| state.marks().len())
+            .unwrap_or(0)
+    }
+
+    pub fn last_exit_code(&self) -> Option<i32> {
+        self.state
+            .lock()
+            .ok()
+            .and_then(|state| state.last_exit_code())
+    }
+
+    pub fn columns(&self) -> usize {
+        self.state.lock().map(|state| state.columns()).unwrap_or(0)
+    }
+
+    pub fn lines(&self) -> usize {
+        self.state.lock().map(|state| state.lines()).unwrap_or(0)
     }
 
     pub fn write(&self, data: &[u8]) -> Result<()> {
@@ -123,6 +167,34 @@ impl TerminalSession {
             .lock()
             .map(|state| state.selection_text(selection))
             .unwrap_or_default()
+    }
+
+    pub fn mouse_report(
+        &self,
+        button: u8,
+        column: usize,
+        row: usize,
+        pressed: bool,
+        modifiers: u8,
+    ) -> Option<Vec<u8>> {
+        self.state
+            .lock()
+            .ok()
+            .and_then(|state| state.mouse_report(button, column, row, pressed, modifiers))
+    }
+
+    pub fn hyperlink_at(&self, line: i32, column: usize) -> Option<String> {
+        self.state
+            .lock()
+            .ok()
+            .and_then(|state| state.hyperlink_at(line, column))
+    }
+
+    pub fn bracketed_paste(&self, text: &str) -> Vec<u8> {
+        self.state
+            .lock()
+            .map(|state| state.bracketed_paste(text))
+            .unwrap_or_else(|_| text.as_bytes().to_vec())
     }
 
     pub fn take_events(&self) -> Vec<UiEvent> {

@@ -9,9 +9,16 @@ description = "AncletoCMD, emulador de terminal y gestor"
 [dependencies]
 alacritty_terminal.workspace = true
 ancleto-code-core.workspace = true
+arboard.workspace = true
+bytemuck.workspace = true
+glyphon.workspace = true
+open.workspace = true
+pollster.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
+wgpu.workspace = true
+winit.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

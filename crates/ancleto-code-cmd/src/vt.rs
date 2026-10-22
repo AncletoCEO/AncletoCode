@@ -147,6 +147,7 @@ pub struct TerminalState {
     title: String,
     marks: Vec<ShellMark>,
     osc_buffer: Vec<u8>,
+    revision: u64,
 }
 
 impl TerminalState {
@@ -172,11 +173,13 @@ impl TerminalState {
             title: "AncletoCMD".to_owned(),
             marks: Vec::new(),
             osc_buffer: Vec::new(),
+            revision: 0,
         }
     }
 
     pub fn feed(&mut self, bytes: &[u8]) {
         self.processor.advance(&mut self.term, bytes);
+        self.revision = self.revision.wrapping_add(1);
         self.scan_shell_marks(bytes);
         if let Ok(mut events) = self.events.lock() {
             for event in events.iter() {
@@ -262,6 +265,11 @@ impl TerminalState {
 
     pub fn scroll(&mut self, delta: i32) {
         self.term.scroll_display(Scroll::Delta(delta));
+        self.revision = self.revision.wrapping_add(1);
+    }
+
+    pub fn revision(&self) -> u64 {
+        self.revision
     }
 
     pub fn scroll_to(&mut self, position: Scroll) {
