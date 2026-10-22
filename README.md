@@ -84,7 +84,7 @@ AncletoCMD es una **terminal real**, no una TUI dentro de otra terminal. La refe
 - Precedencia global → workspace → proyecto, con validación de contraste WCAG AA.
 - La configuración de apariencia se guarda en la app, nunca en el repositorio del proyecto.
 
-## Arquitectura prevista
+## Arquitectura
 
 Es un Cargo workspace: un núcleo compartido, un host de sesiones y tres consumidores.
 
@@ -113,62 +113,155 @@ Es un Cargo workspace: un núcleo compartido, un host de sesiones y tres consumi
 - **CLI**: comandos headless para scripts, CI y administración.
 - **Local-first**: sin nube, sin telemetría y sin sincronización remota.
 
-## Requisitos (previstos)
+## Requisitos
 
-- Para compilar la app de escritorio: Rust estable y las dependencias de Tauri 2 para tu plataforma.
-- Para compilar AncletoCMD: toolchain Rust con soporte de `wgpu` en tu plataforma y, en Linux, las dependencias de sistema de Wayland/X11.
-- Node.js ≥ 24 para `@ancleto/spec` y `@ancleto/writer`.
-- Node.js ≥ 22 para Command Code.
-- Node.js ≥ 18 sólo para los launchers npm de `acode` y `acmd`.
-- Las CLIs de agente que quieras usar, ya instaladas y autenticadas.
-- Shells soportadas: `cmd`, PowerShell y WSL en Windows; bash, zsh y fish en Linux/macOS.
+### Para usar un release 0.0.1
 
-## Uso
+- **Linux x86_64:** glibc compatible con Ubuntu 22.04 o posterior si usás el
+  `.deb`; el tarball y el paquete AUR son la opción para otras distribuciones.
+  La app necesita WebKitGTK 4.1, GTK 3, libsoup 3 y librsvg.
+- **Windows 10/11 x64:** WebView2 (incluido en Windows 11 y en la mayoría de
+  Windows 10 actualizados). No hace falta Node.js para usar la app.
+- **AncletoCMD en Linux:** Wayland o X11, Vulkan/OpenGL y las dependencias del
+  `PKGBUILD` (`libxkbcommon`, `vulkan-icd-loader`, `fontconfig`, `freetype2`,
+  `wayland`, `libx11`).
+- **CLI y host:** no requieren Node.js. Node.js ≥ 24 sólo es necesario para
+  `acode spec` y `acode writer`; Node.js ≥ 22 para el driver de Command Code.
+- **Agentes:** instalá y autenticá por separado las CLIs que quieras usar
+  (`claude`, `opencode`, `agy`, `cmd`). `acode doctor` muestra qué encontró.
+- **macOS:** no hay artefactos en 0.0.1.
 
-App de escritorio en desarrollo:
+### Para compilar
+
+- Rust estable y las dependencias de Tauri 2 de tu plataforma.
+- Node.js ≥ 24 y npm para el frontend y los scripts de release.
+- En Linux, además: `libwebkit2gtk-4.1-dev`, `libappindicator3-dev`,
+  `librsvg2-dev`, `patchelf` y un toolchain de C/C++.
+- En Arch, los grupos `base-devel` y las dependencias que declara el `PKGBUILD`.
+
+## Instalación y uso por plataforma
+
+Todos los artefactos están en
+[Releases v0.0.1](https://github.com/AncletoCEO/AncletoCode/releases/tag/v0.0.1).
+Verificá la integridad con `SHA256SUMS` antes de instalar.
+
+### Linux — Debian/Ubuntu (`.deb`)
 
 ```bash
-npm install
-npm run tauri dev
-```
-
-### Instalación 0.0.1
-
-| Plataforma | Artefacto |
-|---|---|
-| Debian/Ubuntu | `AncletoCode_0.0.1_amd64.deb` |
-| Arch/EndeavourOS | `PKGBUILD` de `ancleto-code-bin` / tarball |
-| Windows x64 | instalador NSIS, MSI (si está disponible) o ZIP portable |
-| CLI | `acode-0.0.1-linux-x86_64.tar.gz` (Linux) / `acode-0.0.1-windows-x64.zip` |
-| AncletoCMD | `AncletoCMD-0.0.1-*.tar.gz` / `AncletoCMD-0.0.1-windows-x64.zip` |
-| npm | **pendiente** para un release posterior |
-
-```bash
-# Debian/Ubuntu
 sudo apt install ./AncletoCode_0.0.1_amd64.deb
-
-# CLI + host desde GitHub Release (hasta que se publique npm)
-# Linux: descomprimir acode-0.0.1-linux-x86_64.tar.gz
-# Windows: descomprimir acode-0.0.1-windows-x64.zip
-# npm queda pendiente para un release posterior.
+ancleto-code-desktop
 ```
 
-La app de escritorio incluye fallback in-process si el host no está disponible;
-para detach/attach entre superficies usá el tarball/ZIP de la CLI o el paquete AUR.
-En Arch, el `PKGBUILD` generado instala el host como dependencia.
-El checklist de Windows está en [`docs/windows-testing.md`](docs/windows-testing.md).
+También aparece en el menú de aplicaciones como **AncletoCode**. El `.deb` no
+incluye el host de sesiones; para sesiones persistentes usá el tarball de la CLI
+o el `PKGBUILD` de Arch.
 
-Actualización y desinstalación (cuando npm esté publicado):
+### Linux — Arch/EndeavourOS (PKGBUILD)
+
+El release incluye `ancleto-aur-0.0.1.tar.gz` con tres `PKGBUILD`. Todavía no
+están publicados en AUR; se compilan desde el release:
 
 ```bash
-npm install -g @ancleto/code@latest
-npm uninstall -g @ancleto/code
+tar -xzf ancleto-aur-0.0.1.tar.gz -C /tmp/ancleto-aur
+cd /tmp/ancleto-aur/ancleto-code-bin
+makepkg -si
 ```
 
-En 0.0.1 la actualización es manual: reemplazar el binario o reinstalar el
-`.deb`/instalador/`PKGBUILD` del release de GitHub.
+Para AncletoCMD y la CLI:
 
-La CLI se publica con binarios por plataforma como `optionalDependencies`:
+```bash
+cd /tmp/ancleto-aur/ancleto-cmd-bin && makepkg -si
+cd /tmp/ancleto-aur/ancleto-code-cli-bin && makepkg -si
+```
+
+`ancleto-code-bin` instala la app y depende de `ancleto-code-cli-bin`, que aporta
+`acode` y `ancleto-code-host`.
+
+### Linux — tarballs (cualquier distribución)
+
+```bash
+# App de escritorio + host
+tar -xzf AncletoCode-0.0.1-linux-x86_64.tar.gz -C /tmp/ancleto-code
+sudo install -Dm755 /tmp/ancleto-code/ancleto-code-desktop /usr/local/bin/ancleto-code-desktop
+sudo install -Dm755 /tmp/ancleto-code/ancleto-code-host /usr/local/bin/ancleto-code-host
+sudo install -Dm644 /tmp/ancleto-code/ancleto-code.desktop /usr/share/applications/ancleto-code.desktop
+for size in 32 128 256; do
+  sudo install -Dm644 "/tmp/ancleto-code/icons/${size}x${size}.png" \
+    "/usr/share/icons/hicolor/${size}x${size}/apps/ancleto-code.png"
+done
+ancleto-code-desktop
+
+# CLI + host
+tar -xzf acode-0.0.1-linux-x86_64.tar.gz -C "$HOME/.local/opt/acode"
+mkdir -p "$HOME/.local/bin"
+ln -sf "$HOME/.local/opt/acode/acode" "$HOME/.local/bin/acode"
+ln -sf "$HOME/.local/opt/acode/ancleto-code" "$HOME/.local/bin/ancleto-code"
+ln -sf "$HOME/.local/opt/acode/ancleto-code-host" "$HOME/.local/bin/ancleto-code-host"
+
+# AncletoCMD
+tar -xzf AncletoCMD-0.0.1-linux-x86_64.tar.gz -C "$HOME/.local/opt/ancleto-cmd"
+ln -sf "$HOME/.local/opt/ancleto-cmd/acmd" "$HOME/.local/bin/acmd"
+ln -sf "$HOME/.local/opt/ancleto-cmd/ancleto-cmd" "$HOME/.local/bin/ancleto-cmd"
+```
+
+Asegurate de que `~/.local/bin` esté en `PATH`. El tarball de la app y el de la
+CLI incluyen `ancleto-code-host`; el de AncletoCMD también, para que sea
+autocontenido.
+
+### Windows 10/11 x64
+
+**Instalador (recomendado para la app):**
+
+1. Descargá `AncletoCode_0.0.1_x64-setup.exe` (NSIS) o
+   `AncletoCode_0.0.1_x64_en-US.msi`.
+2. Ejecutalo. Si SmartScreen advierte por ser una build interna sin firma,
+   elegí **Más información → Ejecutar de todos modos**.
+3. Abrí **AncletoCode** desde el menú Inicio.
+
+**ZIP portable (app + host):**
+
+```powershell
+Expand-Archive .\AncletoCode-0.0.1-windows-x64-portable.zip -DestinationPath .\AncletoCode
+.\AncletoCode\ancleto-code-desktop.exe
+```
+
+**CLI + host en PowerShell:**
+
+```powershell
+$dest = "$env:LOCALAPPDATA\AncletoCode\bin"
+New-Item -ItemType Directory -Force $dest | Out-Null
+Expand-Archive .\acode-0.0.1-windows-x64.zip -DestinationPath $dest -Force
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  [Environment]::GetEnvironmentVariable("Path", "User") + ";$dest",
+  "User"
+)
+# Cerrá y volvé a abrir la terminal para que tome el PATH
+acode doctor
+```
+
+**AncletoCMD en Windows:**
+
+```powershell
+$dest = "$env:LOCALAPPDATA\AncletoCMD"
+Expand-Archive .\AncletoCMD-0.0.1-windows-x64.zip -DestinationPath $dest -Force
+& "$dest\acmd.exe" --project .
+```
+
+El instalador NSIS/MSI **no** incluye `ancleto-code-host.exe`; el ZIP portable y
+el ZIP de la CLI sí. Si usás el instalador y querés sesiones persistentes,
+agregá el host del ZIP de la CLI al `PATH` o usá el portable. El checklist
+completo está en [`docs/windows-testing.md`](docs/windows-testing.md).
+
+### macOS
+
+No hay `.dmg` ni binarios para macOS en 0.0.1. La app y AncletoCMD se pueden
+compilar desde el código, pero no es un artefacto soportado de este release.
+
+### npm
+
+La publicación en npm quedó **pendiente** para un release posterior. En 0.0.1
+usá los tarballs/ZIP de GitHub. La matriz prevista (cuando se publique) es:
 
 | Plataforma | `@ancleto/code` | `@ancleto/cmd` |
 |---|---|---|
@@ -177,7 +270,32 @@ La CLI se publica con binarios por plataforma como `optionalDependencies`:
 | Windows x64/arm64 | sí | sí |
 | macOS x64/arm64 | sí | sí |
 
-El launcher verifica el checksum del binario, propaga señales y, si falta el paquete de la plataforma, indica la plataforma detectada y el comando de instalación manual.
+El launcher verifica el checksum del binario, propaga señales y, si falta el
+paquete de la plataforma, indica la plataforma detectada y el comando de
+instalación manual.
+
+## Uso de las superficies
+
+### App de escritorio
+
+1. Abrí **AncletoCode**.
+2. Agregá un proyecto con la ruta local o elegí uno existente.
+3. Creá una sesión de agente desde el panel del proyecto y elegí el driver.
+4. Las tabs de proyecto y de agente conservan el estado; cerrar la ventana hace
+   *detach*, no mata la sesión.
+5. La atribución de fork y las licencias están en **About**.
+
+### AncletoCMD
+
+```bash
+acmd --project .
+acmd --project . --theme <id>
+acmd --install-hooks bash   # o zsh, fish, powershell
+```
+
+Atajos y paleta de comandos están documentados en la propia app. AncletoCMD
+comparte proyectos, sesiones y temas con la app y la CLI. `--kill-on-close`
+termina las sesiones al cerrar la ventana; sin esa opción quedan en el host.
 
 ### CLI `acode`
 
@@ -218,12 +336,36 @@ acode --json session list
 acode completions bash >> ~/.bashrc
 ```
 
+## Verificación y problemas comunes
+
+```bash
+# Linux
+sha256sum -c SHA256SUMS
+
+# Windows PowerShell
+Get-FileHash .\acode-0.0.1-windows-x64.zip -Algorithm SHA256
+```
+
+- **`acode` no se encuentra:** agregá el directorio de instalación al `PATH` y
+  abrí una terminal nueva.
+- **No hay host / las sesiones no persisten:** `acode host status`; si falta el
+  host, usá el ZIP portable, el ZIP de la CLI o el paquete AUR de la CLI.
+- **La app no abre en Linux:** verificá WebKitGTK 4.1 y probá XWayland si estás
+  en Wayland.
+- **glibc incompatible:** usá el tarball o el `PKGBUILD`; el `.deb` se compila en
+  Ubuntu 22.04.
+- **Windows SmartScreen:** build interna sin firma; verificá el hash y elegí
+  **Ejecutar de todos modos**.
+- **Un agente no aparece:** `acode doctor` y comprobá que su binario esté en
+  `PATH` y autenticado.
+
 ## Documentación
 
 - Propuesta: [`aspec/changes/ancleto-code-desktop-workplace/proposal.md`](aspec/changes/ancleto-code-desktop-workplace/proposal.md)
 - Diseño: [`aspec/changes/ancleto-code-desktop-workplace/design.md`](aspec/changes/ancleto-code-desktop-workplace/design.md)
 - Tareas: [`aspec/changes/ancleto-code-desktop-workplace/tasks.md`](aspec/changes/ancleto-code-desktop-workplace/tasks.md)
 - Especificaciones: [`aspec/changes/ancleto-code-desktop-workplace/specs/`](aspec/changes/ancleto-code-desktop-workplace/specs/)
+- Revisión de compatibilidad de licencias: [`docs/compliance/license-review-0.0.1.md`](docs/compliance/license-review-0.0.1.md)
 
 ## Licencia
 

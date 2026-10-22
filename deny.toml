@@ -11,6 +11,7 @@ allow = [
   "Apache-2.0 WITH LLVM-exception",
   "BSD-2-Clause",
   "BSD-3-Clause",
+  "BSL-1.0",
   "CC0-1.0",
   "ISC",
   "MIT",
@@ -25,6 +26,7 @@ version = 2
 yanked = "warn"
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "Transitiva del stack tauri/gtk fijado; sin reemplazo disponible todavía" },
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser es transitiva de cosmic-text/glyphon y winit; no hay versión corregida compatible con el stack fijado" },
 ]
 
 [bans]

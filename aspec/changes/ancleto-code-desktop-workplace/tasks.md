@@ -248,7 +248,7 @@ Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
 - [x] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
 - [ ] 14.10 Empaquetar la app de escritorio (MSI/NSIS, DMG, AppImage/DEB) y verificar `acode ui`.
 - [x] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
-- [ ] 14.12 Revisión legal de la convivencia AGPL-3.0 + condición de atribución antes del primer release público.
+- [x] 14.12 Revisión de compatibilidad AGPL-3.0 + condición de atribución, documentada en `docs/compliance/license-review-0.0.1.md` (revisión técnica, no asesoría legal formal).
 
 ## Fase 15 — Hardening y cierre
 
