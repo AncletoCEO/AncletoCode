@@ -229,7 +229,7 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 - [x] 13.10 Shell profiles (`cmd`, PowerShell, WSL, bash, zsh, fish) y hooks OSC 133 opt-in con navegación entre comandos, copia de salida y exit status; fallback heurístico en shells sin hooks.
 - [x] 13.11 Notificaciones de fin de comando, bell, indicador de tab y foco.
 - [x] 13.12 Persistencia de `TerminalLayout` y temas compartidos en SQLite; restauración al reabrir y respeto de la configuración global.
-- [ ] 13.13 Benchmark de rendimiento (tecla a frame p99, idle CPU, arranque, throughput) y umbrales en CI.
+- [x] 13.13 Benchmark de rendimiento (tecla a frame p99, idle CPU, arranque, throughput) y umbrales en CI.
 - [ ] 13.14 Tests de conformidad VT con fixtures y programas reales (vim, tmux, htop, git, less), y smoke tests en Windows (`cmd`, PowerShell, WSL), Linux y macOS.
 - [x] 13.15 Manejo de cierre de ventana con detach, restauración de sesiones y "cerrar y matar sesiones" con confirmación.
 
@@ -257,6 +257,6 @@ Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16)
 - [x] 15.1 Persistencia de configuración: idioma, host, tier, límites de conversación, overrides de binarios, preferencias de writer, apariencia y layout de AncletoCMD.
 - [x] 15.2 Atajos: nueva sesión, cambiar proyecto, matar sesión, iniciar conversación, rebuild de writer, cambiar tema y equivalentes en AncletoCMD.
 - [ ] 15.3 Smoke manual end-to-end en las dos versiones: dos proyectos, sesiones `claude`/`opencode`/`agy`/`cmd`, detach/attach, conversación agente-a-agente, aborto, build + vista humana de writer.
-- [ ] 15.4 Verificar escenarios de degradación (CLI ausente, Node ausente, host caído, GPU no disponible, sin language pack, salida no parseable, efectos de transparencia no soportados).
+- [x] 15.4 Verificar escenarios de degradación (CLI ausente, Node ausente, host caído, GPU no disponible, sin language pack, salida no parseable, efectos de transparencia no soportados).
 - [x] 15.5 `cargo test`, `cargo clippy`, `npm run test`, `npm run typecheck` y `npm run lint` en verde.
-- [ ] 15.6 Empaquetado (`npm run tauri build`, matriz npm) y verificación de cierre limpio de procesos.
+- [x] 15.6 Empaquetado (`npm run tauri build`, matriz npm) y verificación de cierre limpio de procesos.
