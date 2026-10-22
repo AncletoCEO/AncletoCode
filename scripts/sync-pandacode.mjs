@@ -12,6 +12,8 @@ const files = [
   "src/color.ts",
   "src/palette-core.ts",
   "src/transcript-scroll.ts",
+  "src/vendor/enriched-markdown/md4c.js",
+  "src/vendor/enriched-markdown/md4c.d.ts",
 ];
 
 function stripHeader(text) {

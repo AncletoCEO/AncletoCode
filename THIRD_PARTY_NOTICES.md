@@ -49,23 +49,39 @@ SOFTWARE.
 
 ## Enriched Markdown (md4c/WASM)
 
-Si se vendoriza `src/vendor/enriched-markdown/` desde PandaCode, el parser
-corresponde a Enriched Markdown, publicado bajo licencia MIT por Software Mansion.
+Parser Markdown vendorizado en `third_party/pandacode/src/vendor/enriched-markdown/`
+(md4c compilado a WebAssembly por Software Mansion), junto con el renderer
+adaptado en `third_party/pandacode/src/enriched-markdown.ts` y
+`third_party/pandacode/src/streaming-markdown.ts`.
 
 - **Proyecto**: https://github.com/software-mansion/enriched-markdown
+- **Paquete de origen**: `react-native-enriched-markdown@1.1.1`, archivo `lib/module/web/wasm/md4c.js`
+- **Integridad del tarball**: `sha512-JvbRIVy75MAoGCv8V6sSscu11/Ian588wfIgH+j64XFpf6gy5sNNkMyG087MH88jNCf3p7fTjgEAGxZMhEqL4A==`
 - **Licencia**: MIT
-- **Requisito**: conservar el aviso de copyright y el texto de permiso al
-  redistribuir el binario WASM o su wrapper.
 
-El texto completo de la licencia se incorporará junto al módulo vendorizado en
-`third_party/pandacode/src/vendor/enriched-markdown/LICENSE` al ejecutar la tarea
-0B.8.
+```text
+MIT License
 
-## Dependencias
+Copyright (c) Software Mansion
 
-Las licencias de los crates de Rust y de los paquetes npm se auditan con
-`cargo deny` y el revisor de licencias npm. El reporte generado se incorpora a este
-archivo o se referencia desde aquí antes de cada release.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## IBM Plex Mono
 

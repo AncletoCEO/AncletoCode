@@ -36,7 +36,11 @@ incorporado de lo planificado.
 | `src/streaming-markdown.ts` | `third_party/pandacode/src/streaming-markdown.ts` | B | planificado |
 | `src/ui-size.ts` | `third_party/pandacode/src/ui-size.ts` | B | planificado |
 | `src/dom.ts` (subset Markdown/iconos) | `third_party/pandacode/src/dom.ts` | B | planificado |
-| `src/vendor/enriched-markdown/` | `third_party/pandacode/src/vendor/enriched-markdown/` | A | planificado |
+| `src/vendor/enriched-markdown/md4c.js` | `third_party/pandacode/src/vendor/enriched-markdown/md4c.js` | A | vendorizado |
+| `src/vendor/enriched-markdown/md4c.d.ts` | `third_party/pandacode/src/vendor/enriched-markdown/md4c.d.ts` | A | vendorizado |
+| `src/vendor/enriched-markdown/README.md` | `third_party/pandacode/src/vendor/enriched-markdown/README.md` | A | vendorizado |
+| `src/enriched-markdown.ts` | `third_party/pandacode/src/enriched-markdown.ts` | B | vendorizado |
+| `src/streaming-markdown.ts` | `third_party/pandacode/src/streaming-markdown.ts` | B | vendorizado |
 
 ## Cabecera obligatoria
 

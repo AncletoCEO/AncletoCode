@@ -38,7 +38,11 @@ esta tabla. La columna "Estado" pasa a `vendorizado` cuando el archivo existe ba
 | `third_party/pandacode/src/streaming-markdown.ts` | `src/streaming-markdown.ts` | B | MIT | PandaCode contributors | Adaptación al transcript propio | planificado |
 | `third_party/pandacode/src/ui-size.ts` | `src/ui-size.ts` | B | MIT | PandaCode contributors | Adaptación a React y preferencias | planificado |
 | `third_party/pandacode/src/dom.ts` | `src/dom.ts` | B | MIT | PandaCode contributors | Sólo subset Markdown/iconos | planificado |
-| `third_party/pandacode/src/vendor/enriched-markdown/` | `src/vendor/enriched-markdown/` | A | MIT (Software Mansion) | Software Mansion | Vendorizado tal cual | planificado |
+| `third_party/pandacode/src/vendor/enriched-markdown/md4c.js` | `src/vendor/enriched-markdown/md4c.js` | A | MIT (Software Mansion) | Software Mansion | Ninguna | vendorizado |
+| `third_party/pandacode/src/vendor/enriched-markdown/md4c.d.ts` | `src/vendor/enriched-markdown/md4c.d.ts` | A | MIT (Software Mansion) | Software Mansion | Ninguna | vendorizado |
+| `third_party/pandacode/src/vendor/enriched-markdown/README.md` | `src/vendor/enriched-markdown/README.md` | A | MIT (Software Mansion) | Software Mansion | Ninguna | vendorizado |
+| `third_party/pandacode/src/enriched-markdown.ts` | `src/enriched-markdown.ts` | B | MIT | PandaCode contributors | KaTeX/DOMPurify propios; sin tags generativos | vendorizado |
+| `third_party/pandacode/src/streaming-markdown.ts` | `src/streaming-markdown.ts` | B | MIT | PandaCode contributors | Adaptado a nuestro render; sin file-links | vendorizado |
 
 ## Referencias de diseño (sin copia)
 
