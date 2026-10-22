@@ -25,7 +25,8 @@
     "check:versions": "node scripts/check-versions.mjs",
     "package:npm": "node scripts/package-npm.mjs",
     "smoke:npm": "node scripts/smoke-npm.mjs",
-    "set:version": "node scripts/set-version.mjs"
+    "set:version": "node scripts/set-version.mjs",
+    "perf:cmd": "node scripts/perf-cmd.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

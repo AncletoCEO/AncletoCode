@@ -155,6 +155,7 @@ pub fn run(options: CmdOptions) -> Result<(), String> {
         options,
         state: None,
         proxy,
+        started: std::time::Instant::now(),
     };
     event_loop
         .run_app(&mut application)
@@ -165,6 +166,7 @@ struct Application {
     options: CmdOptions,
     state: Option<AppState>,
     proxy: EventLoopProxy<UserEvent>,
+    started: std::time::Instant,
 }
 
 impl ApplicationHandler<UserEvent> for Application {
@@ -190,6 +192,7 @@ impl ApplicationHandler<UserEvent> for Application {
             event_loop,
             &self.options,
             self.proxy.clone(),
+            self.started,
         ) {
             Ok(state) => self.state = Some(state),
             Err(error) => {
@@ -273,10 +276,19 @@ struct AppState {
     overlay: Option<Overlay>,
     overlay_buffer: Buffer,
     orchestrator: Orchestrator,
+    perf: PerfState,
     cursor: PhysicalPosition<f64>,
     modal: Option<Modal>,
     status: Option<String>,
     proxy: EventLoopProxy<UserEvent>,
+}
+
+struct PerfState {
+    started: std::time::Instant,
+    last_key: Option<std::time::Instant>,
+    startup_ms: Option<u64>,
+    key_frames_us: Vec<u64>,
+    out: Option<std::path::PathBuf>,
 }
 
 impl AppState {
@@ -285,6 +297,7 @@ impl AppState {
         event_loop: &ActiveEventLoop,
         options: &CmdOptions,
         proxy: EventLoopProxy<UserEvent>,
+        started: std::time::Instant,
     ) -> Result<Self, String> {
         let size = window.inner_size();
         let scale_factor = window.scale_factor();
@@ -428,6 +441,13 @@ impl AppState {
             overlay: None,
             overlay_buffer,
             orchestrator,
+            perf: PerfState {
+                started,
+                last_key: None,
+                startup_ms: None,
+                key_frames_us: Vec::new(),
+                out: std::env::var_os("ACMD_PERF_OUT").map(std::path::PathBuf::from),
+            },
             cursor: PhysicalPosition::new(0.0, 0.0),
             modal: None,
             status: None,
@@ -604,6 +624,7 @@ impl AppState {
                 self.write_to_focus(text.as_bytes());
             }
             WindowEvent::KeyboardInput { event, .. } if event.state == ElementState::Pressed => {
+                self.perf.last_key = Some(std::time::Instant::now());
                 self.handle_key(event_loop, &event);
             }
             WindowEvent::MouseInput { state, button, .. } => {
@@ -2038,6 +2059,7 @@ impl AppState {
     }
 
     fn shutdown(&mut self, event_loop: &ActiveEventLoop, kill: bool) {
+        self.write_perf();
         for tab in &self.layout.tabs {
             for pane in tab.root.panes() {
                 if let Some(session_id) = &pane.session_id {
@@ -2449,6 +2471,7 @@ impl AppState {
         self.queue.submit(Some(encoder.finish()));
         self.queue.present(frame);
         self.atlas.trim();
+        self.record_perf();
 
         self.collect_session_events();
         Ok(())
@@ -2478,6 +2501,52 @@ impl AppState {
         if !active.is_empty() {
             self.update_chrome();
         }
+    }
+
+    fn record_perf(&mut self) {
+        let now = std::time::Instant::now();
+        if self.perf.startup_ms.is_none() {
+            self.perf.startup_ms = Some(
+                u64::try_from(now.duration_since(self.perf.started).as_millis())
+                    .unwrap_or(u64::MAX),
+            );
+        }
+        if let Some(key) = self.perf.last_key.take() {
+            self.perf
+                .key_frames_us
+                .push(u64::try_from(now.duration_since(key).as_micros()).unwrap_or(u64::MAX));
+            self.write_perf();
+        } else if self.perf.startup_ms.is_some() && self.perf.out.is_some() {
+            self.write_perf();
+        }
+    }
+
+    fn write_perf(&self) {
+        let Some(path) = &self.perf.out else {
+            return;
+        };
+        let mut samples = self.perf.key_frames_us.clone();
+        samples.sort_unstable();
+        let percentile = |p: f64| -> u64 {
+            if samples.is_empty() {
+                return 0;
+            }
+            let index = ((samples.len() - 1) as f64 * p).round() as usize;
+            samples[index.min(samples.len() - 1)]
+        };
+        let payload = serde_json::json!({
+            "startupMs": self.perf.startup_ms,
+            "keyFrames": {
+                "count": samples.len(),
+                "p50Ms": percentile(0.50) as f64 / 1000.0,
+                "p99Ms": percentile(0.99) as f64 / 1000.0,
+            },
+            "target": { "keyToFrameP99Ms": 30.0, "idleCpuPercent": 1.0, "startupMs": 300.0 },
+        });
+        let _ = std::fs::write(
+            path,
+            serde_json::to_string_pretty(&payload).unwrap_or_default(),
+        );
     }
 
     fn update_pane_buffers(&mut self) {
