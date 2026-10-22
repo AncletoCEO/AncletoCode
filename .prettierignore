@@ -7,3 +7,4 @@ package-lock.json
 LICENSE
 third_party/pandacode/LICENSE
 *.md
+third_party/pandacode/src*

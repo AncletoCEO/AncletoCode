@@ -5,6 +5,7 @@ pub mod persistence;
 pub mod projects;
 pub mod providers;
 pub mod session;
+pub mod vendored;
 
 pub use domain::{CoreError, FileNode, Project, Result};
 pub use drivers::DriverRegistry;

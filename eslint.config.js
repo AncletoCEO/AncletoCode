@@ -5,7 +5,9 @@ import prettier from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "target", "src-tauri/target", "src-tauri/gen"] },
+  {
+    ignores: ["dist", "node_modules", "target", "src-tauri/target", "src-tauri/gen", "third_party"],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
