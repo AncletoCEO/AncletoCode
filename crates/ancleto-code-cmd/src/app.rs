@@ -5,8 +5,9 @@ use std::sync::Arc;
 use ancleto_code_core::host::HostPaths;
 use ancleto_code_core::providers::{SpecProvider, ToolReport, WriterProvider};
 use ancleto_code_core::{
-    DriverRegistry, DriverStatus, HostClient, Project, ProjectService, SavedSession,
-    SessionBackend, SessionSpec, SessionStatus, Store,
+    ConversationState, DriverRegistry, DriverStatus, HostClient, Orchestrator, Project,
+    ProjectService, SavedSession, SessionBackend, SessionSpec, SessionStatus, StartConversation,
+    Store, Turn,
 };
 use glyphon::{
     Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, SwashCache,
@@ -70,6 +71,57 @@ enum Modal {
     KillSession(String),
     Clipboard(String),
     Hyperlink(String),
+}
+
+#[derive(Debug, Clone)]
+enum Overlay {
+    Palette(PaletteState),
+    Spec(TextPanel),
+    Writer(TextPanel),
+    Conversation(ConversationView),
+}
+
+#[derive(Debug, Clone)]
+struct PaletteState {
+    query: String,
+    selected: usize,
+}
+
+#[derive(Debug, Clone)]
+struct TextPanel {
+    lines: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct ConversationView {
+    session_a: Option<String>,
+    session_b: Option<String>,
+    objective: String,
+    conversation_id: Option<String>,
+    turns: Vec<Turn>,
+    state: Option<ConversationState>,
+    reason: Option<String>,
+    error: Option<String>,
+    sessions: Vec<(String, String, SessionStatus)>,
+    focus: usize,
+}
+
+#[derive(Clone)]
+enum PaletteAction {
+    NewTab,
+    SplitHorizontal,
+    SplitVertical,
+    ClosePanel,
+    Copy,
+    Paste,
+    ZoomIn,
+    ZoomOut,
+    ZoomReset,
+    KillAll,
+    SpecPanel,
+    WriterPanel,
+    ConversationPanel,
+    Quit,
 }
 
 #[derive(Debug, Clone)]
@@ -211,6 +263,9 @@ struct AppState {
     sidebar_buffer: Buffer,
     sidebar_lines: Vec<(String, Option<SidebarAction>)>,
     last_sidebar_refresh: std::time::Instant,
+    overlay: Option<Overlay>,
+    overlay_buffer: Buffer,
+    orchestrator: Orchestrator,
     cursor: PhysicalPosition<f64>,
     modal: Option<Modal>,
     status: Option<String>,
@@ -305,6 +360,17 @@ impl AppState {
             &mut font_system,
             Metrics::new(11.0 * scale_factor as f32, 16.0 * scale_factor as f32),
         );
+        let overlay_buffer = Buffer::new(
+            &mut font_system,
+            Metrics::new(12.0 * scale_factor as f32, 18.0 * scale_factor as f32),
+        );
+        let orchestrator = Orchestrator::new(
+            Store::open(&ancleto_code_core::host::transport::default_database_path())
+                .map_err(|error| format!("no se pudo abrir la base de conversaciones: {error}"))?,
+            Arc::clone(&client) as Arc<dyn SessionBackend>,
+            DriverRegistry::from_store(&store),
+            None,
+        );
         let mut state = Self {
             window,
             _instance: instance,
@@ -352,6 +418,9 @@ impl AppState {
             sidebar_buffer,
             sidebar_lines: Vec::new(),
             last_sidebar_refresh: std::time::Instant::now(),
+            overlay: None,
+            overlay_buffer,
+            orchestrator,
             cursor: PhysicalPosition::new(0.0, 0.0),
             modal: None,
             status: None,
@@ -549,7 +618,485 @@ impl AppState {
         }
     }
 
+    fn open_palette(&mut self) {
+        self.overlay = Some(Overlay::Palette(PaletteState {
+            query: String::new(),
+            selected: 0,
+        }));
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn open_spec_panel(&mut self) {
+        let root = Path::new(&self.project_root);
+        let provider = SpecProvider::detect(root);
+        let tool = provider.tool();
+        let mut lines = vec![format!(
+            "ancleto: {} {}",
+            tool_label(&tool),
+            tool.version.clone().unwrap_or_default()
+        )];
+        match provider.project_state(root) {
+            Ok(state) => {
+                lines.push(format!(
+                    "inicializado: {}",
+                    if state.initialized { "sí" } else { "no" }
+                ));
+                lines.push(format!(
+                    "host: {} · tier: {} · idioma: {}",
+                    state.host.unwrap_or_else(|| "—".to_owned()),
+                    state.tier.unwrap_or_else(|| "—".to_owned()),
+                    state.language.unwrap_or_else(|| "—".to_owned())
+                ));
+                if !state.active_changes.is_empty() {
+                    lines.push(String::new());
+                    lines.push("changes activos:".to_owned());
+                    for change in &state.active_changes {
+                        lines.push(format!(
+                            "  · {} [{}]",
+                            change.name,
+                            change.artifacts.join(", ")
+                        ));
+                    }
+                }
+            }
+            Err(error) => lines.push(format!("estado: {error}")),
+        }
+        if tool.status == ancleto_code_core::drivers::ToolStatus::Available {
+            if let Ok(discovery) = provider.discovery_check(root) {
+                lines.push(String::new());
+                lines.push(format!(
+                    "discovery: {} · impact {} · {}",
+                    discovery.state,
+                    discovery.impact,
+                    discovery.message.unwrap_or_default()
+                ));
+            }
+            if let Ok(check) = provider.specs_check(root, None) {
+                lines.push(format!(
+                    "specs check: {} · {} escaneados · {} no canónicos",
+                    if check.ok { "ok" } else { "con errores" },
+                    check.scanned,
+                    check.non_canonical.len()
+                ));
+            }
+            if let Ok(context) = provider.memory_context(root) {
+                lines.push(String::new());
+                lines.push("memoria:".to_owned());
+                if context.trim().is_empty() {
+                    lines.push("  sin reglas activas".to_owned());
+                } else {
+                    for line in context.lines().take(12) {
+                        lines.push(format!("  {line}"));
+                    }
+                }
+            }
+        }
+        self.overlay = Some(Overlay::Spec(TextPanel { lines }));
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn open_writer_panel(&mut self) {
+        let root = Path::new(&self.project_root);
+        let provider = WriterProvider::detect(root);
+        let mut lines = Vec::new();
+        match provider.state(root) {
+            Ok(state) => {
+                lines.push(format!(
+                    "ancleto-writer: {} {}",
+                    tool_label(&state.tool),
+                    state.tool.version.clone().unwrap_or_default()
+                ));
+                if let Some(check) = &state.check {
+                    lines.push(format!("frescura: {}", check.status));
+                }
+                if let Some(manifest) = &state.manifest {
+                    lines.push(format!(
+                        "manifest: schema {} · writer {}",
+                        manifest.schema_version,
+                        manifest.writer_version.clone().unwrap_or_default()
+                    ));
+                    lines.push(format!("stats: {}", manifest.stats));
+                }
+                if let Some(graph) = &state.graph {
+                    lines.push(format!(
+                        "grafo: {} nodos · {} aristas",
+                        graph.nodes, graph.edges
+                    ));
+                }
+                lines.push(format!(
+                    "language pack: {} · {} · {}",
+                    state.language_pack.module,
+                    if state.language_pack.installed {
+                        "instalado"
+                    } else {
+                        "ausente"
+                    },
+                    if state.language_pack.enabled {
+                        "habilitado"
+                    } else {
+                        "deshabilitado"
+                    }
+                ));
+                lines.push(String::new());
+                lines.push("hechos:".to_owned());
+                for (name, value) in &state.facts {
+                    lines.push(format!("  {name}: {}", summarize_fact(value)));
+                }
+                if let Some(unsupported) = state.facts.get("unsupported") {
+                    lines.push(format!("  unsupported: {}", summarize_fact(unsupported)));
+                }
+            }
+            Err(error) => lines.push(format!("writer: {error}")),
+        }
+        self.overlay = Some(Overlay::Writer(TextPanel { lines }));
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn open_conversation_panel(&mut self) {
+        let sessions: Vec<(String, String, SessionStatus)> = self
+            .saved_sessions
+            .iter()
+            .filter(|session| {
+                session.spec.project_id == self.project_id
+                    && !matches!(
+                        session.status,
+                        SessionStatus::Stopped | SessionStatus::Crashed
+                    )
+            })
+            .map(|session| {
+                (
+                    session.id.clone(),
+                    session.spec.driver_id.clone(),
+                    self.live_status
+                        .get(&session.id)
+                        .copied()
+                        .unwrap_or(session.status),
+                )
+            })
+            .collect();
+        let session_a = sessions.first().map(|entry| entry.0.clone());
+        let session_b = sessions.get(1).map(|entry| entry.0.clone());
+        self.overlay = Some(Overlay::Conversation(ConversationView {
+            session_a,
+            session_b,
+            objective: String::new(),
+            conversation_id: None,
+            turns: Vec::new(),
+            state: None,
+            reason: None,
+            error: None,
+            sessions,
+            focus: 0,
+        }));
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn palette_items(&self) -> Vec<(&'static str, PaletteAction)> {
+        vec![
+            ("Nueva tab", PaletteAction::NewTab),
+            ("Dividir horizontal", PaletteAction::SplitHorizontal),
+            ("Dividir vertical", PaletteAction::SplitVertical),
+            ("Cerrar panel", PaletteAction::ClosePanel),
+            ("Copiar selección", PaletteAction::Copy),
+            ("Pegar", PaletteAction::Paste),
+            ("Zoom +", PaletteAction::ZoomIn),
+            ("Zoom −", PaletteAction::ZoomOut),
+            ("Zoom 100%", PaletteAction::ZoomReset),
+            ("Panel de spec", PaletteAction::SpecPanel),
+            ("Panel de writer", PaletteAction::WriterPanel),
+            (
+                "Conversación agente-a-agente",
+                PaletteAction::ConversationPanel,
+            ),
+            ("Matar todas las sesiones", PaletteAction::KillAll),
+            ("Salir", PaletteAction::Quit),
+        ]
+    }
+
+    fn filtered_palette(&self, query: &str) -> Vec<(&'static str, PaletteAction)> {
+        let query = query.to_lowercase();
+        self.palette_items()
+            .into_iter()
+            .filter(|(label, _)| query.is_empty() || label.to_lowercase().contains(&query))
+            .collect()
+    }
+
+    fn handle_overlay_key(&mut self, event_loop: &ActiveEventLoop, event: &winit::event::KeyEvent) {
+        let Some(mut overlay) = self.overlay.take() else {
+            return;
+        };
+        let escape = matches!(event.logical_key, Key::Named(NamedKey::Escape));
+        let mut keep = true;
+        let mut pending_action: Option<PaletteAction> = None;
+        let mut refresh_panel: Option<bool> = None;
+
+        match &mut overlay {
+            Overlay::Palette(state) => {
+                if escape {
+                    keep = false;
+                } else {
+                    match &event.logical_key {
+                        Key::Named(NamedKey::Backspace) => {
+                            state.query.pop();
+                            state.selected = 0;
+                        }
+                        Key::Named(NamedKey::ArrowDown) => {
+                            let count = self.filtered_palette(&state.query).len();
+                            if count > 0 {
+                                state.selected = (state.selected + 1) % count;
+                            }
+                        }
+                        Key::Named(NamedKey::ArrowUp) => {
+                            let count = self.filtered_palette(&state.query).len();
+                            if count > 0 {
+                                state.selected = (state.selected + count - 1) % count;
+                            }
+                        }
+                        Key::Named(NamedKey::Enter) => {
+                            let items = self.filtered_palette(&state.query);
+                            if let Some((_, action)) = items.get(state.selected) {
+                                pending_action = Some(action.clone());
+                                keep = false;
+                            }
+                        }
+                        Key::Character(text) => {
+                            state.query.push_str(text);
+                            state.selected = 0;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Overlay::Spec(_) | Overlay::Writer(_) => {
+                if escape {
+                    keep = false;
+                } else if matches!(&event.logical_key, Key::Character(text) if text.eq_ignore_ascii_case("r"))
+                {
+                    refresh_panel = Some(matches!(overlay, Overlay::Writer(_)));
+                    keep = false;
+                }
+            }
+            Overlay::Conversation(view) => {
+                if escape {
+                    keep = false;
+                } else {
+                    match &event.logical_key {
+                        Key::Named(NamedKey::Tab) => view.focus = (view.focus + 1) % 3,
+                        Key::Named(NamedKey::Backspace) if view.focus == 2 => {
+                            view.objective.pop();
+                        }
+                        Key::Named(NamedKey::ArrowUp) if view.focus < 2 => {
+                            shift_choice(view, -1);
+                        }
+                        Key::Named(NamedKey::ArrowDown) if view.focus < 2 => {
+                            shift_choice(view, 1);
+                        }
+                        Key::Character(text) if self.modifiers.control_key() => {
+                            if let Some(id) = view.conversation_id.clone() {
+                                if text.eq_ignore_ascii_case("p") {
+                                    let _ = self.orchestrator.pause(&id);
+                                } else if text.eq_ignore_ascii_case("r") {
+                                    let _ = self.orchestrator.resume(&id);
+                                } else if text.eq_ignore_ascii_case("a") {
+                                    let _ = self.orchestrator.abort(&id);
+                                }
+                            }
+                        }
+                        Key::Character(text) if view.focus == 2 => {
+                            view.objective.push_str(text);
+                        }
+                        Key::Named(NamedKey::Enter) if view.focus == 2 => {
+                            let (Some(a), Some(b)) =
+                                (view.session_a.clone(), view.session_b.clone())
+                            else {
+                                view.error = Some("hacen falta dos sesiones".to_owned());
+                                self.overlay = Some(overlay);
+                                self.update_overlay_buffer();
+                                self.window.request_redraw();
+                                return;
+                            };
+                            if a == b || view.objective.trim().is_empty() {
+                                view.error =
+                                    Some("elegí dos sesiones distintas y un objetivo".to_owned());
+                                self.overlay = Some(overlay);
+                                self.update_overlay_buffer();
+                                self.window.request_redraw();
+                                return;
+                            }
+                            match self.orchestrator.start(StartConversation {
+                                session_a: a,
+                                session_b: b,
+                                objective: view.objective.clone(),
+                                max_turns: Some(6),
+                                turn_budget_ms: Some(60_000),
+                            }) {
+                                Ok(conversation) => {
+                                    view.conversation_id = Some(conversation.id);
+                                    view.state = Some(ConversationState::Running);
+                                    view.turns.clear();
+                                    view.error = None;
+                                }
+                                Err(error) => view.error = Some(error.to_string()),
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        if keep {
+            self.overlay = Some(overlay);
+        }
+        if let Some(writer) = refresh_panel {
+            if writer {
+                self.open_writer_panel();
+            } else {
+                self.open_spec_panel();
+            }
+            return;
+        }
+        if let Some(action) = pending_action {
+            self.execute_palette(event_loop, action);
+            return;
+        }
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn execute_palette(&mut self, event_loop: &ActiveEventLoop, action: PaletteAction) {
+        match action {
+            PaletteAction::NewTab => self.perform_action(event_loop, Action::NewTab),
+            PaletteAction::SplitHorizontal => {
+                self.perform_action(event_loop, Action::SplitHorizontal)
+            }
+            PaletteAction::SplitVertical => self.perform_action(event_loop, Action::SplitVertical),
+            PaletteAction::ClosePanel => self.perform_action(event_loop, Action::ClosePanel),
+            PaletteAction::Copy => self.perform_action(event_loop, Action::Copy),
+            PaletteAction::Paste => self.perform_action(event_loop, Action::Paste),
+            PaletteAction::ZoomIn => self.perform_action(event_loop, Action::ZoomIn),
+            PaletteAction::ZoomOut => self.perform_action(event_loop, Action::ZoomOut),
+            PaletteAction::ZoomReset => self.perform_action(event_loop, Action::ZoomReset),
+            PaletteAction::KillAll => self.perform_action(event_loop, Action::KillAll),
+            PaletteAction::Quit => self.shutdown(event_loop, false),
+            PaletteAction::SpecPanel => self.open_spec_panel(),
+            PaletteAction::WriterPanel => self.open_writer_panel(),
+            PaletteAction::ConversationPanel => self.open_conversation_panel(),
+        }
+    }
+
+    fn update_overlay_buffer(&mut self) {
+        if let Some(Overlay::Conversation(view)) = &mut self.overlay {
+            if let Some(id) = view.conversation_id.clone() {
+                if let Ok(conversation) = self.orchestrator.conversation(&id) {
+                    view.state = Some(conversation.state);
+                    view.reason = conversation.reason.clone();
+                }
+                if let Ok(turns) = self.orchestrator.turns(&id) {
+                    view.turns = turns;
+                }
+            }
+        }
+
+        let lines = match &self.overlay {
+            None => Vec::new(),
+            Some(Overlay::Palette(state)) => {
+                let mut lines = vec![
+                    "command palette".to_owned(),
+                    format!("filtro: {}", state.query),
+                    String::new(),
+                ];
+                for (index, (label, _)) in self
+                    .filtered_palette(&state.query)
+                    .iter()
+                    .enumerate()
+                    .take(20)
+                {
+                    let marker = if index == state.selected { "▶" } else { " " };
+                    lines.push(format!("{marker} {label}"));
+                }
+                lines.push(String::new());
+                lines.push("↑↓ elegir · Enter ejecutar · Esc cerrar".to_owned());
+                lines
+            }
+            Some(Overlay::Spec(panel)) | Some(Overlay::Writer(panel)) => {
+                let mut lines = panel.lines.clone();
+                lines.push(String::new());
+                lines.push("r recargar · Esc cerrar".to_owned());
+                lines
+            }
+            Some(Overlay::Conversation(view)) => {
+                let mut lines = vec!["conversación agente-a-agente".to_owned(), String::new()];
+                lines.push("sesiones:".to_owned());
+                for (index, (id, driver, status)) in view.sessions.iter().enumerate() {
+                    let marker = if Some(id) == view.session_a.as_ref() {
+                        "A"
+                    } else if Some(id) == view.session_b.as_ref() {
+                        "B"
+                    } else {
+                        " "
+                    };
+                    lines.push(format!(
+                        "  [{marker}] {} · {} · {id}",
+                        driver,
+                        status_glyph(*status)
+                    ));
+                    let _ = index;
+                }
+                lines.push(String::new());
+                lines.push(format!("objetivo: {}", view.objective));
+                if let Some(state) = view.state {
+                    lines.push(format!(
+                        "estado: {} · {} turnos{}",
+                        conversation_state_label(state),
+                        view.turns.len(),
+                        view.reason
+                            .as_ref()
+                            .map(|reason| format!(" · {reason}"))
+                            .unwrap_or_default()
+                    ));
+                }
+                if let Some(error) = &view.error {
+                    lines.push(format!("error: {error}"));
+                }
+                lines.push(String::new());
+                lines.push(
+                    "Tab foco · ↑↓ sesión · Enter iniciar · Ctrl+P/R/A · Esc cerrar".to_owned(),
+                );
+                lines.push(String::new());
+                for turn in view.turns.iter().rev().take(12).rev() {
+                    lines.push(format!(
+                        "#{} {} → {}: {}",
+                        turn.index,
+                        turn.from_session,
+                        turn.to_session,
+                        turn.text.lines().next().unwrap_or_default()
+                    ));
+                }
+                lines
+            }
+        };
+
+        let text = lines.join("\n");
+        self.overlay_buffer.set_size(
+            Some(
+                (self.surface_config.width as f32 / self.scale_factor as f32 - 160.0)
+                    * self.scale_factor as f32,
+            ),
+            None,
+        );
+        set_buffer_text(&mut self.font_system, &mut self.overlay_buffer, &text);
+    }
+
     fn handle_key(&mut self, event_loop: &ActiveEventLoop, event: &winit::event::KeyEvent) {
+        if self.overlay.is_some() {
+            self.handle_overlay_key(event_loop, event);
+            return;
+        }
         if let Some(modal) = &self.modal {
             let key = event
                 .logical_key
@@ -674,6 +1221,7 @@ impl AppState {
             Action::PreviousCommand => self.navigate_command(true),
             Action::NextCommand => self.navigate_command(false),
             Action::CopyCommandOutput => self.copy_command_output(),
+            Action::CommandPalette => self.open_palette(),
         }
     }
 
@@ -1010,6 +1558,8 @@ impl AppState {
             .set_metrics(Metrics::new(11.0 * scale, 16.0 * scale));
         self.modal_buffer
             .set_metrics(Metrics::new(14.0 * scale, 20.0 * scale));
+        self.overlay_buffer
+            .set_metrics(Metrics::new(12.0 * scale, 18.0 * scale));
         self.renders.clear();
         self.refresh_sidebar();
         self.update_layout_geometry();
@@ -1443,6 +1993,9 @@ impl AppState {
         self.update_layout_geometry();
         self.update_pane_buffers();
         self.detect_activity();
+        if self.overlay.is_some() {
+            self.update_overlay_buffer();
+        }
         self.update_chrome();
 
         let width = self.surface_config.width as f32;
@@ -1561,6 +2114,31 @@ impl AppState {
             height: (height / scale - TITLE_BAR - STATUS_BAR).max(0.0) * scale,
             color: rgba(self.theme.border, 1.0),
         });
+        let overlay_geometry = if self.overlay.is_some() && self.modal.is_none() {
+            let width_l = width / scale;
+            let height_l = height / scale;
+            let panel_width = (width_l * 0.8).min(900.0);
+            let panel_height = (height_l * 0.75).min(620.0);
+            let panel_x = (width_l - panel_width) / 2.0;
+            let panel_y = (height_l - panel_height) / 2.0;
+            rects.push(Rect {
+                x: 0.0,
+                y: 0.0,
+                width,
+                height,
+                color: [0.0, 0.0, 0.0, 0.6],
+            });
+            rects.push(Rect {
+                x: panel_x * scale,
+                y: panel_y * scale,
+                width: panel_width * scale,
+                height: panel_height * scale,
+                color: rgba(self.theme.background, 0.98),
+            });
+            Some((panel_x, panel_y, panel_width, panel_height))
+        } else {
+            None
+        };
         let modal_rects = if self.modal.is_some() {
             vec![
                 Rect {
@@ -1664,6 +2242,26 @@ impl AppState {
         };
 
         let mut areas: Vec<TextArea<'_>> = Vec::new();
+        if let Some((panel_x, panel_y, panel_width, panel_height)) = overlay_geometry {
+            areas.push(TextArea {
+                buffer: &self.overlay_buffer,
+                left: (panel_x + 12.0) * scale,
+                top: (panel_y + 10.0) * scale,
+                scale: 1.0,
+                bounds: TextBounds {
+                    left: ((panel_x + 8.0) * scale) as i32,
+                    top: ((panel_y + 6.0) * scale) as i32,
+                    right: ((panel_x + panel_width - 8.0) * scale) as i32,
+                    bottom: ((panel_y + panel_height - 6.0) * scale) as i32,
+                },
+                default_color: Color::rgb(
+                    self.theme.foreground.0,
+                    self.theme.foreground.1,
+                    self.theme.foreground.2,
+                ),
+                custom_glyphs: &[],
+            });
+        }
         areas.push(TextArea {
             buffer: &self.sidebar_buffer,
             left: 6.0 * scale,
@@ -1682,26 +2280,28 @@ impl AppState {
             ),
             custom_glyphs: &[],
         });
-        for pane in &text_areas {
-            if let Some(render) = self.renders.get(&pane.pane_id) {
-                areas.push(TextArea {
-                    buffer: &render.buffer,
-                    left: pane.left,
-                    top: pane.top,
-                    scale: 1.0,
-                    bounds: TextBounds {
-                        left: pane.left as i32,
-                        top: pane.top as i32,
-                        right: pane.right,
-                        bottom: pane.bottom,
-                    },
-                    default_color: Color::rgb(
-                        self.theme.foreground.0,
-                        self.theme.foreground.1,
-                        self.theme.foreground.2,
-                    ),
-                    custom_glyphs: &[],
-                });
+        if overlay_geometry.is_none() {
+            for pane in &text_areas {
+                if let Some(render) = self.renders.get(&pane.pane_id) {
+                    areas.push(TextArea {
+                        buffer: &render.buffer,
+                        left: pane.left,
+                        top: pane.top,
+                        scale: 1.0,
+                        bounds: TextBounds {
+                            left: pane.left as i32,
+                            top: pane.top as i32,
+                            right: pane.right,
+                            bottom: pane.bottom,
+                        },
+                        default_color: Color::rgb(
+                            self.theme.foreground.0,
+                            self.theme.foreground.1,
+                            self.theme.foreground.2,
+                        ),
+                        custom_glyphs: &[],
+                    });
+                }
             }
         }
         areas.push(chrome_text);
@@ -2001,6 +2601,56 @@ fn next_pane_id(layout: &TerminalLayout, tab_id: &str, from: &str) -> Option<Str
     }
     let position = ids.iter().position(|id| id == from).unwrap_or(0);
     Some(ids[(position + 1) % ids.len()].clone())
+}
+
+fn tool_label(tool: &ToolReport) -> &'static str {
+    match tool.status {
+        ancleto_code_core::drivers::ToolStatus::Available => "available",
+        ancleto_code_core::drivers::ToolStatus::Missing => "missing",
+        ancleto_code_core::drivers::ToolStatus::Incompatible => "incompatible",
+        ancleto_code_core::drivers::ToolStatus::Error => "error",
+    }
+}
+
+fn summarize_fact(value: &serde_json::Value) -> String {
+    if let Some(array) = value.as_array() {
+        return array.len().to_string();
+    }
+    if let Some(object) = value.as_object() {
+        if let Some(array) = object.values().find_map(|value| value.as_array()) {
+            return array.len().to_string();
+        }
+        return "·".to_owned();
+    }
+    value.to_string()
+}
+
+fn conversation_state_label(state: ConversationState) -> &'static str {
+    match state {
+        ConversationState::Running => "running",
+        ConversationState::Paused => "paused",
+        ConversationState::Completed => "completed",
+        ConversationState::Aborted => "aborted",
+        ConversationState::Failed => "failed",
+    }
+}
+
+fn shift_choice(view: &mut ConversationView, delta: i32) {
+    let ids: Vec<String> = view.sessions.iter().map(|entry| entry.0.clone()).collect();
+    if ids.is_empty() {
+        return;
+    }
+    let target = if view.focus == 0 {
+        &mut view.session_a
+    } else {
+        &mut view.session_b
+    };
+    let current = target
+        .as_ref()
+        .and_then(|id| ids.iter().position(|candidate| candidate == id))
+        .unwrap_or(0) as i32;
+    let next = (current + delta).rem_euclid(ids.len() as i32) as usize;
+    *target = Some(ids[next].clone());
 }
 
 fn terminal_env(extra: &[(String, String)]) -> Vec<(String, String)> {

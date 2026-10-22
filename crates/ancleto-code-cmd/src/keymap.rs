@@ -31,6 +31,7 @@ pub enum Action {
     PreviousCommand,
     NextCommand,
     CopyCommandOutput,
+    CommandPalette,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,6 +59,7 @@ pub struct Keymap {
     pub previous_command: String,
     pub next_command: String,
     pub copy_command_output: String,
+    pub command_palette: String,
 }
 
 impl Default for Keymap {
@@ -85,6 +87,7 @@ impl Default for Keymap {
             previous_command: "ctrl+shift+up".to_owned(),
             next_command: "ctrl+shift+down".to_owned(),
             copy_command_output: "ctrl+shift+o".to_owned(),
+            command_palette: "ctrl+shift+p".to_owned(),
         }
     }
 }
@@ -125,6 +128,7 @@ impl Keymap {
                 "previousCommand" => Some(&mut self.previous_command),
                 "nextCommand" => Some(&mut self.next_command),
                 "copyCommandOutput" => Some(&mut self.copy_command_output),
+                "commandPalette" => Some(&mut self.command_palette),
                 _ => None,
             };
             if let Some(target) = target {
@@ -164,6 +168,7 @@ impl Keymap {
             (Action::PreviousCommand, self.previous_command.as_str()),
             (Action::NextCommand, self.next_command.as_str()),
             (Action::CopyCommandOutput, self.copy_command_output.as_str()),
+            (Action::CommandPalette, self.command_palette.as_str()),
         ]
     }
 }
