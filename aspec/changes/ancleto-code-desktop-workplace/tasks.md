@@ -72,12 +72,12 @@ Issue: [#3](https://github.com/AncletoCEO/AncletoCode/issues/3)
 
 Issue: [#4](https://github.com/AncletoCEO/AncletoCode/issues/4)
 
-- [ ] 3.1 `SessionManager` con `portable-pty`: crear, escribir, redimensionar y matar sesiones.
-- [ ] 3.2 Ring buffer por sesión y `session_snapshot` para rehidratar la terminal.
-- [ ] 3.3 Eventos `session://output/{id}`, `session://state/{id}`, `session://exit/{id}`.
-- [ ] 3.4 Cierre ordenado de todas las sesiones al salir (sin huérfanos).
-- [ ] 3.5 `TerminalView` con xterm.js, snapshot y resize.
-- [ ] 3.6 Tests de ciclo de vida con un proceso de prueba y verificación de no-huérfanos.
+- [x] 3.1 `SessionManager` con `portable-pty`: crear, escribir, redimensionar y matar sesiones.
+- [x] 3.2 Ring buffer por sesión y `session_snapshot` para rehidratar la terminal.
+- [x] 3.3 Eventos `session://output/{id}`, `session://state/{id}`, `session://exit/{id}`.
+- [x] 3.4 Cierre ordenado de todas las sesiones al salir (sin huérfanos).
+- [x] 3.5 `TerminalView` con xterm.js, snapshot y resize.
+- [x] 3.6 Tests de ciclo de vida con un proceso de prueba y verificación de no-huérfanos.
 
 ## Fase 3B — Incorporación de código reutilizable de PandaCode
 
