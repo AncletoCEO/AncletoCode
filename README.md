@@ -162,17 +162,29 @@ El release incluye `ancleto-aur-0.0.1.tar.gz` con tres `PKGBUILD`. Todavía no
 están publicados en AUR; se compilan desde el release:
 
 ```bash
-tar -xzf ancleto-aur-0.0.1.tar.gz -C /tmp/ancleto-aur
-cd /tmp/ancleto-aur/ancleto-code-bin
+sudo pacman -S --needed base-devel
+mkdir -p ~/ancleto-aur
+tar -xzf ~/Downloads/ancleto-aur-0.0.1.tar.gz -C ~/ancleto-aur
+
+# 1) Primero la CLI: aporta acode y ancleto-code-host
+cd ~/ancleto-aur/ancleto-code-cli-bin
+makepkg -si
+
+# 2) Después la app de escritorio
+cd ~/ancleto-aur/ancleto-code-bin
 makepkg -si
 ```
 
-Para AncletoCMD y la CLI:
+Para AncletoCMD:
 
 ```bash
-cd /tmp/ancleto-aur/ancleto-cmd-bin && makepkg -si
-cd /tmp/ancleto-aur/ancleto-code-cli-bin && makepkg -si
+cd ~/ancleto-aur/ancleto-cmd-bin
+makepkg -si
 ```
+
+El orden importa: `ancleto-code-bin` y `ancleto-cmd-bin` dependen de
+`ancleto-code-cli-bin`, que todavía no está publicado en AUR. Por eso `pacman`
+no puede resolver esa dependencia si instalás primero la app.
 
 `ancleto-code-bin` instala la app y depende de `ancleto-code-cli-bin`, que aporta
 `acode` y `ancleto-code-host`.
