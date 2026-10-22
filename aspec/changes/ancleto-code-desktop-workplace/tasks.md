@@ -157,15 +157,15 @@ Issue: [#9](https://github.com/AncletoCEO/AncletoCode/issues/9)
 
 Issue: [#10](https://github.com/AncletoCEO/AncletoCode/issues/10)
 
-- [ ] 9.1 Resolución de `ancleto-writer` y detección de versión; estado `missing`/`incompatible`.
-- [ ] 9.2 Comandos `init`, `build`, `check`, `lint`, `impact`, `human`, `doctor` con manejo de `--json` y códigos de salida 0–5.
-- [ ] 9.3 Frescura autoritativa vía `check --json`; no recalcular fingerprint ni asumir `schemaVersion`.
-- [ ] 9.4 Lectura de `manifest.json`, `graph.json` y `facts/*` (ciclos, capas, comunidades, god nodes, hotspots, blast radius, dead code, doc coverage, unsupported).
-- [ ] 9.5 `KnowledgePanel` con stats y hechos; documentos `agent/*` con acción "adjuntar al contexto".
-- [ ] 9.6 Vista humana: ejecutar `human` y embeber `index.html`/`interactive.html` vía asset protocol; alternativa "abrir en navegador".
-- [ ] 9.7 Detección de `@ancleto/writer-languages` (pack de lenguajes de programación), toggle `languagePack.enabled`/`module` en `.ancleto-writer.json` y estado en `facts/unsupported.json`.
-- [ ] 9.8 Estado `missing` con comando npm sugerido (incluida nota `--legacy-peer-deps` para peers de tree-sitter).
-- [ ] 9.9 Tests del adapter con fixtures de manifest/graph/facts, `schemaVersion` incompatible y pack ausente.
+- [x] 9.1 Resolución de `ancleto-writer` y detección de versión; estado `missing`/`incompatible`.
+- [x] 9.2 Comandos `init`, `build`, `check`, `lint`, `impact`, `human`, `doctor` con manejo de `--json` y códigos de salida 0–5.
+- [x] 9.3 Frescura autoritativa vía `check --json`; no recalcular fingerprint ni asumir `schemaVersion`.
+- [x] 9.4 Lectura de `manifest.json`, `graph.json` y `facts/*` (ciclos, capas, comunidades, god nodes, hotspots, blast radius, dead code, doc coverage, unsupported).
+- [x] 9.5 `KnowledgePanel` con stats y hechos; documentos `agent/*` con acción "adjuntar al contexto".
+- [x] 9.6 Vista humana: ejecutar `human` y embeber `index.html`/`interactive.html` vía asset protocol; alternativa "abrir en navegador".
+- [x] 9.7 Detección de `@ancleto/writer-languages` (pack de lenguajes de programación), toggle `languagePack.enabled`/`module` en `.ancleto-writer.json` y estado en `facts/unsupported.json`.
+- [x] 9.8 Estado `missing` con comando npm sugerido (incluida nota `--legacy-peer-deps` para peers de tree-sitter).
+- [x] 9.9 Tests del adapter con fixtures de manifest/graph/facts, `schemaVersion` incompatible y pack ausente.
 
 ## Fase 10 — Apariencia CLI, transparencia y temas
 
