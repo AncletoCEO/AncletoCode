@@ -15,13 +15,16 @@ const files = [
 ];
 
 function stripHeader(text) {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const lines = text
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .filter((line) => line !== "// @ts-nocheck");
   if (lines[0]?.startsWith("// SPDX-License-Identifier")) {
     let index = 0;
     while (index < lines.length && lines[index].startsWith("//")) {
       index += 1;
     }
-    if (lines[index] === "") {
+    while (lines[index] === "") {
       index += 1;
     }
     return lines.slice(index).join("\n");
@@ -32,7 +35,10 @@ function stripHeader(text) {
       index += 1;
     }
     index += 1;
-    if (lines[index] === "") {
+    if (lines[index]?.startsWith("// @ts-")) {
+      index += 1;
+    }
+    while (lines[index] === "") {
       index += 1;
     }
     return lines.slice(index).join("\n");

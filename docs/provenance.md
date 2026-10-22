@@ -27,7 +27,7 @@ esta tabla. La columna "Estado" pasa a `vendorizado` cuando el archivo existe ba
 | `third_party/pandacode/src-tauri/src/appearance.rs` | `src-tauri/src/appearance.rs` | B | MIT | PandaCode contributors | Conserva macOS/fallback; agrega Windows | planificado |
 | `third_party/pandacode/src-tauri/src/file_preview.rs` | `src-tauri/src/file_preview.rs` | B | MIT | PandaCode contributors | Opcional | planificado |
 | `third_party/pandacode/src-tauri/src/vsix_themes.rs` | `src-tauri/src/vsix_themes.rs` | B | MIT | PandaCode contributors | Opcional | planificado |
-| `third_party/pandacode/src/color.ts` | `src/color.ts` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
+| `third_party/pandacode/src/color.ts` | `src/color.ts` | A | MIT | PandaCode contributors | Se agrega `@ts-nocheck` para el tsconfig estricto | vendorizado |
 | `third_party/pandacode/src/palette-core.ts` | `src/palette-core.ts` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src/theme.ts` | `src/theme.ts` | B | MIT | PandaCode contributors | Claves y persistencia propias | planificado |
 | `third_party/pandacode/src/preferences.ts` | `src/preferences.ts` | B | MIT | PandaCode contributors | Claves y persistencia propias | planificado |
