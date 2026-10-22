@@ -1,0 +1,202 @@
+:root {
+  --bg-base: #0d1117;
+  --bg-panel: #161b22;
+  --fg: #e6edf3;
+  --fg-muted: #8b949e;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  --border: #30363d;
+  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--fg);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 16rem 1fr;
+  height: 100%;
+  font-size: 0.8125rem;
+}
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.sidebar-title {
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.project-form {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.project-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--fg);
+  font: inherit;
+}
+
+.project-form button,
+.about-trigger {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.project {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project.active .project-name {
+  color: var(--accent);
+}
+
+.project-name,
+.project-remove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-name {
+  flex: 1;
+  padding: 0.25rem 0;
+}
+
+.project-remove {
+  color: var(--fg-muted);
+  padding: 0 0.25rem;
+}
+
+.workspace {
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.prompt {
+  margin: 0;
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--fg-muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.project-path {
+  color: var(--fg-muted);
+  margin: 0 0 0.75rem;
+}
+
+.tree,
+.tree-children {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.tree-children {
+  padding-left: 1rem;
+}
+
+.tree-node {
+  line-height: 1.6;
+}
+
+.tree-label.directory {
+  color: var(--accent);
+}
+
+.about-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 60%);
+}
+
+.about {
+  width: min(32rem, calc(100% - 2rem));
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.about-header h1 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.about-close {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.about a {
+  color: var(--accent);
+}
+
+.about-muted {
+  color: var(--fg-muted);
+}
