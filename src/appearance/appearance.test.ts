@@ -71,6 +71,18 @@ describe("appearance", () => {
     expect(() => parseTheme("{}")).toThrow();
   });
 
+  it("no falla cuando el efecto nativo de ventana no está soportado", async () => {
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "appearance_native_effect") {
+        return Promise.reject(new Error("unsupported platform"));
+      }
+      return Promise.resolve(null);
+    });
+
+    await expect(setTheme("carbon", "global")).resolves.toBeUndefined();
+    expect(getSnapshot().resolved.theme.id).toBe("carbon");
+  });
+
   it("persiste el tema por proyecto y lo aplica en vivo", async () => {
     await loadAppearance("project-1");
     invokeMock.mockClear();

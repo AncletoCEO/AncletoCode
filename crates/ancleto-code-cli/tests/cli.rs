@@ -45,13 +45,21 @@ impl Sandbox {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::new(ACODE)
+        self.run_with_env(args, &[])
+    }
+
+    fn run_with_env(&self, args: &[&str], env: &[(&str, &str)]) -> Output {
+        let mut command = Command::new(ACODE);
+        command
             .args(args)
             .env("ANCLETO_CODE_HOME", self.home())
             .env("ANCLETO_CODE_STATE", self.state())
             .env("ANCLETO_HOST_BIN", &self.host_binary)
-            .output()
-            .unwrap()
+            .env_remove("ANCLETO_SPEC_BIN");
+        for (key, value) in env {
+            command.env(key, value);
+        }
+        command.output().unwrap()
     }
 
     fn json(&self, args: &[&str]) -> (i32, serde_json::Value) {
@@ -231,4 +239,53 @@ fn spec_passthrough_returns_an_envelope_or_a_dependency_error() {
 
     assert!(code == 0 || code == 3, "código inesperado: {code} {value}");
     assert_eq!(value["schemaVersion"], 1);
+}
+
+#[test]
+fn host_status_without_a_host_exits_with_session_error() {
+    let sandbox = Sandbox::new();
+    let output = sandbox.run(&["--json", "host", "status"]);
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+
+    assert_eq!(output.status.code(), Some(4));
+    assert_eq!(value["ok"], false);
+    assert_eq!(value["error"]["code"], "session_error");
+}
+
+#[test]
+fn spec_passthrough_without_the_cli_returns_missing_dependency() {
+    let sandbox = Sandbox::new();
+    let output = sandbox.run_with_env(&["--json", "spec", "init"], &[("PATH", "/usr/bin:/bin")]);
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+
+    assert_eq!(output.status.code(), Some(3), "{value}");
+    assert_eq!(value["error"]["code"], "missing_dependency");
+}
+
+#[cfg(unix)]
+#[test]
+fn spec_without_node_is_incompatible() {
+    use std::os::unix::fs::symlink;
+
+    let sandbox = Sandbox::new();
+    let path = std::env::var_os("PATH").unwrap_or_default();
+    let Some(ancleto) = std::env::split_paths(&path)
+        .map(|directory| directory.join("ancleto"))
+        .find(|candidate| candidate.is_file())
+    else {
+        eprintln!("ancleto no está en PATH; se omite la prueba de Node ausente");
+        return;
+    };
+    let bin = sandbox.directory.path().join("bin");
+    std::fs::create_dir_all(&bin).unwrap();
+    symlink(&ancleto, bin.join("ancleto")).unwrap();
+
+    let output = sandbox.run_with_env(
+        &["--json", "spec", "init"],
+        &[("PATH", bin.to_str().unwrap())],
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+
+    assert_eq!(output.status.code(), Some(5), "{value}");
+    assert_eq!(value["error"]["code"], "incompatible_state");
 }
