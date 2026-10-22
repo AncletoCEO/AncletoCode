@@ -10,6 +10,7 @@ accidental de código o activos de PandaCode.
 | Activo | Ruta | Origen | Licencia | Permite redistribución |
 |---|---|---|---|---|
 | Icono de la app | `src-tauri/icon.svg`, `src-tauri/icons/` | Generado para AncletoCode | AGPL-3.0-only | Sí (obra propia) |
+| IBM Plex Mono | `public/fonts/IBMPlexMono-Regular.ttf` | Google Fonts / IBM Plex | SIL OFL 1.1 | Sí (OFL permite redistribución) |
 
 No se incluyen wallpapers, temas, iconos, screenshots, logos ni fuentes de
 PandaCode, de proveedores o de terceros.
