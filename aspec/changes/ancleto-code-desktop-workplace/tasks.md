@@ -226,7 +226,7 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 - [x] 13.7 Selección, copia (OSC 52/nativo), hyperlinks OSC 8, títulos saneados y confirmación para escrituras de clipboard.
 - [ ] 13.8 Sidebar de proyectos, sesiones de agente, creación con selector de driver, estado en vivo, detach/attach y kill con confirmación.
 - [ ] 13.9 Command palette (`Ctrl+Shift+P`) y paneles de spec, writer y conversación agente-a-agente.
-- [ ] 13.10 Shell profiles (`cmd`, PowerShell, WSL, bash, zsh, fish) y hooks OSC 133 opt-in con navegación entre comandos, copia de salida y exit status; fallback heurístico en shells sin hooks.
+- [x] 13.10 Shell profiles (`cmd`, PowerShell, WSL, bash, zsh, fish) y hooks OSC 133 opt-in con navegación entre comandos, copia de salida y exit status; fallback heurístico en shells sin hooks.
 - [x] 13.11 Notificaciones de fin de comando, bell, indicador de tab y foco.
 - [x] 13.12 Persistencia de `TerminalLayout` y temas compartidos en SQLite; restauración al reabrir y respeto de la configuración global.
 - [ ] 13.13 Benchmark de rendimiento (tecla a frame p99, idle CPU, arranque, throughput) y umbrales en CI.
