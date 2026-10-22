@@ -52,21 +52,21 @@ Issue: [#2](https://github.com/AncletoCEO/AncletoCode/issues/2)
 
 Issue: [#2](https://github.com/AncletoCEO/AncletoCode/issues/2)
 
-- [ ] 1B.1 Convertir el proyecto en Cargo workspace con `crates/ancleto-code-core`, `ancleto-code-host`, `ancleto-code-cli`, `ancleto-code-cmd` y `ancleto-code-tauri`.
-- [ ] 1B.2 Mover dominio, proyectos, sesiones PTY, drivers, orquestador, providers y persistencia a `ancleto-code-core` sin dependencias de Tauri, host, CLI ni AncletoCMD.
-- [ ] 1B.3 Adaptar la app Tauri para consumir `ancleto-code-core` y mantener sus comandos y eventos.
-- [ ] 1B.4 Añadir un test de CI que falle ante dependencias inversas o imports de `tauri`/`winit`/`wgpu` dentro del core.
-- [ ] 1B.5 Ejecutar los tests existentes del core y de la app sin regresiones tras la extracción.
+- [x] 1B.1 Convertir el proyecto en Cargo workspace con `crates/ancleto-code-core`, `ancleto-code-host`, `ancleto-code-cli`, `ancleto-code-cmd` y `ancleto-code-tauri`.
+- [x] 1B.2 Mover dominio, proyectos, sesiones PTY, drivers, orquestador, providers y persistencia a `ancleto-code-core` sin dependencias de Tauri, host, CLI ni AncletoCMD.
+- [x] 1B.3 Adaptar la app Tauri para consumir `ancleto-code-core` y mantener sus comandos y eventos.
+- [x] 1B.4 Añadir un test de CI que falle ante dependencias inversas o imports de `tauri`/`winit`/`wgpu` dentro del core.
+- [x] 1B.5 Ejecutar los tests existentes del core y de la app sin regresiones tras la extracción.
 
 ## Fase 2 — Proyectos y persistencia
 
 Issue: [#3](https://github.com/AncletoCEO/AncletoCode/issues/3)
 
-- [ ] 2.1 Modelo `Project` + comandos `project_add`, `project_list`, `project_remove`, `project_open`.
-- [ ] 2.2 Persistencia SQLite de proyectos y configuración en `app_config_dir`, con migración inicial.
-- [ ] 2.3 Comando `project_tree` para el árbol de archivos del proyecto.
-- [ ] 2.4 `projectsStore` y sidebar de proyectos con alta/baja/apertura.
-- [ ] 2.5 Tests de persistencia (Rust) y del store (Vitest).
+- [x] 2.1 Modelo `Project` + comandos `project_add`, `project_list`, `project_remove`, `project_open`.
+- [x] 2.2 Persistencia SQLite de proyectos y configuración en `app_config_dir`, con migración inicial.
+- [x] 2.3 Comando `project_tree` para el árbol de archivos del proyecto.
+- [x] 2.4 `projectsStore` y sidebar de proyectos con alta/baja/apertura.
+- [x] 2.5 Tests de persistencia (Rust) y del store (Vitest).
 
 ## Fase 3 — Motor de sesiones PTY
 
