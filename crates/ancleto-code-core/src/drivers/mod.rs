@@ -410,7 +410,7 @@ fn first_line(text: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn resolve_binary(binary: &str) -> Option<PathBuf> {
+pub(crate) fn resolve_binary(binary: &str) -> Option<PathBuf> {
     if binary.is_empty() {
         return None;
     }
