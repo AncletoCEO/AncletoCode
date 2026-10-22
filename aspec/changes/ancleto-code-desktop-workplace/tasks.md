@@ -258,5 +258,5 @@ Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16)
 - [ ] 15.2 Atajos: nueva sesión, cambiar proyecto, matar sesión, iniciar conversación, rebuild de writer, cambiar tema y equivalentes en AncletoCMD.
 - [ ] 15.3 Smoke manual end-to-end en las dos versiones: dos proyectos, sesiones `claude`/`opencode`/`agy`/`cmd`, detach/attach, conversación agente-a-agente, aborto, build + vista humana de writer.
 - [ ] 15.4 Verificar escenarios de degradación (CLI ausente, Node ausente, host caído, GPU no disponible, sin language pack, salida no parseable, efectos de transparencia no soportados).
-- [ ] 15.5 `cargo test`, `cargo clippy`, `npm run test`, `npm run typecheck` y `npm run lint` en verde.
+- [x] 15.5 `cargo test`, `cargo clippy`, `npm run test`, `npm run typecheck` y `npm run lint` en verde.
 - [ ] 15.6 Empaquetado (`npm run tauri build`, matriz npm) y verificación de cierre limpio de procesos.
