@@ -199,19 +199,19 @@ Issue: [#12](https://github.com/AncletoCEO/AncletoCode/issues/12)
 
 Issue: [#13](https://github.com/AncletoCEO/AncletoCode/issues/13)
 
-- [ ] 12.1 Estructura `clap` con bins `acode`/`ancleto-code`, `--help`, `--version` y árbol de subcomandos.
-- [ ] 12.2 Sobre JSON versionado (`schemaVersion`, `ok`, `data`, `error`), detección de TTY, `NO_COLOR` y `--no-input`.
-- [ ] 12.3 Códigos de salida `0/2/3/4/5/6` y manejo de `Ctrl+C`/`SIGTERM` sin dejar procesos hijos.
-- [ ] 12.4 Comandos `project add|list|remove|open` sobre el estado compartido.
-- [ ] 12.5 Comandos `agents` y `doctor` con Node ≥ 24, drivers, providers, plataforma, terminal y host.
-- [ ] 12.6 Comandos `session start|list|attach|send|kill` contra el host y fallback in-process con `--no-host`.
-- [ ] 12.7 `acode run` one-shot con `--driver`, `--project`, salida texto/JSON y streaming en TTY.
-- [ ] 12.8 `acode converse` con objetivo, `maxTurns`, timeout, streaming y motivo de finalización.
-- [ ] 12.9 `acode spec` y `acode writer` como passthrough normalizado de los providers.
-- [ ] 12.10 `acode host start|stop|status` y `acode ui` para abrir la app instalada.
+- [x] 12.1 Estructura `clap` con bins `acode`/`ancleto-code`, `--help`, `--version` y árbol de subcomandos.
+- [x] 12.2 Sobre JSON versionado (`schemaVersion`, `ok`, `data`, `error`), detección de TTY, `NO_COLOR` y `--no-input`.
+- [x] 12.3 Códigos de salida `0/2/3/4/5/6` y manejo de `Ctrl+C`/`SIGTERM` sin dejar procesos hijos.
+- [x] 12.4 Comandos `project add|list|remove|open` sobre el estado compartido.
+- [x] 12.5 Comandos `agents` y `doctor` con Node ≥ 24, drivers, providers, plataforma, terminal y host.
+- [x] 12.6 Comandos `session start|list|attach|send|kill` contra el host y fallback in-process con `--no-host`.
+- [x] 12.7 `acode run` one-shot con `--driver`, `--project`, salida texto/JSON y streaming en TTY.
+- [x] 12.8 `acode converse` con objetivo, `maxTurns`, timeout, streaming y motivo de finalización.
+- [x] 12.9 `acode spec` y `acode writer` como passthrough normalizado de los providers.
+- [x] 12.10 `acode host start|stop|status` y `acode ui` para abrir la app instalada.
 - [ ] 12.11 Windows: argv sin shell intermedia, VT/UTF-8 cuando esté disponible y pruebas en `cmd.exe` y PowerShell.
-- [ ] 12.12 Completions de shell y documentación de comandos en `README.md`.
-- [ ] 12.13 Tests de contrato de salida JSON, códigos de salida y cancelación.
+- [x] 12.12 Completions de shell y documentación de comandos en `README.md`.
+- [x] 12.13 Tests de contrato de salida JSON, códigos de salida y cancelación.
 
 ## Fase 13 — AncletoCMD: emulador de terminal y gestor
 
