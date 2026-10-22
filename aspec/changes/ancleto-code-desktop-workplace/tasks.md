@@ -223,15 +223,15 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 - [ ] 13.4 Render por frame con daño parcial, frame pacing, DPI por monitor, multi-monitor, fuentes empaquetadas, fallback y zoom.
 - [ ] 13.5 Layout: tabs y árbol de splits, foco, mover/redimensionar y multi-ventana opcional.
 - [ ] 13.6 Entrada: teclado, IME, dead keys, layouts no latinos, mouse reporting, bracketed paste y atajos configurables.
-- [ ] 13.7 Selección, copia (OSC 52/nativo), hyperlinks OSC 8, títulos saneados y confirmación para escrituras de clipboard.
+- [x] 13.7 Selección, copia (OSC 52/nativo), hyperlinks OSC 8, títulos saneados y confirmación para escrituras de clipboard.
 - [ ] 13.8 Sidebar de proyectos, sesiones de agente, creación con selector de driver, estado en vivo, detach/attach y kill con confirmación.
 - [ ] 13.9 Command palette (`Ctrl+Shift+P`) y paneles de spec, writer y conversación agente-a-agente.
 - [ ] 13.10 Shell profiles (`cmd`, PowerShell, WSL, bash, zsh, fish) y hooks OSC 133 opt-in con navegación entre comandos, copia de salida y exit status; fallback heurístico en shells sin hooks.
-- [ ] 13.11 Notificaciones de fin de comando, bell, indicador de tab y foco.
-- [ ] 13.12 Persistencia de `TerminalLayout` y temas compartidos en SQLite; restauración al reabrir y respeto de la configuración global.
+- [x] 13.11 Notificaciones de fin de comando, bell, indicador de tab y foco.
+- [x] 13.12 Persistencia de `TerminalLayout` y temas compartidos en SQLite; restauración al reabrir y respeto de la configuración global.
 - [ ] 13.13 Benchmark de rendimiento (tecla a frame p99, idle CPU, arranque, throughput) y umbrales en CI.
 - [ ] 13.14 Tests de conformidad VT con fixtures y programas reales (vim, tmux, htop, git, less), y smoke tests en Windows (`cmd`, PowerShell, WSL), Linux y macOS.
-- [ ] 13.15 Manejo de cierre de ventana con detach, restauración de sesiones y "cerrar y matar sesiones" con confirmación.
+- [x] 13.15 Manejo de cierre de ventana con detach, restauración de sesiones y "cerrar y matar sesiones" con confirmación.
 
 ## Fase 14 — Empaquetado npm y release multiplataforma
 
