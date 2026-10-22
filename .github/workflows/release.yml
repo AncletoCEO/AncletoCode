@@ -157,6 +157,8 @@ jobs:
         run: |
           tar -czf "dist/ancleto-aur-${VERSION}.tar.gz" -C dist/aur .
           rm -rf dist/aur
+      - name: Package corresponding source
+        run: git archive --format=tar.gz --prefix="AncletoCode-${VERSION}/" -o "dist/AncletoCode-${VERSION}-source.tar.gz" HEAD
       - name: Generate checksums
         shell: bash
         run: |

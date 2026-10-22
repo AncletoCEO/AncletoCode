@@ -81,8 +81,8 @@ propios. No se sugiere afiliación o endoso de PandaCode.
 - [x] `deny.toml` permite BSL-1.0 y documenta el advisory de `ttf-parser`.
 - [x] `cargo deny check licenses advisories` OK.
 - [x] `npm run license:check`, `license:check:npm` y `check:core-deps` OK.
-- [x] Fuente correspondiente: asset `AncletoCode-0.0.1-source.tar.gz` generado
-      desde el commit exacto del build.
+- [x] Fuente correspondiente: el workflow genera
+      `AncletoCode-0.0.1-source.tar.gz` desde el mismo commit del build.
 
 ## Riesgos residuales
 
@@ -90,9 +90,8 @@ propios. No se sugiere afiliación o endoso de PandaCode.
   `cosmic-text`/`glyphon` y `winit`; no hay actualización compatible con el stack
   fijado. Es un riesgo de mantenimiento, no de licencia. Queda ignorado con
   justificación en `deny.toml` y debe revisarse al actualizar el stack gráfico.
-- **Fuente del release:** el build se ejecutó desde `181d247e...`; la etiqueta
-  `v0.0.1` apunta a un commit de empaquetado inmediatamente anterior. Por eso se
-  adjunta el source exacto como asset y se documenta en las notas.
+- **Fuente del release:** el asset de fuente se genera desde la etiqueta con la
+  que se ejecuta el workflow; no se mantiene una copia manual separada.
 - **Revisión legal formal:** esta revisión cubre compatibilidad y avisos, no
   sustituye una opinión legal si en el futuro hay una versión comercial o un
   contrato con terceros. Para 0.0.1 interno/beta no se identificó un blocker.
