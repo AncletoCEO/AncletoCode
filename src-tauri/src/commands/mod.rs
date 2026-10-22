@@ -1,10 +1,13 @@
 use std::sync::Mutex;
 
-use ancleto_code_core::{FileNode, Project, ProjectService};
+use ancleto_code_core::{
+    FileNode, Project, ProjectService, SessionInfo, SessionManager, SessionSpec,
+};
 use tauri::State;
 
 pub struct AppState {
     pub projects: Mutex<ProjectService>,
+    pub sessions: SessionManager,
 }
 
 fn lock_error() -> String {
@@ -48,4 +51,54 @@ pub fn project_tree(
 ) -> Result<FileNode, String> {
     let service = state.projects.lock().map_err(|_| lock_error())?;
     service.tree(&id, limit).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_create(
+    state: State<'_, AppState>,
+    spec: SessionSpec,
+) -> Result<SessionInfo, String> {
+    state
+        .sessions
+        .create(spec)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_write(state: State<'_, AppState>, id: String, data: Vec<u8>) -> Result<(), String> {
+    state
+        .sessions
+        .write(&id, &data)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_resize(
+    state: State<'_, AppState>,
+    id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<(), String> {
+    state
+        .sessions
+        .resize(&id, cols, rows)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_kill(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.sessions.kill(&id).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_snapshot(state: State<'_, AppState>, id: String) -> Result<Vec<u8>, String> {
+    state
+        .sessions
+        .snapshot(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_list(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, String> {
+    state.sessions.list().map_err(|error| error.to_string())
 }

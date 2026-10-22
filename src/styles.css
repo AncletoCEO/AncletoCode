@@ -200,3 +200,31 @@ body {
 .about-muted {
   color: var(--fg-muted);
 }
+
+.actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.actions button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.terminal {
+  height: 20rem;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  overflow: hidden;
+}

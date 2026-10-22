@@ -12,7 +12,7 @@ pub use orch::Orchestrator;
 pub use persistence::Store;
 pub use projects::ProjectService;
 pub use providers::Providers;
-pub use session::SessionManager;
+pub use session::{SessionEvent, SessionInfo, SessionManager, SessionSpec, SessionStatus};
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

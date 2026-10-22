@@ -27,6 +27,10 @@ pub enum CoreError {
     NotADirectory(String),
     #[error("proyecto no encontrado: {0}")]
     ProjectNotFound(String),
+    #[error("sesión no encontrada: {0}")]
+    SessionNotFound(String),
+    #[error("error de terminal: {0}")]
+    Pty(String),
     #[error("error de base de datos: {0}")]
     Database(#[from] rusqlite::Error),
     #[error("error de E/S: {0}")]
