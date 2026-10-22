@@ -27,6 +27,7 @@ use crate::session::{SessionBackend, SessionInfo, SessionSpec};
 
 type Pending = Mutex<HashMap<u64, Sender<std::result::Result<Value, RpcError>>>>;
 
+#[derive(Clone)]
 pub struct HostClient {
     inner: Arc<ClientInner>,
 }

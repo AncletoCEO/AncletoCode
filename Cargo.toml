@@ -15,6 +15,7 @@ rust-version = "1.90"
 license = "AGPL-3.0-only"
 
 [workspace.dependencies]
+alacritty_terminal = "0.26.0"
 ancleto-code-core = { path = "crates/ancleto-code-core" }
 clap = { version = "4.6.7", features = ["derive"] }
 clap_complete = "4.6.11"

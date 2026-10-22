@@ -7,7 +7,14 @@ license.workspace = true
 description = "AncletoCMD, emulador de terminal y gestor"
 
 [dependencies]
+alacritty_terminal.workspace = true
 ancleto-code-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true
