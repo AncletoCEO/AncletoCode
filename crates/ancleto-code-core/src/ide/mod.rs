@@ -136,3 +136,63 @@ mod tests {
         assert_eq!(command.args, ["init", "--agent", "antigravity"]);
     }
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod mcp_tests {
+    use crate::drivers::ToolStatus;
+    use crate::providers::{InitOptions, SpecProvider};
+    use serde_json::Value;
+    use std::fs;
+    use std::path::Path;
+
+    #[test]
+    fn ancleto_init_merges_antigravity_mcp_without_destroying_keys() {
+        let project = tempfile::tempdir().unwrap();
+        let agents = project.path().join(".agents");
+        fs::create_dir_all(&agents).unwrap();
+        fs::write(
+            agents.join("mcp_config.json"),
+            r#"{
+              "mcpServers": { "existente": { "command": "echo", "args": ["hola"] } },
+              "otraClave": true
+            }"#,
+        )
+        .unwrap();
+
+        let provider = SpecProvider::detect(project.path());
+        if provider.tool().status != ToolStatus::Available {
+            eprintln!("ancleto no disponible; se omite la prueba de merge MCP");
+            return;
+        }
+
+        let outcome = provider
+            .init(
+                project.path(),
+                &InitOptions {
+                    agent: Some("antigravity".to_owned()),
+                    tier: Some("minimo".to_owned()),
+                    language: Some("es".to_owned()),
+                    exclude: Vec::new(),
+                    profile: Some("general".to_owned()),
+                },
+            )
+            .unwrap();
+        assert!(outcome.success, "init falló: {}", outcome.stderr);
+
+        let config: Value = serde_json::from_str(
+            &fs::read_to_string(Path::new(project.path()).join(".agents/mcp_config.json")).unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(config["otraClave"], true);
+        assert_eq!(config["mcpServers"]["existente"]["command"], "echo");
+        assert_eq!(config["mcpServers"]["existente"]["args"][0], "hola");
+        let servers = config["mcpServers"].as_object().unwrap();
+        assert!(
+            servers.len() > 1,
+            "no se agregó ningún servidor MCP: {servers:?}"
+        );
+        assert!(servers.keys().any(|name| name != "existente"));
+    }
+}
