@@ -217,11 +217,11 @@ Issue: [#13](https://github.com/AncletoCEO/AncletoCode/issues/13)
 
 Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 
-- [ ] 13.1 Crear `crates/ancleto-code-cmd`: ventana `winit`, superficie `wgpu`, render de texto con `glyphon`/`cosmic-text` y fallback de render por software.
+- [x] 13.1 Crear `crates/ancleto-code-cmd`: ventana `winit`, superficie `wgpu`, render de texto con `glyphon`/`cosmic-text` y fallback de render por software.
 - [x] 13.2 Motor VT con `alacritty_terminal`/`vte` alimentado por el stream del host; soporte de alt screen, scroll regions, cursor, mouse y bracketed paste.
 - [x] 13.3 Grilla y scrollback: buffer circular de 10k líneas, wide chars, emoji, combining, reflow al redimensionar y búsqueda incremental.
 - [ ] 13.4 Render por frame con daño parcial, frame pacing, DPI por monitor, multi-monitor, fuentes empaquetadas, fallback y zoom.
-- [ ] 13.5 Layout: tabs y árbol de splits, foco, mover/redimensionar y multi-ventana opcional.
+- [x] 13.5 Layout: tabs y árbol de splits, foco, mover/redimensionar y multi-ventana opcional.
 - [ ] 13.6 Entrada: teclado, IME, dead keys, layouts no latinos, mouse reporting, bracketed paste y atajos configurables.
 - [x] 13.7 Selección, copia (OSC 52/nativo), hyperlinks OSC 8, títulos saneados y confirmación para escrituras de clipboard.
 - [ ] 13.8 Sidebar de proyectos, sesiones de agente, creación con selector de driver, estado en vivo, detach/attach y kill con confirmación.
