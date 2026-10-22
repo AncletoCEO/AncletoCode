@@ -73,6 +73,7 @@ function packageProduct(name, scope, binaries) {
     version,
     description: `${name} para ${platform}`,
     license: "AGPL-3.0-only",
+    publishConfig: { access: "public" },
     homepage: "https://github.com/AncletoCEO/AncletoCode",
     repository: { type: "git", url: "git+https://github.com/AncletoCEO/AncletoCode.git" },
     ...platformFields(platform),

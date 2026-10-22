@@ -30,5 +30,8 @@
     "@ancleto/cmd-win32-arm64": "0.0.1",
     "@ancleto/cmd-darwin-x64": "0.0.1",
     "@ancleto/cmd-darwin-arm64": "0.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

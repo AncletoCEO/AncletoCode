@@ -32,5 +32,8 @@
     "@ancleto/code-win32-arm64": "0.0.1",
     "@ancleto/code-darwin-x64": "0.0.1",
     "@ancleto/code-darwin-arm64": "0.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
