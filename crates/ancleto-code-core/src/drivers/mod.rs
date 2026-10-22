@@ -227,8 +227,31 @@ impl Default for DriverRegistry {
     }
 }
 
+pub const OVERRIDES_KEY: &str = "drivers.overrides";
+
 impl DriverRegistry {
     pub fn new() -> Self {
+        Self::with_overrides(&HashMap::new())
+    }
+
+    pub fn from_store(store: &crate::Store) -> Self {
+        let overrides = store
+            .get_setting(OVERRIDES_KEY)
+            .ok()
+            .flatten()
+            .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
+            .unwrap_or_default();
+        Self::with_overrides(&overrides)
+    }
+
+    pub fn with_overrides(overrides: &HashMap<String, String>) -> Self {
+        let binary = |id: &str, default: &str| {
+            overrides
+                .get(id)
+                .filter(|value| !value.trim().is_empty())
+                .cloned()
+                .unwrap_or_else(|| default.to_owned())
+        };
         let fallback: Arc<dyn AgentDriver> = Arc::new(RawDriver {
             descriptor: AgentDriverDescriptor {
                 id: "raw".to_owned(),
@@ -253,7 +276,7 @@ impl DriverRegistry {
             descriptor(
                 "claude",
                 "Claude Code",
-                "claude",
+                &binary("claude", "claude"),
                 capabilities(true, true, true, true, true),
             ),
             OneShotKind::PromptJson,
@@ -265,7 +288,7 @@ impl DriverRegistry {
             descriptor(
                 "opencode",
                 "OpenCode",
-                "opencode",
+                &binary("opencode", "opencode"),
                 capabilities(true, true, false, true, false),
             ),
             OneShotKind::RunPositional,
@@ -277,7 +300,7 @@ impl DriverRegistry {
             descriptor(
                 "agy",
                 "Antigravity CLI",
-                "agy",
+                &binary("agy", "agy"),
                 capabilities(true, true, true, true, true),
             ),
             OneShotKind::PromptJson,
@@ -289,7 +312,7 @@ impl DriverRegistry {
             descriptor(
                 "cmd",
                 "Command Code",
-                "commandcode",
+                &binary("cmd", "commandcode"),
                 capabilities(true, true, true, true, true),
             ),
             OneShotKind::PromptJson,
@@ -509,6 +532,21 @@ mod tests {
 
         assert_eq!(ids, vec!["agy", "claude", "cmd", "opencode", "raw"]);
         assert_eq!(registry.resolve("desconocido").descriptor().id, "raw");
+    }
+
+    #[test]
+    fn applies_binary_overrides_from_settings() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = crate::Store::open(&directory.path().join("state.sqlite")).unwrap();
+        store
+            .set_setting(OVERRIDES_KEY, r#"{"claude":"/opt/claude/bin/claude"}"#)
+            .unwrap();
+
+        let registry = DriverRegistry::from_store(&store);
+        let claude = registry.resolve("claude");
+
+        assert_eq!(claude.descriptor().binary, "/opt/claude/bin/claude");
+        assert_eq!(registry.resolve("agy").descriptor().binary, "agy");
     }
 
     #[test]

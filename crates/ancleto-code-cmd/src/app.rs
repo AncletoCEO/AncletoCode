@@ -374,7 +374,7 @@ impl AppState {
             ProjectService::open(&ancleto_code_core::host::transport::default_database_path())
                 .and_then(|service| service.list())
                 .unwrap_or_default();
-        state.drivers = DriverRegistry::new().detect_all();
+        state.drivers = DriverRegistry::from_store(&state.store).detect_all();
         for project in state.projects.iter().take(8) {
             let spec = SpecProvider::detect(Path::new(&project.root_path)).tool();
             let writer = WriterProvider::detect(Path::new(&project.root_path)).tool();

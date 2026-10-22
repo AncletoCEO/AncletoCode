@@ -52,6 +52,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   const [sessionB, setSessionB] = useState("");
   const [objective, setObjective] = useState("");
   const [maxTurns, setMaxTurns] = useState(6);
+  const [turnBudgetSeconds, setTurnBudgetSeconds] = useState(60);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +62,25 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
 
   const effectiveA = sessionA || (projectSessions[0]?.id ?? "");
   const effectiveB = sessionB || (projectSessions[1]?.id ?? "");
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [turns, budget] = await Promise.all([
+          invoke<string | null>("settings_get", { key: "conversation.maxTurns" }),
+          invoke<string | null>("settings_get", { key: "conversation.turnBudgetMs" }),
+        ]);
+        if (turns && Number(turns) > 0) {
+          setMaxTurns(Number(turns));
+        }
+        if (budget && Number(budget) >= 1000) {
+          setTurnBudgetSeconds(Math.round(Number(budget) / 1000));
+        }
+      } catch {
+        // Sin Tauri se usan los valores por defecto.
+      }
+    })();
+  }, []);
 
   const conversationId = conversation?.id;
 
@@ -120,7 +140,15 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
         sessionB: effectiveB,
         objective,
         maxTurns,
+        turnBudgetMs: turnBudgetSeconds * 1000,
       });
+      await Promise.all([
+        invoke("settings_put", { key: "conversation.maxTurns", value: String(maxTurns) }),
+        invoke("settings_put", {
+          key: "conversation.turnBudgetMs",
+          value: String(turnBudgetSeconds * 1000),
+        }),
+      ]).catch(() => undefined);
       setConversation(created);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
@@ -177,6 +205,15 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
           value={maxTurns}
           onChange={(event) => setMaxTurns(Number(event.target.value))}
           aria-label="Máximo de turnos"
+        />
+        <input
+          type="number"
+          min={5}
+          max={600}
+          value={turnBudgetSeconds}
+          onChange={(event) => setTurnBudgetSeconds(Number(event.target.value))}
+          aria-label="Timeout por turno (segundos)"
+          title="Timeout por turno (segundos)"
         />
         <button type="button" onClick={() => void start()} disabled={busy}>
           iniciar

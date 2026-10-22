@@ -115,7 +115,8 @@ pub fn run() {
             fs::create_dir_all(&config_directory)?;
             let database = ancleto_code_core::host::transport::default_database_path();
             let service = ProjectService::open(&database)?;
-            let drivers = DriverRegistry::new();
+            let settings_store = Store::open(&database)?;
+            let drivers = DriverRegistry::from_store(&settings_store);
             let paths = HostPaths::discover(None);
             let (host, sessions): (Option<Arc<HostClient>>, Arc<dyn SessionBackend>) =
                 match HostClient::connect_or_start(&paths, &database) {
@@ -153,7 +154,7 @@ pub fn run() {
                 }
             });
             let orchestrator = Orchestrator::new(
-                Store::open(&database)?,
+                settings_store,
                 sessions.clone(),
                 drivers.clone(),
                 Some(sink),

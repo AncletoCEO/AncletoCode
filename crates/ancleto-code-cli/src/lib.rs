@@ -325,7 +325,7 @@ fn project_command(action: ProjectAction, _json: bool) -> Result<Output, CliErro
 }
 
 fn agents_command() -> Result<Output, CliError> {
-    let registry = DriverRegistry::new();
+    let registry = driver_registry();
     let statuses = registry.detect_all();
     let human = statuses
         .iter()
@@ -347,7 +347,7 @@ fn agents_command() -> Result<Output, CliError> {
 
 fn doctor_command() -> Result<Output, CliError> {
     let node = NodeRuntime::detect();
-    let drivers = DriverRegistry::new().detect_all();
+    let drivers = driver_registry().detect_all();
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let spec = SpecProvider::detect(&cwd).tool();
     let writer = WriterProvider::detect(&cwd).tool();
@@ -592,7 +592,7 @@ fn converse_command(
     let backend: Arc<dyn SessionBackend> = client.clone();
     let store = Store::open(&default_database_path())
         .map_err(|error| cli_error(EXIT_SESSION, error.to_string()))?;
-    let orchestrator = Orchestrator::new(store, backend, DriverRegistry::new(), None);
+    let orchestrator = Orchestrator::new(store, backend, driver_registry(), None);
     let conversation = orchestrator
         .start(StartConversation {
             session_a: a.to_owned(),
@@ -849,8 +849,18 @@ fn resolve_project_root(project: Option<&str>) -> Result<String, CliError> {
         .map_err(|error| cli_error(EXIT_USAGE, error.to_string()))
 }
 
+fn driver_registry() -> DriverRegistry {
+    let path = default_database_path();
+    if path.is_file() {
+        if let Ok(store) = Store::open(&path) {
+            return DriverRegistry::from_store(&store);
+        }
+    }
+    DriverRegistry::new()
+}
+
 fn available_driver(id: &str) -> Result<Arc<dyn ancleto_code_core::AgentDriver>, CliError> {
-    let registry = DriverRegistry::new();
+    let registry = driver_registry();
     let driver = registry.resolve(id);
     if driver.descriptor().id != id {
         return Err(cli_error(EXIT_MISSING, format!("driver desconocido: {id}")));
