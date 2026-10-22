@@ -6,6 +6,7 @@ import ProjectActions from "./components/ProjectActions";
 import ProjectTabs from "./components/ProjectTabs";
 import ProjectTree from "./components/ProjectTree";
 import Sidebar from "./components/Sidebar";
+import SpecPanel from "./components/SpecPanel";
 import TerminalView from "./components/TerminalView";
 import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
 import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./stores/sessionsStore";
@@ -13,6 +14,7 @@ import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./st
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
+  const [specOpen, setSpecOpen] = useState(false);
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const selected = projects.projects.find((project) => project.id === projects.selectedId);
@@ -36,6 +38,15 @@ export default function App() {
                 conversación
               </button>
             ) : null}
+            {selected ? (
+              <button
+                type="button"
+                onClick={() => setSpecOpen((open) => !open)}
+                aria-pressed={specOpen}
+              >
+                spec
+              </button>
+            ) : null}
             <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
               About
             </button>
@@ -46,6 +57,7 @@ export default function App() {
           <>
             <p className="project-path">{selected.rootPath}</p>
             <ProjectActions projectId={selected.id} />
+            {specOpen ? <SpecPanel projectId={selected.id} /> : null}
             <AgentTabs project={selected} />
             {conversationOpen ? <ConversationPanel project={selected} /> : null}
             {active ? (

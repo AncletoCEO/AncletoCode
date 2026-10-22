@@ -467,3 +467,68 @@ body {
   word-break: break-word;
   font: inherit;
 }
+
+.spec-panel {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.spec-status,
+.spec-settings,
+.spec-actions,
+.spec-discovery,
+.spec-check,
+.spec-memory {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+.spec-settings label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--fg-muted);
+}
+
+.spec-settings select,
+.spec-settings input,
+.spec-panel button {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
+.spec-settings input {
+  min-width: 10rem;
+}
+
+.spec-label {
+  color: var(--accent);
+}
+
+.spec-changes ul,
+.spec-memory ul {
+  list-style: none;
+  margin: 0.2rem 0;
+  padding: 0;
+}
+
+.spec-context,
+.spec-output {
+  margin: 0.25rem 0 0;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 12rem;
+  overflow: auto;
+  font: inherit;
+}

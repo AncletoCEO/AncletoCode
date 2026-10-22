@@ -119,7 +119,19 @@ pub fn run() {
             commands::conversation_abort,
             commands::conversation_get,
             commands::conversation_turns,
-            commands::conversation_list
+            commands::conversation_list,
+            commands::spec_status,
+            commands::spec_init,
+            commands::spec_install,
+            commands::spec_update,
+            commands::spec_upgrade,
+            commands::spec_check,
+            commands::spec_doctor,
+            commands::spec_specs_check,
+            commands::spec_discovery_check,
+            commands::spec_discovery_generate,
+            commands::spec_memory_list,
+            commands::spec_memory_context
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");

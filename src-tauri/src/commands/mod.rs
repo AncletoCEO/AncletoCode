@@ -1,6 +1,12 @@
 use std::sync::Mutex;
 
+use std::path::Path;
+
 use ancleto_code_core::ide::SyncResult;
+use ancleto_code_core::providers::{
+    CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
+    SpecsCheck,
+};
 use ancleto_code_core::{
     Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, Orchestrator, Project,
     ProjectService, SessionInfo, SessionManager, SessionSpec, StartConversation, Turn,
@@ -207,5 +213,119 @@ pub fn conversation_list(state: State<'_, AppState>) -> Result<Vec<Conversation>
     state
         .orchestrator
         .conversations()
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_status(state: State<'_, AppState>, id: String) -> Result<SpecProjectState, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .project_state(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_init(
+    state: State<'_, AppState>,
+    id: String,
+    options: InitOptions,
+) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .init(Path::new(&root), &options)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_install(
+    state: State<'_, AppState>,
+    id: String,
+    options: InitOptions,
+) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .install(Path::new(&root), &options)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_update(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .update(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_upgrade(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .upgrade(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_check(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .check(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_doctor(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .doctor(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_specs_check(
+    state: State<'_, AppState>,
+    id: String,
+    change: Option<String>,
+) -> Result<SpecsCheck, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .specs_check(Path::new(&root), change.as_deref())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_discovery_check(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<DiscoveryState, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .discovery_check(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_discovery_generate(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<CommandOutcome, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .discovery_generate(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_memory_list(state: State<'_, AppState>, id: String) -> Result<Vec<MemoryNode>, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .memory_list(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn spec_memory_context(state: State<'_, AppState>, id: String) -> Result<String, String> {
+    let root = project_root(&state, &id)?;
+    SpecProvider::detect(Path::new(&root))
+        .memory_context(Path::new(&root))
         .map_err(|error| error.to_string())
 }
