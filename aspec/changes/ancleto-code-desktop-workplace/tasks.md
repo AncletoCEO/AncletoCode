@@ -90,12 +90,12 @@ Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
 - [x] 3B.5 Vendorizar `src/color.ts` y `src/palette-core.ts` (Nivel A), renombrar tokens y portar tests de contraste/acentos.
 - [ ] 3B.6 Adaptar `src/theme.ts`, `src/preferences.ts`, `src/appearance.ts` y `src-tauri/src/appearance.rs` (Nivel B) a nuestro store y bridge; sumar Mica/Acrylic en Windows.
 - [ ] 3B.7 Adaptar `src/terminal.ts` y `src/terminal-panel.ts` (Nivel B) a xterm.js, tabs y eventos de sesión.
-- [ ] 3B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
+- [x] 3B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
 - [x] 3B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
 - [ ] 3B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
 - [x] 3B.11 Crear `scripts/sync-pandacode.mjs` para descargar los archivos fijados y mostrar el diff contra `third_party/pandacode/`.
 - [x] 3B.12 Verificar que cada archivo vendorizado tiene cabecera, entrada en `docs/provenance.md` y figura en `UPSTREAM.md`; integrar la verificación en CI.
-- [ ] 3B.13 Ejecutar los tests portados y los del proyecto (`cargo test`, `npm run test`) sin regresiones.
+- [x] 3B.13 Ejecutar los tests portados y los del proyecto (`cargo test`, `npm run test`) sin regresiones.
 
 ## Fase 4 — Drivers de CLIs
 
@@ -220,7 +220,7 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 - [x] 13.1 Crear `crates/ancleto-code-cmd`: ventana `winit`, superficie `wgpu`, render de texto con `glyphon`/`cosmic-text` y fallback de render por software.
 - [x] 13.2 Motor VT con `alacritty_terminal`/`vte` alimentado por el stream del host; soporte de alt screen, scroll regions, cursor, mouse y bracketed paste.
 - [x] 13.3 Grilla y scrollback: buffer circular de 10k líneas, wide chars, emoji, combining, reflow al redimensionar y búsqueda incremental.
-- [ ] 13.4 Render por frame con daño parcial, frame pacing, DPI por monitor, multi-monitor, fuentes empaquetadas, fallback y zoom.
+- [x] 13.4 Render por frame con daño parcial, frame pacing, DPI por monitor, multi-monitor, fuentes empaquetadas, fallback y zoom.
 - [x] 13.5 Layout: tabs y árbol de splits, foco, mover/redimensionar y multi-ventana opcional.
 - [x] 13.6 Entrada: teclado, IME, dead keys, layouts no latinos, mouse reporting, bracketed paste y atajos configurables.
 - [x] 13.7 Selección, copia (OSC 52/nativo), hyperlinks OSC 8, títulos saneados y confirmación para escrituras de clipboard.
