@@ -75,6 +75,8 @@ jobs:
         run: cargo build --release -p ancleto-code-cmd
       - name: Build static CLI and host
         run: cargo build --release --target x86_64-unknown-linux-musl -p ancleto-code-cli -p ancleto-code-host
+      - name: Use static host in standalone tarballs
+        run: install -m 755 target/x86_64-unknown-linux-musl/release/ancleto-code-host target/release/ancleto-code-host
       - name: Package desktop tarball
         run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product desktop --platform linux-x86_64 --binary-dir target/release --out dist
       - name: Package AncletoCMD tarball
