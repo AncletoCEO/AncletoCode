@@ -85,14 +85,14 @@ Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
 
 - [x] 3B.1 Vendorizar `src-tauri/src/providers/windows_job.rs` (Nivel A: casi textual) con cabecera SPDX y tests de terminación de descendientes.
 - [x] 3B.2 Vendorizar `src-tauri/src/providers/text_stream.rs` (Nivel A) y extraer el helper `limited`; portar sus tests de deltas/snapshots.
-- [ ] 3B.3 Adaptar `src-tauri/src/terminal.rs` (Nivel B) a `SessionManager`, eventos `session://` y `windows_job`; portar tests de ciclo de vida y no-huérfanos.
+- [x] 3B.3 Adaptar `src-tauri/src/terminal.rs` (Nivel B) a `SessionManager`, eventos `session://` y `windows_job`; portar tests de ciclo de vida y no-huérfanos.
 - [x] 3B.4 Adaptar `src-tauri/src/workspace.rs` y `workspace/file_search.rs` (Nivel B) sin Git/worktrees: rutas canónicas, árbol acotado, búsqueda y captura de procesos.
 - [x] 3B.5 Vendorizar `src/color.ts` y `src/palette-core.ts` (Nivel A), renombrar tokens y portar tests de contraste/acentos.
 - [x] 3B.6 Adaptar `src/theme.ts`, `src/preferences.ts`, `src/appearance.ts` y `src-tauri/src/appearance.rs` (Nivel B) a nuestro store y bridge; sumar Mica/Acrylic en Windows.
 - [x] 3B.7 Adaptar `src/terminal.ts` y `src/terminal-panel.ts` (Nivel B) a xterm.js, tabs y eventos de sesión.
 - [x] 3B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
 - [x] 3B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
-- [ ] 3B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
+- [x] 3B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
 - [x] 3B.11 Crear `scripts/sync-pandacode.mjs` para descargar los archivos fijados y mostrar el diff contra `third_party/pandacode/`.
 - [x] 3B.12 Verificar que cada archivo vendorizado tiene cabecera, entrada en `docs/provenance.md` y figura en `UPSTREAM.md`; integrar la verificación en CI.
 - [x] 3B.13 Ejecutar los tests portados y los del proyecto (`cargo test`, `npm run test`) sin regresiones.
