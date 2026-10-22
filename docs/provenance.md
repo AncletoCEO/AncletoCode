@@ -21,19 +21,19 @@ esta tabla. La columna "Estado" pasa a `vendorizado` cuando el archivo existe ba
 | `third_party/pandacode/src-tauri/src/providers/windows_job.rs` | `src-tauri/src/providers/windows_job.rs` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src-tauri/src/providers/text_stream.rs` | `src-tauri/src/providers/text_stream.rs` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src-tauri/src/providers/support.rs` | `src-tauri/src/providers.rs` | B | MIT | PandaCode contributors | Extracción de `Preview` y `limited` | vendorizado |
-| `third_party/pandacode/src-tauri/src/terminal.rs` | `src-tauri/src/terminal.rs` | B | MIT | PandaCode contributors | Integración con `SessionManager`, eventos y `windows_job` | planificado |
-| `third_party/pandacode/src-tauri/src/workspace.rs` | `src-tauri/src/workspace.rs` | B | MIT | PandaCode contributors | Sin Git/worktrees; scoping y límites propios | planificado |
-| `third_party/pandacode/src-tauri/src/workspace/file_search.rs` | `src-tauri/src/workspace/file_search.rs` | B | MIT | PandaCode contributors | Adaptación a límites propios | planificado |
-| `third_party/pandacode/src-tauri/src/appearance.rs` | `src-tauri/src/appearance.rs` | B | MIT | PandaCode contributors | Conserva macOS/fallback; agrega Windows | planificado |
-| `third_party/pandacode/src-tauri/src/file_preview.rs` | `src-tauri/src/file_preview.rs` | B | MIT | PandaCode contributors | Opcional | planificado |
-| `third_party/pandacode/src-tauri/src/vsix_themes.rs` | `src-tauri/src/vsix_themes.rs` | B | MIT | PandaCode contributors | Opcional | planificado |
+| `third_party/pandacode/src-tauri/src/terminal.rs` | `src-tauri/src/terminal.rs` | B | MIT | PandaCode contributors | Reimplementado en `SessionManager` nativo (PTY, eventos, cierre); no copiado | reimplementado |
+| `third_party/pandacode/src-tauri/src/workspace.rs` | `src-tauri/src/workspace.rs` | B | MIT | PandaCode contributors | Rutas canónicas, árbol acotado y limpieza reimplementados; búsqueda vendorizada | reimplementado |
+| `third_party/pandacode/src-tauri/src/workspace/file_search.rs` | `src-tauri/src/workspace/file_search.rs` | B | MIT | PandaCode contributors | `FileEntry` del core; sin prueba de worktrees | vendorizado |
+| `third_party/pandacode/src-tauri/src/appearance.rs` | `src-tauri/src/appearance.rs` | B | MIT | PandaCode contributors | Reimplementado con `window-vibrancy` y fallback CSS | reimplementado |
+| `third_party/pandacode/src-tauri/src/file_preview.rs` | `src-tauri/src/file_preview.rs` | B | MIT | PandaCode contributors | Opcional no habilitado | no habilitado |
+| `third_party/pandacode/src-tauri/src/vsix_themes.rs` | `src-tauri/src/vsix_themes.rs` | B | MIT | PandaCode contributors | Opcional no habilitado | no habilitado |
 | `third_party/pandacode/src/color.ts` | `src/color.ts` | A | MIT | PandaCode contributors | Se agrega `@ts-nocheck` para el tsconfig estricto | vendorizado |
 | `third_party/pandacode/src/palette-core.ts` | `src/palette-core.ts` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
-| `third_party/pandacode/src/theme.ts` | `src/theme.ts` | B | MIT | PandaCode contributors | Claves y persistencia propias | planificado |
-| `third_party/pandacode/src/preferences.ts` | `src/preferences.ts` | B | MIT | PandaCode contributors | Claves y persistencia propias | planificado |
-| `third_party/pandacode/src/appearance.ts` | `src/appearance.ts` | B | MIT | PandaCode contributors | Bridge Tauri y store propio | planificado |
-| `third_party/pandacode/src/terminal.ts` | `src/terminal.ts` | B | MIT | PandaCode contributors | Integración xterm y sesiones | planificado |
-| `third_party/pandacode/src/terminal-panel.ts` | `src/terminal-panel.ts` | B | MIT | PandaCode contributors | Integración xterm y tabs | planificado |
+| `third_party/pandacode/src/theme.ts` | `src/theme.ts` | B | MIT | PandaCode contributors | Reimplementado en el store de apariencia | reimplementado |
+| `third_party/pandacode/src/preferences.ts` | `src/preferences.ts` | B | MIT | PandaCode contributors | Reimplementado en la configuración SQLite | reimplementado |
+| `third_party/pandacode/src/appearance.ts` | `src/appearance.ts` | B | MIT | PandaCode contributors | Reimplementado en el store de apariencia | reimplementado |
+| `third_party/pandacode/src/terminal.ts` | `src/terminal.ts` | B | MIT | PandaCode contributors | Reimplementado en `TerminalView` (React + xterm) | reimplementado |
+| `third_party/pandacode/src/terminal-panel.ts` | `src/terminal-panel.ts` | B | MIT | PandaCode contributors | Reimplementado en tabs y paneles React | reimplementado |
 | `third_party/pandacode/src/transcript-scroll.ts` | `src/transcript-scroll.ts` | A | MIT | PandaCode contributors | Ninguna | vendorizado |
 | `third_party/pandacode/src/streaming-markdown.ts` | `src/streaming-markdown.ts` | B | MIT | PandaCode contributors | Adaptación al transcript propio | planificado |
 | `third_party/pandacode/src/ui-size.ts` | `src/ui-size.ts` | B | MIT | PandaCode contributors | Adaptación a React y preferencias | planificado |

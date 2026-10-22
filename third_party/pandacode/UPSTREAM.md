@@ -19,19 +19,19 @@ incorporado de lo planificado.
 | `src-tauri/src/providers/windows_job.rs` | `third_party/pandacode/src-tauri/src/providers/windows_job.rs` | A | vendorizado |
 | `src-tauri/src/providers/text_stream.rs` | `third_party/pandacode/src-tauri/src/providers/text_stream.rs` | A | vendorizado |
 | `src-tauri/src/providers.rs` (extracción `Preview`/`limited`) | `third_party/pandacode/src-tauri/src/providers/support.rs` | B | vendorizado |
-| `src-tauri/src/terminal.rs` | `third_party/pandacode/src-tauri/src/terminal.rs` | B | planificado |
-| `src-tauri/src/workspace.rs` | `third_party/pandacode/src-tauri/src/workspace.rs` | B | planificado |
-| `src-tauri/src/workspace/file_search.rs` | `third_party/pandacode/src-tauri/src/workspace/file_search.rs` | B | planificado |
-| `src-tauri/src/appearance.rs` | `third_party/pandacode/src-tauri/src/appearance.rs` | B | planificado |
-| `src-tauri/src/file_preview.rs` | `third_party/pandacode/src-tauri/src/file_preview.rs` | B (opcional) | planificado |
-| `src-tauri/src/vsix_themes.rs` | `third_party/pandacode/src-tauri/src/vsix_themes.rs` | B (opcional) | planificado |
+| `src-tauri/src/terminal.rs` | — | B | reimplementado sin copia |
+| `src-tauri/src/workspace.rs` | — | B | reimplementado sin copia |
+| `src-tauri/src/workspace/file_search.rs` | `third_party/pandacode/src-tauri/src/workspace/file_search.rs` | B | vendorizado |
+| `src-tauri/src/appearance.rs` | — | B | reimplementado sin copia |
+| `src-tauri/src/file_preview.rs` | — | B (opcional) | no habilitado |
+| `src-tauri/src/vsix_themes.rs` | — | B (opcional) | no habilitado |
 | `src/color.ts` | `third_party/pandacode/src/color.ts` | A | vendorizado |
 | `src/palette-core.ts` | `third_party/pandacode/src/palette-core.ts` | A | vendorizado |
-| `src/theme.ts` | `third_party/pandacode/src/theme.ts` | B | planificado |
-| `src/preferences.ts` | `third_party/pandacode/src/preferences.ts` | B | planificado |
-| `src/appearance.ts` | `third_party/pandacode/src/appearance.ts` | B | planificado |
-| `src/terminal.ts` | `third_party/pandacode/src/terminal.ts` | B | planificado |
-| `src/terminal-panel.ts` | `third_party/pandacode/src/terminal-panel.ts` | B | planificado |
+| `src/theme.ts` | — | B | reimplementado sin copia |
+| `src/preferences.ts` | — | B | reimplementado sin copia |
+| `src/appearance.ts` | — | B | reimplementado sin copia |
+| `src/terminal.ts` | — | B | reimplementado sin copia |
+| `src/terminal-panel.ts` | — | B | reimplementado sin copia |
 | `src/transcript-scroll.ts` | `third_party/pandacode/src/transcript-scroll.ts` | A | vendorizado |
 | `src/streaming-markdown.ts` | `third_party/pandacode/src/streaming-markdown.ts` | B | planificado |
 | `src/ui-size.ts` | `third_party/pandacode/src/ui-size.ts` | B | planificado |
