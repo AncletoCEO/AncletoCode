@@ -132,13 +132,13 @@ Issue: [#7](https://github.com/AncletoCEO/AncletoCode/issues/7)
 
 Issue: [#8](https://github.com/AncletoCEO/AncletoCode/issues/8)
 
-- [ ] 7.1 Modelo `Conversation` y persistencia de turnos (origen, destino, texto, modo, duración, timestamps).
-- [ ] 7.2 Estrategia one-shot estructurada por turno, con continuidad por resume/continue cuando el driver la soporte.
-- [ ] 7.3 Fallback de inyección PTY con espera de quiescencia y señal `Ready`.
-- [ ] 7.4 Límites: `maxTurns`, timeout por turno, detección de repetición, pausa/reanudación y aborto.
-- [ ] 7.5 Comandos `conversation_start`, `conversation_pause`, `conversation_resume`, `conversation_abort` y eventos de turno.
-- [ ] 7.6 `ConversationPanel` con selector de dos sesiones, objetivo, contador y controles.
-- [ ] 7.7 Tests de la máquina de estados con drivers simulados (one-shot y PTY).
+- [x] 7.1 Modelo `Conversation` y persistencia de turnos (origen, destino, texto, modo, duración, timestamps).
+- [x] 7.2 Estrategia one-shot estructurada por turno, con continuidad por resume/continue cuando el driver la soporte.
+- [x] 7.3 Fallback de inyección PTY con espera de quiescencia y señal `Ready`.
+- [x] 7.4 Límites: `maxTurns`, timeout por turno, detección de repetición, pausa/reanudación y aborto.
+- [x] 7.5 Comandos `conversation_start`, `conversation_pause`, `conversation_resume`, `conversation_abort` y eventos de turno.
+- [x] 7.6 `ConversationPanel` con selector de dos sesiones, objetivo, contador y controles.
+- [x] 7.7 Tests de la máquina de estados con drivers simulados (one-shot y PTY).
 
 ## Fase 8 — Proveedor `@ancleto/spec`
 
