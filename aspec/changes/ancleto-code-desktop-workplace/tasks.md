@@ -172,15 +172,15 @@ Issue: [#10](https://github.com/AncletoCEO/AncletoCode/issues/10)
 Issue: [#11](https://github.com/AncletoCEO/AncletoCode/issues/11)
 
 - [ ] 10.1 Definir la identidad CLI: tipografía monoespaciada empaquetada, densidad, glifos de prompt y statusline.
-- [ ] 10.2 Implementar el sistema de tokens semánticos y derivar la paleta ANSI de xterm desde el tema activo.
-- [ ] 10.3 Incluir temas preset (Ancleto Dark, Carbon, Solarized, Nord, Dracula, Light) como manifiestos JSON con preview en vivo.
-- [ ] 10.4 Editor de temas: crear, duplicar, importar y exportar `theme.json`.
-- [ ] 10.5 Transparencia de ventana con efectos nativos (Mica/Acrylic/Blur en Windows, vibrancy en macOS, compositor en Linux) y fallback CSS.
-- [ ] 10.6 Transparencia de paneles con `backdrop-filter` y controles separados de opacidad (ventana, paneles, terminal) más "modo opaco".
-- [ ] 10.7 Configuración de fondos: sólido, degradado, imagen (cover/contain/tile) con blur/dim y patrón opcional; copiar imágenes al directorio de datos de la app.
-- [ ] 10.8 Precedencia y persistencia global → workspace → proyecto, sin escribir en `.ancletorc` ni `.ancleto-writer.json`.
-- [ ] 10.9 Validación de contraste WCAG AA, scrim automático sobre imágenes y soporte de `prefers-reduced-motion`/modo opaco.
-- [ ] 10.10 Tests de resolución de temas, contraste, export/import y persistencia por proyecto.
+- [x] 10.2 Implementar el sistema de tokens semánticos y derivar la paleta ANSI de xterm desde el tema activo.
+- [x] 10.3 Incluir temas preset (Ancleto Dark, Carbon, Solarized, Nord, Dracula, Light) como manifiestos JSON con preview en vivo.
+- [x] 10.4 Editor de temas: crear, duplicar, importar y exportar `theme.json`.
+- [x] 10.5 Transparencia de ventana con efectos nativos (Mica/Acrylic/Blur en Windows, vibrancy en macOS, compositor en Linux) y fallback CSS.
+- [x] 10.6 Transparencia de paneles con `backdrop-filter` y controles separados de opacidad (ventana, paneles, terminal) más "modo opaco".
+- [x] 10.7 Configuración de fondos: sólido, degradado, imagen (cover/contain/tile) con blur/dim y patrón opcional; copiar imágenes al directorio de datos de la app.
+- [x] 10.8 Precedencia y persistencia global → workspace → proyecto, sin escribir en `.ancletorc` ni `.ancleto-writer.json`.
+- [x] 10.9 Validación de contraste WCAG AA, scrim automático sobre imágenes y soporte de `prefers-reduced-motion`/modo opaco.
+- [x] 10.10 Tests de resolución de temas, contraste, export/import y persistencia por proyecto.
 
 ## Fase 11 — Host local de sesiones
 
