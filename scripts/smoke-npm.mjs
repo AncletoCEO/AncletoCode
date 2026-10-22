@@ -12,7 +12,16 @@ function run(command, args, options = {}) {
 }
 
 try {
-  run("cargo", ["build", "--release", "-p", "ancleto-code-cli", "-p", "ancleto-code-host"]);
+  run("cargo", [
+    "build",
+    "--release",
+    "-p",
+    "ancleto-code-cli",
+    "-p",
+    "ancleto-code-host",
+    "-p",
+    "ancleto-code-cmd",
+  ]);
 
   const platform = run(
     process.execPath,
@@ -32,14 +41,17 @@ try {
     "--platform",
     platform,
     "--product",
-    "code",
+    "all",
   ]);
 
-  const platformDirectory = join(root, "packages", `code-${platform}`);
   const packDestination = join(temporary, "packs");
   mkdirSync(packDestination, { recursive: true });
-  run("npm", ["pack", platformDirectory, "--pack-destination", packDestination]);
+  for (const product of ["code", "cmd"]) {
+    const platformDirectory = join(root, "packages", `${product}-${platform}`);
+    run("npm", ["pack", platformDirectory, "--pack-destination", packDestination]);
+  }
   run("npm", ["pack", join(root, "packages", "acode"), "--pack-destination", packDestination]);
+  run("npm", ["pack", join(root, "packages", "acmd"), "--pack-destination", packDestination]);
 
   const tarballs = readdirSync(packDestination)
     .filter((name) => name.endsWith(".tgz"))
@@ -47,11 +59,15 @@ try {
   const prefix = join(temporary, "prefix");
   run("npm", ["install", "-g", "--prefix", prefix, "--ignore-scripts", ...tarballs]);
 
-  const bin = join(prefix, "bin", process.platform === "win32" ? "acode.cmd" : "acode");
-  const version = execFileSync(bin, ["--version"], { encoding: "utf8" }).trim();
+  const extension = process.platform === "win32" ? ".cmd" : "";
+  const acode = join(prefix, "bin", `acode${extension}`);
+  const version = execFileSync(acode, ["--version"], { encoding: "utf8" }).trim();
   console.log(`smoke-npm: ${version}`);
-  const agents = execFileSync(bin, ["--json", "agents"], { encoding: "utf8" });
-  JSON.parse(agents);
+  JSON.parse(execFileSync(acode, ["--json", "agents"], { encoding: "utf8" }));
+  JSON.parse(execFileSync(acode, ["--json", "doctor"], { encoding: "utf8" }));
+  const acmd = join(prefix, "bin", `acmd${extension}`);
+  const cmdVersion = execFileSync(acmd, ["--version"], { encoding: "utf8" }).trim();
+  console.log(`smoke-npm: ${cmdVersion}`);
   console.log("smoke-npm: OK");
 } finally {
   rmSync(temporary, { recursive: true, force: true });

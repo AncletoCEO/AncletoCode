@@ -86,5 +86,5 @@ if (product === "all" || product === "code") {
   packageProduct("@ancleto/code", "code", ["acode", "ancleto-code-host"]);
 }
 if (product === "all" || product === "cmd") {
-  packageProduct("@ancleto/cmd", "cmd", ["acmd"]);
+  packageProduct("@ancleto/cmd", "cmd", ["acmd", "ancleto-code-host"]);
 }

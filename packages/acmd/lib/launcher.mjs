@@ -99,10 +99,7 @@ export function resolvePlatformDir(binary, key) {
 }
 
 export function launch(binary, argv = process.argv.slice(2), env = process.env) {
-  if (binary === "acmd") {
-    return launchBinary("acmd", argv, env, { verifyHost: false });
-  }
-  return launchBinary("acode", argv, env, { verifyHost: true });
+  return launchBinary(binary, argv, env, { verifyHost: true });
 }
 
 function launchBinary(binary, argv, env, { verifyHost }) {
