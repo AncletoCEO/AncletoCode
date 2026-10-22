@@ -186,14 +186,14 @@ Issue: [#11](https://github.com/AncletoCEO/AncletoCode/issues/11)
 
 Issue: [#12](https://github.com/AncletoCEO/AncletoCode/issues/12)
 
-- [ ] 11.1 Definir el protocolo JSON-RPC versionado (métodos, eventos, errores y `protocolVersion`) en `ancleto-code-host`.
-- [ ] 11.2 Implementar transporte por named pipe en Windows y Unix domain socket en Linux/macOS, con permisos `0700` y token `0600`.
-- [ ] 11.3 Implementar autostart con lock file, `host start|stop|status`, límite de inactividad y apagado ordenado.
-- [ ] 11.4 Mover la propiedad de los PTY y los ring buffers al host; exponer `session.create|write|resize|kill|snapshot|list|attach|detach`.
-- [ ] 11.5 Implementar detach sin matar la sesión y reattach con snapshot del buffer.
-- [ ] 11.6 Reconciliar sesiones huérfanas a `crashed` al arrancar el host y ofrecer recreación con el mismo `cwd` y driver.
-- [ ] 11.7 Conectar la app Tauri al host y conservar sus eventos `session://` como adaptador.
-- [ ] 11.8 Tests de handshake, token inválido, versión incompatible, autostart concurrente, detach/reattach y caída del host.
+- [x] 11.1 Definir el protocolo JSON-RPC versionado (métodos, eventos, errores y `protocolVersion`) en `ancleto-code-host`.
+- [x] 11.2 Implementar transporte por named pipe en Windows y Unix domain socket en Linux/macOS, con permisos `0700` y token `0600`.
+- [x] 11.3 Implementar autostart con lock file, `host start|stop|status`, límite de inactividad y apagado ordenado.
+- [x] 11.4 Mover la propiedad de los PTY y los ring buffers al host; exponer `session.create|write|resize|kill|snapshot|list|attach|detach`.
+- [x] 11.5 Implementar detach sin matar la sesión y reattach con snapshot del buffer.
+- [x] 11.6 Reconciliar sesiones huérfanas a `crashed` al arrancar el host y ofrecer recreación con el mismo `cwd` y driver.
+- [x] 11.7 Conectar la app Tauri al host y conservar sus eventos `session://` como adaptador.
+- [x] 11.8 Tests de handshake, token inválido, versión incompatible, autostart concurrente, detach/reattach y caída del host.
 
 ## Fase 12 — CLI headless `acode`
 
