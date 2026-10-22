@@ -154,7 +154,9 @@ jobs:
       - name: Generate AUR PKGBUILDs
         run: node scripts/package-aur.mjs --dist dist --version "$VERSION"
       - name: Bundle AUR PKGBUILDs
-        run: tar -czf "dist/ancleto-aur-${VERSION}.tar.gz" -C dist/aur .
+        run: |
+          tar -czf "dist/ancleto-aur-${VERSION}.tar.gz" -C dist/aur .
+          rm -rf dist/aur
       - name: Generate checksums
         shell: bash
         run: |
