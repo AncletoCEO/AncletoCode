@@ -5,7 +5,7 @@ use std::path::Path;
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
     CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
-    SpecsCheck,
+    SpecsCheck, WriterCheck, WriterConfig, WriterProvider, WriterState,
 };
 use ancleto_code_core::{
     Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, Orchestrator, Project,
@@ -328,4 +328,132 @@ pub fn spec_memory_context(state: State<'_, AppState>, id: String) -> Result<Str
     SpecProvider::detect(Path::new(&root))
         .memory_context(Path::new(&root))
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn writer_status(state: State<'_, AppState>, id: String) -> Result<WriterState, String> {
+    let root = project_root(&state, &id)?;
+    WriterProvider::detect(Path::new(&root))
+        .state(Path::new(&root))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn writer_init(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.init(root))
+}
+
+#[tauri::command]
+pub fn writer_build(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.build(root))
+}
+
+#[tauri::command]
+pub fn writer_check(state: State<'_, AppState>, id: String) -> Result<WriterCheck, String> {
+    with_writer(&state, &id, |provider, root| provider.check(root))
+}
+
+#[tauri::command]
+pub fn writer_lint(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.lint(root))
+}
+
+#[tauri::command]
+pub fn writer_impact(
+    state: State<'_, AppState>,
+    id: String,
+    files: Vec<String>,
+) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.impact(root, &files))
+}
+
+#[tauri::command]
+pub fn writer_human(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.human(root))
+}
+
+#[tauri::command]
+pub fn writer_doctor(state: State<'_, AppState>, id: String) -> Result<CommandOutcome, String> {
+    with_writer(&state, &id, |provider, root| provider.doctor(root))
+}
+
+#[tauri::command]
+pub fn writer_set_language_pack(
+    state: State<'_, AppState>,
+    id: String,
+    enabled: bool,
+    module: Option<String>,
+) -> Result<WriterConfig, String> {
+    with_writer(&state, &id, |provider, root| {
+        provider.set_language_pack(root, enabled, module.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn writer_agent_doc(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<String, String> {
+    const ALLOWED: [&str; 5] = [
+        "INDEX.md",
+        "API.md",
+        "SYMBOLS.md",
+        "GOTCHAS.md",
+        "ARCHITECTURE.md",
+    ];
+    if !ALLOWED.contains(&name.as_str()) {
+        return Err(format!("documento no permitido: {name}"));
+    }
+    let root = project_root(&state, &id)?;
+    let config = ancleto_code_core::providers::read_writer_config(Path::new(&root))
+        .map_err(|error| error.to_string())?;
+    std::fs::read_to_string(
+        Path::new(&root)
+            .join(config.output_dir)
+            .join("agent")
+            .join(&name),
+    )
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn writer_open_human(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let root = project_root(&state, &id)?;
+    let config = ancleto_code_core::providers::read_writer_config(Path::new(&root))
+        .map_err(|error| error.to_string())?;
+    let index = Path::new(&root)
+        .join(config.output_dir)
+        .join("human")
+        .join("index.html");
+    if !index.is_file() {
+        return Err("todavía no existe human/index.html; generá la vista primero".to_owned());
+    }
+
+    #[cfg(target_os = "macos")]
+    let mut command = std::process::Command::new("open");
+    #[cfg(target_os = "windows")]
+    let mut command = {
+        let mut command = std::process::Command::new("cmd");
+        command.args(["/C", "start", ""]);
+        command
+    };
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut command = std::process::Command::new("xdg-open");
+
+    command
+        .arg(index)
+        .spawn()
+        .map_err(|error| format!("no se pudo abrir la vista humana: {error}"))?;
+    Ok(())
+}
+
+fn with_writer<T>(
+    state: &State<'_, AppState>,
+    id: &str,
+    run: impl FnOnce(&WriterProvider, &Path) -> ancleto_code_core::Result<T>,
+) -> Result<T, String> {
+    let root = project_root(state, id)?;
+    let provider = WriterProvider::detect(Path::new(&root));
+    run(&provider, Path::new(&root)).map_err(|error| error.to_string())
 }

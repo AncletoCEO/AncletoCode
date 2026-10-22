@@ -131,7 +131,18 @@ pub fn run() {
             commands::spec_discovery_check,
             commands::spec_discovery_generate,
             commands::spec_memory_list,
-            commands::spec_memory_context
+            commands::spec_memory_context,
+            commands::writer_status,
+            commands::writer_init,
+            commands::writer_build,
+            commands::writer_check,
+            commands::writer_lint,
+            commands::writer_impact,
+            commands::writer_human,
+            commands::writer_doctor,
+            commands::writer_set_language_pack,
+            commands::writer_agent_doc,
+            commands::writer_open_human
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");
