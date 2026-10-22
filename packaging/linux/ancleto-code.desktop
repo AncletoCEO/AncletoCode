@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AncletoCode
+Comment=Workspace de agentes de código para escritorio y terminal
+Exec=ancleto-code-desktop
+Icon=ancleto-code
+Terminal=false
+Categories=Development;
+Keywords=agents;sdd;terminal;code;
+StartupWMClass=AncletoCode

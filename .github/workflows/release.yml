@@ -5,9 +5,57 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a publicar (sin v)"
+        required: true
+        default: "0.0.1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
 jobs:
-  build:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve version
+        shell: bash
+        run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Check version matches the tag and packages
+        shell: bash
+        run: |
+          node -e "const v=require('./package.json').version; if (v !== process.env.VERSION) { console.error('package.json', v, '!=', process.env.VERSION); process.exit(1) }"
+          npm run check:versions
+          test -f "docs/release-notes/${VERSION}.md"
+      - name: License and dependency checks
+        run: |
+          npm ci
+          npm run license:check
+          npm run license:check:npm
+          npm run check:core-deps
+      - name: Rust format and tests
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets
+      - run: cargo test --workspace
+
+  npm:
+    needs: preflight
+    environment: release
     strategy:
       fail-fast: false
       matrix:
@@ -50,8 +98,7 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - name: Check versions
-        run: npm run check:versions
+      - run: npm ci
       - name: Build CLI and host
         run: cargo build --release --target ${{ matrix.target }} -p ancleto-code-cli -p ancleto-code-host
       - name: Build AncletoCMD
@@ -73,7 +120,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-meta:
-    needs: build
+    needs: npm
+    environment: release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,3 +135,120 @@ jobs:
       - run: npm publish packages/acmd --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  desktop-linux:
+    needs: preflight
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: sudo apt-get install -y musl-tools
+      - run: rustup target add x86_64-unknown-linux-musl
+      - run: npm ci
+      - name: Resolve version
+        shell: bash
+        run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Build Linux installer
+        run: npm run tauri -- build --bundles deb
+      - name: Build AncletoCMD
+        run: cargo build --release -p ancleto-code-cmd
+      - name: Build static CLI and host
+        run: cargo build --release --target x86_64-unknown-linux-musl -p ancleto-code-cli -p ancleto-code-host
+      - name: Package desktop tarball
+        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product desktop --platform linux-x86_64 --binary-dir target/release --out dist
+      - name: Package AncletoCMD tarball
+        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product cmd --platform linux-x86_64 --binary-dir target/release --out dist
+      - name: Package static CLI tarball
+        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product cli --platform linux-x86_64 --binary-dir target/x86_64-unknown-linux-musl/release --out dist
+      - name: Collect release assets
+        run: |
+          mkdir -p release
+          cp target/release/bundle/deb/*.deb release/
+          cp dist/*.tar.gz release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: release/*
+          if-no-files-found: error
+
+  desktop-windows:
+    needs: preflight
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Resolve version
+        shell: bash
+        run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Build host
+        run: cargo build --release -p ancleto-code-host
+      - name: Build NSIS installer
+        run: npm run tauri -- build --bundles nsis
+      - name: Build MSI installer
+        continue-on-error: true
+        run: npm run tauri -- build --bundles msi
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item target/release/ancleto-code-desktop.exe dist/
+          Copy-Item target/release/ancleto-code-host.exe dist/
+          Copy-Item LICENSE dist/
+          Copy-Item THIRD_PARTY_NOTICES.md dist/
+          Compress-Archive -Path dist/ancleto-code-desktop.exe, dist/ancleto-code-host.exe, dist/LICENSE, dist/THIRD_PARTY_NOTICES.md -DestinationPath "dist/AncletoCode-$env:VERSION-windows-x64-portable.zip" -Force
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item target/release/bundle/nsis/*.exe release/
+          if (Test-Path target/release/bundle/msi/*.msi) { Copy-Item target/release/bundle/msi/*.msi release/ }
+          Copy-Item dist/*.zip release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows
+          path: release/*
+          if-no-files-found: error
+
+  release:
+    needs: [publish-meta, desktop-linux, desktop-windows]
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve version
+        shell: bash
+        run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate AUR PKGBUILDs
+        run: node scripts/package-aur.mjs --dist dist --version "$VERSION"
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd dist
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "AncletoCode ${{ env.VERSION }}"
+          tag_name: "v${{ env.VERSION }}"
+          body_path: "docs/release-notes/${{ env.VERSION }}.md"
+          prerelease: true
+          files: |
+            dist/**/*.deb
+            dist/**/*.tar.gz
+            dist/**/*.zip
+            dist/**/*.msi
+            dist/**/*.exe
+            dist/SHA256SUMS
+            dist/aur/**/PKGBUILD
