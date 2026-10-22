@@ -249,7 +249,7 @@ AncletoCode reutiliza código de [PandaCode](https://github.com/aicodeking/panda
 - Archivos reutilizados y sincronización: [`third_party/pandacode/UPSTREAM.md`](third_party/pandacode/UPSTREAM.md).
 - Procedencia y modificaciones: [`docs/provenance.md`](docs/provenance.md).
 
-La declaración de fork también aparecerá en la pantalla **About** de la app de escritorio y en la de AncletoCMD. No se incluirán wallpapers, temas, iconos, screenshots ni logos de PandaCode; los activos de terceros que se incorporen quedarán registrados con su licencia en `THIRD_PARTY_NOTICES.md`. Las dependencias del emulador (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) se auditan con el resto.
+La declaración de fork aparece en la pantalla **About** de la app de escritorio y en los README de los paquetes npm. No se incluirán wallpapers, temas, iconos, screenshots ni logos de PandaCode; los activos de terceros que se incorporen quedarán registrados con su licencia en `THIRD_PARTY_NOTICES.md`. Las dependencias del emulador (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) se auditan con el resto.
 
 ## Contribuir
 
