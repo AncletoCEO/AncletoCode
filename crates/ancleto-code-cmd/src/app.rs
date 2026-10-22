@@ -3,7 +3,11 @@ use std::path::Path;
 use std::sync::Arc;
 
 use ancleto_code_core::host::HostPaths;
-use ancleto_code_core::{HostClient, ProjectService, SessionBackend, SessionSpec, Store};
+use ancleto_code_core::providers::{SpecProvider, ToolReport, WriterProvider};
+use ancleto_code_core::{
+    DriverRegistry, DriverStatus, HostClient, Project, ProjectService, SavedSession,
+    SessionBackend, SessionSpec, SessionStatus, Store,
+};
 use glyphon::{
     Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, SwashCache,
     TextArea, TextAtlas, TextBounds, TextRenderer, Viewport,
@@ -28,6 +32,7 @@ const STATUS_BAR: f32 = 20.0;
 const PADDING: f32 = 3.0;
 const MIN_COLS: usize = 10;
 const MIN_ROWS: usize = 3;
+const SIDEBAR_WIDTH: f32 = 220.0;
 
 #[derive(Debug, Clone, Default)]
 pub struct CmdOptions {
@@ -62,8 +67,24 @@ struct PaneLayout {
 enum Modal {
     KillAll,
     ClosePane(String),
+    KillSession(String),
     Clipboard(String),
     Hyperlink(String),
+}
+
+#[derive(Debug, Clone)]
+enum SidebarAction {
+    SelectProject {
+        id: String,
+        root: String,
+    },
+    AttachSession(String),
+    NewAgent {
+        project_id: String,
+        root: String,
+        driver_id: String,
+        program: String,
+    },
 }
 
 pub fn run(options: CmdOptions) -> Result<(), String> {
@@ -182,6 +203,14 @@ struct AppState {
     focused: bool,
     activity: std::collections::HashSet<String>,
     marks_seen: HashMap<String, usize>,
+    projects: Vec<Project>,
+    saved_sessions: Vec<SavedSession>,
+    live_status: HashMap<String, SessionStatus>,
+    drivers: Vec<DriverStatus>,
+    providers: HashMap<String, (ToolReport, ToolReport)>,
+    sidebar_buffer: Buffer,
+    sidebar_lines: Vec<(String, Option<SidebarAction>)>,
+    last_sidebar_refresh: std::time::Instant,
     cursor: PhysicalPosition<f64>,
     modal: Option<Modal>,
     status: Option<String>,
@@ -272,6 +301,10 @@ impl AppState {
         );
 
         let rects = RectRenderer::new(&device, wgpu::TextureFormat::Bgra8UnormSrgb);
+        let sidebar_buffer = Buffer::new(
+            &mut font_system,
+            Metrics::new(11.0 * scale_factor as f32, 16.0 * scale_factor as f32),
+        );
         let mut state = Self {
             window,
             _instance: instance,
@@ -311,6 +344,14 @@ impl AppState {
             focused: true,
             activity: std::collections::HashSet::new(),
             marks_seen: HashMap::new(),
+            projects: Vec::new(),
+            saved_sessions: Vec::new(),
+            live_status: HashMap::new(),
+            drivers: Vec::new(),
+            providers: HashMap::new(),
+            sidebar_buffer,
+            sidebar_lines: Vec::new(),
+            last_sidebar_refresh: std::time::Instant::now(),
             cursor: PhysicalPosition::new(0.0, 0.0),
             modal: None,
             status: None,
@@ -329,6 +370,17 @@ impl AppState {
             state.layout = TerminalLayout::new(state.project_id.clone(), pane);
         }
 
+        state.projects =
+            ProjectService::open(&ancleto_code_core::host::transport::default_database_path())
+                .and_then(|service| service.list())
+                .unwrap_or_default();
+        state.drivers = DriverRegistry::new().detect_all();
+        for project in state.projects.iter().take(8) {
+            let spec = SpecProvider::detect(Path::new(&project.root_path)).tool();
+            let writer = WriterProvider::detect(Path::new(&project.root_path)).tool();
+            state.providers.insert(project.id.clone(), (spec, writer));
+        }
+        state.refresh_sidebar();
         state.update_chrome();
         Ok(state)
     }
@@ -342,7 +394,7 @@ impl AppState {
             program: self.profile.program.clone(),
             args: self.profile.args.clone(),
             cwd: self.project_root.clone(),
-            env: self.profile.env.clone(),
+            env: terminal_env(&self.profile.env),
             cols: columns as u16,
             rows: lines as u16,
         };
@@ -479,7 +531,7 @@ impl AppState {
                 self.handle_key(event_loop, &event);
             }
             WindowEvent::MouseInput { state, button, .. } => {
-                self.handle_mouse_button(state, button);
+                self.handle_mouse_button(event_loop, state, button);
             }
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = position;
@@ -514,6 +566,11 @@ impl AppState {
                     self.close_pane(event_loop, &pane_id, true);
                 }
                 Modal::ClosePane(_) if cancel => self.modal = None,
+                Modal::KillSession(session_id) if confirm => {
+                    let session_id = session_id.clone();
+                    self.close_session_panes(&session_id);
+                }
+                Modal::KillSession(_) if cancel => self.modal = None,
                 Modal::Clipboard(text) if confirm => {
                     if let Ok(mut clipboard) = arboard::Clipboard::new() {
                         let _ = clipboard.set_text(text.clone());
@@ -678,7 +735,19 @@ impl AppState {
         self.layout.active().map(|tab| tab.id.clone())
     }
 
-    fn handle_mouse_button(&mut self, state: ElementState, button: MouseButton) {
+    fn handle_mouse_button(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        state: ElementState,
+        button: MouseButton,
+    ) {
+        let scale = self.scale_factor as f32;
+        if self.cursor.x as f32 / scale <= SIDEBAR_WIDTH {
+            if state == ElementState::Pressed {
+                self.handle_sidebar_click(event_loop, button);
+            }
+            return;
+        }
         let Some(focused) = self.focused_pane_id() else {
             return;
         };
@@ -942,6 +1011,7 @@ impl AppState {
         self.modal_buffer
             .set_metrics(Metrics::new(14.0 * scale, 20.0 * scale));
         self.renders.clear();
+        self.refresh_sidebar();
         self.update_layout_geometry();
         self.resize_surface(self.window.inner_size());
         self.window.request_redraw();
@@ -985,9 +1055,9 @@ impl AppState {
         let width = self.surface_config.width as f32 / self.scale_factor as f32;
         let height = self.surface_config.height as f32 / self.scale_factor as f32;
         let area = Rect2 {
-            x: 0.0,
+            x: SIDEBAR_WIDTH,
             y: TITLE_BAR,
-            width,
+            width: (width - SIDEBAR_WIDTH).max(1.0),
             height: (height - TITLE_BAR - STATUS_BAR).max(1.0),
         };
         let tab = match self.layout.active() {
@@ -1010,6 +1080,237 @@ impl AppState {
                     let _ = session.resize(columns, lines);
                 }
             }
+        }
+    }
+
+    fn refresh_sidebar(&mut self) {
+        self.live_status = self
+            .client
+            .list_sessions()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|session| (session.id, session.status))
+            .collect();
+        self.saved_sessions = self
+            .client
+            .saved_sessions()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|session| session.status != SessionStatus::Stopped)
+            .collect();
+        let mut lines: Vec<(String, Option<SidebarAction>)> = Vec::new();
+        lines.push(("proyectos".to_owned(), None));
+        for project in self.projects.iter().take(8) {
+            let active = self
+                .saved_sessions
+                .iter()
+                .filter(|session| {
+                    session.spec.project_id == project.id
+                        && session.status != SessionStatus::Crashed
+                })
+                .count();
+            let glyphs = self
+                .providers
+                .get(&project.id)
+                .map(|(spec, writer)| {
+                    format!(" {}{}", provider_glyph(spec), provider_glyph(writer))
+                })
+                .unwrap_or_default();
+            let marker = if active > 0 {
+                format!(" ●{active}")
+            } else {
+                String::new()
+            };
+            lines.push((
+                format!("▸ {}{}{}", project.name, marker, glyphs),
+                Some(SidebarAction::SelectProject {
+                    id: project.id.clone(),
+                    root: project.root_path.clone(),
+                }),
+            ));
+        }
+
+        lines.push(("sesiones".to_owned(), None));
+        for session in self.saved_sessions.iter().take(12) {
+            let status = self
+                .live_status
+                .get(&session.id)
+                .copied()
+                .unwrap_or(session.status);
+            let id = if session.id.len() > 8 {
+                &session.id[..8]
+            } else {
+                &session.id
+            };
+            lines.push((
+                format!(
+                    "  {} {} · {id}",
+                    status_glyph(status),
+                    session.spec.driver_id
+                ),
+                Some(SidebarAction::AttachSession(session.id.clone())),
+            ));
+        }
+
+        lines.push(("nuevo agente".to_owned(), None));
+        let project_id = self.project_id.clone();
+        let root = self.project_root.clone();
+        for driver in &self.drivers {
+            if driver.status != ancleto_code_core::drivers::ToolStatus::Available {
+                continue;
+            }
+            lines.push((
+                format!("  + {}", driver.display_name),
+                Some(SidebarAction::NewAgent {
+                    project_id: project_id.clone(),
+                    root: root.clone(),
+                    driver_id: driver.id.clone(),
+                    program: driver.binary.clone(),
+                }),
+            ));
+        }
+
+        self.sidebar_lines = lines;
+        let text = self
+            .sidebar_lines
+            .iter()
+            .map(|(line, _)| line.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        self.sidebar_buffer.set_metrics(Metrics::new(
+            11.0 * self.scale_factor as f32,
+            16.0 * self.scale_factor as f32,
+        ));
+        self.sidebar_buffer.set_size(
+            Some((SIDEBAR_WIDTH - 12.0) * self.scale_factor as f32),
+            None,
+        );
+        set_buffer_text(&mut self.font_system, &mut self.sidebar_buffer, &text);
+        self.last_sidebar_refresh = std::time::Instant::now();
+    }
+
+    fn handle_sidebar_click(&mut self, event_loop: &ActiveEventLoop, button: MouseButton) {
+        let scale = self.scale_factor as f32;
+        let x = self.cursor.x as f32 / scale;
+        let y = self.cursor.y as f32 / scale;
+        let height = self.surface_config.height as f32 / scale;
+        if x > SIDEBAR_WIDTH || y < TITLE_BAR || y > height - STATUS_BAR {
+            return;
+        }
+        let line = ((y - TITLE_BAR - PADDING) / 16.0).floor() as usize;
+        let Some((_, Some(action))) = self.sidebar_lines.get(line) else {
+            return;
+        };
+        let action = action.clone();
+        match action {
+            SidebarAction::SelectProject { id, root } => {
+                self.project_id = id;
+                self.project_root = root;
+                if let Ok(pane) = self.create_session() {
+                    self.layout.new_tab(self.profile.display_name.clone(), pane);
+                    self.update_layout_geometry();
+                }
+            }
+            SidebarAction::AttachSession(session_id) => {
+                if button == MouseButton::Right {
+                    self.modal = Some(Modal::KillSession(session_id));
+                } else {
+                    self.attach_session(session_id);
+                }
+            }
+            SidebarAction::NewAgent {
+                project_id,
+                root,
+                driver_id,
+                program,
+            } => {
+                let spec = SessionSpec {
+                    project_id,
+                    driver_id: driver_id.clone(),
+                    program,
+                    args: Vec::new(),
+                    cwd: root,
+                    env: terminal_env(&[]),
+                    cols: 100,
+                    rows: 30,
+                };
+                if let Ok(info) = self.client.create_session(spec) {
+                    let proxy = self.proxy.clone();
+                    let wake: crate::session::Wake = Arc::new(move || {
+                        let _ = proxy.send_event(UserEvent::Wakeup);
+                    });
+                    if let Ok(session) = TerminalSession::attach_with_wake(
+                        Arc::clone(&self.client),
+                        info.id.clone(),
+                        100,
+                        30,
+                        Some(wake),
+                    ) {
+                        let pane = Pane::new(PaneKind::Agent, driver_id).with_session(info.id);
+                        self.sessions.insert(pane.id.clone(), session);
+                        self.layout.new_tab(pane.title.clone(), pane);
+                        self.refresh_sidebar();
+                        self.update_layout_geometry();
+                        self.update_chrome();
+                        self.window.request_redraw();
+                    }
+                }
+            }
+        }
+        self.refresh_sidebar();
+        let _ = event_loop;
+        self.update_chrome();
+        self.window.request_redraw();
+    }
+
+    fn attach_session(&mut self, session_id: String) {
+        let mut found = None;
+        for (index, tab) in self.layout.tabs.iter().enumerate() {
+            for pane in tab.root.panes() {
+                if pane.session_id.as_deref() == Some(session_id.as_str()) {
+                    found = Some((index, tab.id.clone(), pane.id.clone()));
+                    break;
+                }
+            }
+            if found.is_some() {
+                break;
+            }
+        }
+        if let Some((index, tab_id, pane_id)) = found {
+            self.layout.select_tab(index);
+            self.layout.focus_pane(&tab_id, &pane_id);
+            self.update_layout_geometry();
+            self.update_chrome();
+            self.window.request_redraw();
+            return;
+        }
+
+        let Some(saved) = self
+            .saved_sessions
+            .iter()
+            .find(|session| session.id == session_id)
+            .cloned()
+        else {
+            return;
+        };
+        let proxy = self.proxy.clone();
+        let wake: crate::session::Wake = Arc::new(move || {
+            let _ = proxy.send_event(UserEvent::Wakeup);
+        });
+        if let Ok(session) = TerminalSession::attach_with_wake(
+            Arc::clone(&self.client),
+            session_id.clone(),
+            100,
+            30,
+            Some(wake),
+        ) {
+            let pane =
+                Pane::new(PaneKind::Agent, saved.spec.driver_id.clone()).with_session(session_id);
+            self.sessions.insert(pane.id.clone(), session);
+            self.layout.new_tab(pane.title.clone(), pane);
+            self.update_layout_geometry();
+            self.update_chrome();
+            self.window.request_redraw();
         }
     }
 
@@ -1064,6 +1365,7 @@ impl AppState {
 
         let modal = match &self.modal {
             Some(Modal::KillAll) => "¿Matar todas las sesiones y salir? [s/n]",
+            Some(Modal::KillSession(_)) => "¿Terminar esta sesión? [s/n]",
             Some(Modal::ClosePane(_)) => "¿Cerrar el panel y terminar su sesión? [s/n]",
             Some(Modal::Clipboard(_)) => {
                 "Un programa quiere escribir el portapapeles (OSC 52). ¿Permitir? [s/n]"
@@ -1072,6 +1374,31 @@ impl AppState {
             None => "",
         };
         set_buffer_text(&mut self.font_system, &mut self.modal_buffer, modal);
+    }
+
+    fn close_session_panes(&mut self, session_id: &str) {
+        let mut targets: Vec<(String, String)> = Vec::new();
+        for tab in &self.layout.tabs {
+            for pane in tab.root.panes() {
+                if pane.session_id.as_deref() == Some(session_id) {
+                    targets.push((tab.id.clone(), pane.id.clone()));
+                }
+            }
+        }
+        for (tab_id, pane_id) in targets {
+            self.sessions.remove(&pane_id);
+            self.layout.close_pane(&tab_id, &pane_id);
+        }
+        let _ = self.client.kill_session(session_id);
+        if self.layout.tabs.is_empty() {
+            if let Ok(pane) = self.create_session() {
+                self.layout.new_tab(self.profile.display_name.clone(), pane);
+            }
+        }
+        self.refresh_sidebar();
+        self.update_layout_geometry();
+        self.update_chrome();
+        self.window.request_redraw();
     }
 
     fn close_pane(&mut self, event_loop: &ActiveEventLoop, pane_id: &str, kill: bool) {
@@ -1087,6 +1414,8 @@ impl AppState {
             self.shutdown(event_loop, kill);
             return;
         }
+        self.client.saved_sessions().ok();
+        self.refresh_sidebar();
         self.update_layout_geometry();
         self.update_chrome();
         self.window.request_redraw();
@@ -1108,6 +1437,9 @@ impl AppState {
     }
 
     fn redraw(&mut self) -> Result<(), String> {
+        if self.last_sidebar_refresh.elapsed().as_secs() >= 2 {
+            self.refresh_sidebar();
+        }
         self.update_layout_geometry();
         self.update_pane_buffers();
         self.detect_activity();
@@ -1215,6 +1547,20 @@ impl AppState {
             }
         }
 
+        rects.push(Rect {
+            x: 0.0,
+            y: TITLE_BAR * scale,
+            width: SIDEBAR_WIDTH * scale,
+            height: (height / scale - TITLE_BAR - STATUS_BAR).max(0.0) * scale,
+            color: rgba(self.theme.background, 0.96),
+        });
+        rects.push(Rect {
+            x: SIDEBAR_WIDTH * scale,
+            y: TITLE_BAR * scale,
+            width: 1.0,
+            height: (height / scale - TITLE_BAR - STATUS_BAR).max(0.0) * scale,
+            color: rgba(self.theme.border, 1.0),
+        });
         let modal_rects = if self.modal.is_some() {
             vec![
                 Rect {
@@ -1318,6 +1664,24 @@ impl AppState {
         };
 
         let mut areas: Vec<TextArea<'_>> = Vec::new();
+        areas.push(TextArea {
+            buffer: &self.sidebar_buffer,
+            left: 6.0 * scale,
+            top: (TITLE_BAR + PADDING) * scale,
+            scale: 1.0,
+            bounds: TextBounds {
+                left: 0,
+                top: (TITLE_BAR * scale) as i32,
+                right: (SIDEBAR_WIDTH * scale) as i32,
+                bottom: (height - STATUS_BAR * scale) as i32,
+            },
+            default_color: Color::rgb(
+                self.theme.foreground.0,
+                self.theme.foreground.1,
+                self.theme.foreground.2,
+            ),
+            custom_glyphs: &[],
+        });
         for pane in &text_areas {
             if let Some(render) = self.renders.get(&pane.pane_id) {
                 areas.push(TextArea {
@@ -1637,6 +2001,40 @@ fn next_pane_id(layout: &TerminalLayout, tab_id: &str, from: &str) -> Option<Str
     }
     let position = ids.iter().position(|id| id == from).unwrap_or(0);
     Some(ids[(position + 1) % ids.len()].clone())
+}
+
+fn terminal_env(extra: &[(String, String)]) -> Vec<(String, String)> {
+    let mut env = vec![
+        ("TERM".to_owned(), "xterm-256color".to_owned()),
+        ("COLORTERM".to_owned(), "truecolor".to_owned()),
+    ];
+    for (key, value) in extra {
+        if key != "TERM" && key != "COLORTERM" {
+            env.push((key.clone(), value.clone()));
+        }
+    }
+    env
+}
+
+fn provider_glyph(tool: &ToolReport) -> &'static str {
+    match tool.status {
+        ancleto_code_core::drivers::ToolStatus::Available => "●",
+        ancleto_code_core::drivers::ToolStatus::Missing => "○",
+        ancleto_code_core::drivers::ToolStatus::Incompatible => "!",
+        ancleto_code_core::drivers::ToolStatus::Error => "×",
+    }
+}
+
+fn status_glyph(status: SessionStatus) -> &'static str {
+    match status {
+        SessionStatus::Starting => "◌",
+        SessionStatus::Ready => "●",
+        SessionStatus::Busy => "◐",
+        SessionStatus::WaitingInput => "◑",
+        SessionStatus::Detached => "○",
+        SessionStatus::Stopped => "·",
+        SessionStatus::Crashed => "×",
+    }
 }
 
 fn tab_for_pane(layout: &TerminalLayout, pane_id: &str) -> Option<String> {
