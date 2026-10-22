@@ -6,7 +6,7 @@ Cada issue corresponde a un bloque de features y está asociado a las tareas de 
 
 | Issue | Feature | Fases / tareas |
 |---|---|---|
-| [#1](https://github.com/AncletoCEO/AncletoCode/issues/1) | Compliance de licencias y vendorización | Fase 0 (0.1–0.13), Fase 0B (0B.1–0B.13) |
+| [#1](https://github.com/AncletoCEO/AncletoCode/issues/1) | Compliance de licencias y vendorización | Fase 0 (0.1–0.8), Fase 1 (1.5–1.7), Fase 3B (3B.1–3B.13), Fase 14 (14.11–14.12) |
 | [#2](https://github.com/AncletoCEO/AncletoCode/issues/2) | Workspace Cargo y núcleo compartido | Fase 1 (1.1–1.4), Fase 1B (1B.1–1B.5) |
 | [#3](https://github.com/AncletoCEO/AncletoCode/issues/3) | Proyectos y persistencia | Fase 2 (2.1–2.5) |
 | [#4](https://github.com/AncletoCEO/AncletoCode/issues/4) | Motor de sesiones PTY | Fase 3 (3.1–3.6) |
@@ -32,41 +32,21 @@ Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
 - [x] 0.3 Crear `THIRD_PARTY_NOTICES.md` con PandaCode, Software Mansion (md4c/Enriched Markdown) y las dependencias vendorizadas que se adopten.
 - [x] 0.4 Crear `docs/provenance.md` con el ledger de módulos reutilizados: ruta local, ruta upstream, commit, licencia, autor y modificaciones.
 - [x] 0.5 Agregar la sección "Licencias y atribuciones" en `README.md` con la declaración obligatoria "This is a fork of PandaCode" y el enlace.
-- [ ] 0.6 Implementar la declaración "This is a fork of PandaCode" + enlace en la pantalla About de la app.
-- [ ] 0.7 Documentar la convención de cabeceras SPDX para archivos vendorizados y adaptados en `AGENTS.md`/guía de contribución.
-- [ ] 0.8 Añadir `npm run license:check` (`scripts/license-check.mjs`): valida `LICENSE`, `THIRD_PARTY_NOTICES.md`, la sección del README, la declaración de fork, las cabeceras SPDX y el ledger.
-- [ ] 0.9 Añadir `deny.toml` + `cargo deny check licenses advisories` y un revisor de licencias npm para dependencias directas y transitivas.
-- [ ] 0.10 Auditar el árbol contra nombres y hashes de PandaCode para detectar copias accidentales de código o activos; documentar el inventario de activos.
-- [ ] 0.11 Verificar que no se incluyen wallpapers, temas, iconos, screenshots ni logos de PandaCode ni de proveedores sin licencia que permita redistribución.
-- [ ] 0.12 Revisión legal de la convivencia AGPL-3.0 + condición de atribución antes del primer release público.
-- [ ] 0.13 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
-
-## Fase 0B — Incorporación de código reutilizable de PandaCode
-
-Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
-
-- [ ] 0B.1 Vendorizar `src-tauri/src/providers/windows_job.rs` (Nivel A: casi textual) con cabecera SPDX y tests de terminación de descendientes.
-- [ ] 0B.2 Vendorizar `src-tauri/src/providers/text_stream.rs` (Nivel A) y extraer el helper `limited`; portar sus tests de deltas/snapshots.
-- [ ] 0B.3 Adaptar `src-tauri/src/terminal.rs` (Nivel B) a `SessionManager`, eventos `session://` y `windows_job`; portar tests de ciclo de vida y no-huérfanos.
-- [ ] 0B.4 Adaptar `src-tauri/src/workspace.rs` y `workspace/file_search.rs` (Nivel B) sin Git/worktrees: rutas canónicas, árbol acotado, búsqueda y captura de procesos.
-- [ ] 0B.5 Vendorizar `src/color.ts` y `src/palette-core.ts` (Nivel A), renombrar tokens y portar tests de contraste/acentos.
-- [ ] 0B.6 Adaptar `src/theme.ts`, `src/preferences.ts`, `src/appearance.ts` y `src-tauri/src/appearance.rs` (Nivel B) a nuestro store y bridge; sumar Mica/Acrylic en Windows.
-- [ ] 0B.7 Adaptar `src/terminal.ts` y `src/terminal-panel.ts` (Nivel B) a xterm.js, tabs y eventos de sesión.
-- [ ] 0B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
-- [ ] 0B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
-- [ ] 0B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
-- [ ] 0B.11 Crear `scripts/sync-pandacode.mjs` para descargar los archivos fijados y mostrar el diff contra `third_party/pandacode/`.
-- [ ] 0B.12 Verificar que cada archivo vendorizado tiene cabecera, entrada en `docs/provenance.md` y figura en `UPSTREAM.md`; integrar la verificación en CI.
-- [ ] 0B.13 Ejecutar los tests portados y los del proyecto (`cargo test`, `npm run test`) sin regresiones.
+- [x] 0.6 Documentar la convención de cabeceras SPDX para archivos vendorizados y adaptados en `AGENTS.md`/guía de contribución.
+- [x] 0.7 Auditar el árbol contra nombres y hashes de PandaCode para detectar copias accidentales de código o activos; documentar el inventario de activos.
+- [x] 0.8 Verificar que no se incluyen wallpapers, temas, iconos, screenshots ni logos de PandaCode ni de proveedores sin licencia que permita redistribución.
 
 ## Fase 1 — Bootstrap del proyecto
 
 Issue: [#2](https://github.com/AncletoCEO/AncletoCode/issues/2)
 
-- [ ] 1.1 Inicializar Tauri 2 con frontend React 19 + TypeScript + Vite y fijar versiones.
-- [ ] 1.2 Configurar `tsconfig` estricto, ESLint/Prettier y scripts `dev`, `build`, `test`, `typecheck`, `lint`.
-- [ ] 1.3 Configurar `cargo fmt`/`clippy` y estructura de módulos Rust (`commands`, `session`, `drivers`, `orch`, `providers`, `ide`, `persistence`).
+- [x] 1.1 Inicializar Tauri 2 con frontend React 19 + TypeScript + Vite y fijar versiones.
+- [x] 1.2 Configurar `tsconfig` estricto, ESLint/Prettier y scripts `dev`, `build`, `test`, `typecheck`, `lint`.
+- [x] 1.3 Configurar `cargo fmt`/`clippy` y estructura de módulos Rust (`commands`, `session`, `drivers`, `orch`, `providers`, `ide`, `persistence`).
 - [ ] 1.4 Verificar arranque de la app de escritorio en Windows (`npm run tauri dev`).
+- [x] 1.5 Implementar la declaración "This is a fork of PandaCode" + enlace en la pantalla About de la app.
+- [x] 1.6 Añadir `npm run license:check` (`scripts/license-check.mjs`): valida `LICENSE`, `THIRD_PARTY_NOTICES.md`, la sección del README, la declaración de fork, las cabeceras SPDX y el ledger.
+- [x] 1.7 Añadir `deny.toml` + `cargo deny check licenses advisories` y un revisor de licencias npm para dependencias directas y transitivas.
 
 ## Fase 1B — Extracción del núcleo compartido
 
@@ -98,6 +78,24 @@ Issue: [#4](https://github.com/AncletoCEO/AncletoCode/issues/4)
 - [ ] 3.4 Cierre ordenado de todas las sesiones al salir (sin huérfanos).
 - [ ] 3.5 `TerminalView` con xterm.js, snapshot y resize.
 - [ ] 3.6 Tests de ciclo de vida con un proceso de prueba y verificación de no-huérfanos.
+
+## Fase 3B — Incorporación de código reutilizable de PandaCode
+
+Issue: [#1](https://github.com/AncletoCEO/AncletoCode/issues/1)
+
+- [ ] 3B.1 Vendorizar `src-tauri/src/providers/windows_job.rs` (Nivel A: casi textual) con cabecera SPDX y tests de terminación de descendientes.
+- [ ] 3B.2 Vendorizar `src-tauri/src/providers/text_stream.rs` (Nivel A) y extraer el helper `limited`; portar sus tests de deltas/snapshots.
+- [ ] 3B.3 Adaptar `src-tauri/src/terminal.rs` (Nivel B) a `SessionManager`, eventos `session://` y `windows_job`; portar tests de ciclo de vida y no-huérfanos.
+- [ ] 3B.4 Adaptar `src-tauri/src/workspace.rs` y `workspace/file_search.rs` (Nivel B) sin Git/worktrees: rutas canónicas, árbol acotado, búsqueda y captura de procesos.
+- [ ] 3B.5 Vendorizar `src/color.ts` y `src/palette-core.ts` (Nivel A), renombrar tokens y portar tests de contraste/acentos.
+- [ ] 3B.6 Adaptar `src/theme.ts`, `src/preferences.ts`, `src/appearance.ts` y `src-tauri/src/appearance.rs` (Nivel B) a nuestro store y bridge; sumar Mica/Acrylic en Windows.
+- [ ] 3B.7 Adaptar `src/terminal.ts` y `src/terminal-panel.ts` (Nivel B) a xterm.js, tabs y eventos de sesión.
+- [ ] 3B.8 Vendorizar `src/vendor/enriched-markdown/` (MIT, Software Mansion) y adaptar el subset de `src/dom.ts` + `src/streaming-markdown.ts` con DOMPurify/KaTeX.
+- [ ] 3B.9 Vendorizar `src/transcript-scroll.ts` (Nivel A) y adaptar `src/ui-size.ts` (Nivel B) al frontend React.
+- [ ] 3B.10 Opcional: adaptar `src-tauri/src/file_preview.rs`, `src-tauri/src/vsix_themes.rs` y `src/theme-settings.ts` si se habilitan preview de archivos e import de temas VS Code.
+- [ ] 3B.11 Crear `scripts/sync-pandacode.mjs` para descargar los archivos fijados y mostrar el diff contra `third_party/pandacode/`.
+- [ ] 3B.12 Verificar que cada archivo vendorizado tiene cabecera, entrada en `docs/provenance.md` y figura en `UPSTREAM.md`; integrar la verificación en CI.
+- [ ] 3B.13 Ejecutar los tests portados y los del proyecto (`cargo test`, `npm run test`) sin regresiones.
 
 ## Fase 4 — Drivers de CLIs
 
@@ -249,6 +247,8 @@ Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
 - [ ] 14.8 Smoke test de `npm i -g @ancleto/code` y `npm i -g @ancleto/cmd` en Windows (`cmd`/PowerShell) y Linux; abrir AncletoCMD y ejecutar `acode doctor`.
 - [ ] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
 - [ ] 14.10 Empaquetar la app de escritorio (MSI/NSIS, DMG, AppImage/DEB) y verificar `acode ui`.
+- [ ] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
+- [ ] 14.12 Revisión legal de la convivencia AGPL-3.0 + condición de atribución antes del primer release público.
 
 ## Fase 15 — Hardening y cierre
 
