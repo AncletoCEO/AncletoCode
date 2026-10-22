@@ -67,6 +67,12 @@ impl ProjectService {
         self.store.remove_project(id)
     }
 
+    pub fn get(&self, id: &str) -> Result<Project> {
+        self.store
+            .find_project_by_id(id)?
+            .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))
+    }
+
     pub fn open_project(&self, id: &str) -> Result<Project> {
         self.store
             .touch_project(id, unix_timestamp())?

@@ -356,3 +356,28 @@ body {
   margin-top: 0.5rem;
   font-size: 0.75rem;
 }
+
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.project-actions button {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.project-action-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40rem;
+}

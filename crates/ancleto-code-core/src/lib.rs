@@ -1,5 +1,6 @@
 pub mod domain;
 pub mod drivers;
+pub mod ide;
 pub mod orch;
 pub mod persistence;
 pub mod projects;

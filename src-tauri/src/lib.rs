@@ -6,7 +6,6 @@ use serde::Serialize;
 use tauri::{Emitter, Manager};
 
 pub mod commands;
-pub mod ide;
 
 use commands::AppState;
 
@@ -72,7 +71,9 @@ pub fn run() {
             commands::session_kill,
             commands::session_snapshot,
             commands::session_list,
-            commands::drivers_list
+            commands::drivers_list,
+            commands::ide_open_antigravity,
+            commands::ide_sync_antigravity
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");

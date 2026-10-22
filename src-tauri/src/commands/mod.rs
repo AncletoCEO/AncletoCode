@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::{
     DriverRegistry, DriverStatus, FileNode, Project, ProjectService, SessionInfo, SessionManager,
     SessionSpec,
@@ -108,4 +109,24 @@ pub fn session_list(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, Stri
 #[tauri::command]
 pub fn drivers_list(state: State<'_, AppState>) -> Vec<DriverStatus> {
     state.drivers.detect_all()
+}
+
+fn project_root(state: &State<'_, AppState>, id: &str) -> Result<String, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service
+        .get(id)
+        .map(|project| project.root_path)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn ide_open_antigravity(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::ide::open_in_antigravity(&root).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn ide_sync_antigravity(state: State<'_, AppState>, id: String) -> Result<SyncResult, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::ide::sync_antigravity_assets(&root).map_err(|error| error.to_string())
 }

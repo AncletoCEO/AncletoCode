@@ -31,6 +31,8 @@ pub enum CoreError {
     SessionNotFound(String),
     #[error("error de terminal: {0}")]
     Pty(String),
+    #[error("error de proceso: {0}")]
+    Process(String),
     #[error("error de base de datos: {0}")]
     Database(#[from] rusqlite::Error),
     #[error("error de E/S: {0}")]

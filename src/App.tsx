@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from "react";
 import AboutDialog from "./components/AboutDialog";
 import AgentTabs from "./components/AgentTabs";
+import ProjectActions from "./components/ProjectActions";
 import ProjectTabs from "./components/ProjectTabs";
 import ProjectTree from "./components/ProjectTree";
 import Sidebar from "./components/Sidebar";
@@ -31,6 +32,7 @@ export default function App() {
         {selected ? (
           <>
             <p className="project-path">{selected.rootPath}</p>
+            <ProjectActions projectId={selected.id} />
             <AgentTabs project={selected} />
             {active ? (
               <TerminalView key={active.id} sessionId={active.id} />
