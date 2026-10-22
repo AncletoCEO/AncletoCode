@@ -1,0 +1,108 @@
+name: Publish npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión ya publicada en GitHub (sin v)"
+        required: true
+        default: "0.0.1"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64-gnu
+            cmd: true
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            platform: linux-arm64-gnu
+            cmd: true
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
+            platform: linux-x64-musl
+            cmd: false
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            platform: linux-arm64-musl
+            cmd: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32-x64
+            cmd: true
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            platform: win32-arm64
+            cmd: true
+          - os: macos-13
+            target: x86_64-apple-darwin
+            platform: darwin-x64
+            cmd: true
+          - os: macos-14
+            target: aarch64-apple-darwin
+            platform: darwin-arm64
+            cmd: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Check version
+        run: node -e "const v=require('./package.json').version; if (v !== '${{ inputs.version }}') process.exit(1)"
+      - name: Install musl tools
+        if: contains(matrix.platform, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build CLI and host
+        run: cargo build --release --target ${{ matrix.target }} -p ancleto-code-cli -p ancleto-code-host
+      - name: Build AncletoCMD
+        if: matrix.cmd
+        run: cargo build --release --target ${{ matrix.target }} -p ancleto-code-cmd
+      - name: Package AncletoCode platform binaries
+        run: node scripts/package-npm.mjs --binary-dir target/${{ matrix.target }}/release --platform ${{ matrix.platform }} --product code
+      - name: Package AncletoCMD platform binaries
+        if: matrix.cmd
+        run: node scripts/package-npm.mjs --binary-dir target/${{ matrix.target }}/release --platform ${{ matrix.platform }} --product cmd
+      - name: Publish AncletoCode platform package
+        run: npm publish packages/code-${{ matrix.platform }} --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish AncletoCMD platform package
+        if: matrix.cmd
+        run: npm publish packages/cmd-${{ matrix.platform }} --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-meta:
+    needs: publish
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm publish packages/acode --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish packages/acmd --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

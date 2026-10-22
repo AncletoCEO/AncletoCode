@@ -27,8 +27,8 @@ if (platform.startsWith("win32")) {
 }
 
 const products = {
-  desktop: { name: "AncletoCode", binaries: ["ancleto-code-desktop"] },
-  cmd: { name: "AncletoCMD", binaries: ["acmd", "ancleto-cmd"] },
+  desktop: { name: "AncletoCode", binaries: ["ancleto-code-desktop", "ancleto-code-host"] },
+  cmd: { name: "AncletoCMD", binaries: ["acmd", "ancleto-cmd", "ancleto-code-host"] },
   cli: { name: "acode", binaries: ["acode", "ancleto-code", "ancleto-code-host"] },
 };
 const selected = products[product];

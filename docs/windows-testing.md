@@ -8,18 +8,20 @@ reportar antes de un release estable.
 - `AncletoCode_0.0.1_x64-setup.exe` — instalador NSIS.
 - `AncletoCode_0.0.1_x64_en-US.msi` — instalador MSI (si el job lo produce).
 - `AncletoCode-0.0.1-windows-x64-portable.zip` — ejecutable, host local y licencias.
-- Paquetes npm: `npm install -g @ancleto/code@0.0.1` y
-  `npm install -g @ancleto/cmd@0.0.1`.
+- `acode-0.0.1-windows-x64.zip` — CLI, `ancleto-code` y host.
+- `AncletoCMD-0.0.1-windows-x64.zip` — AncletoCMD y host.
+- npm queda **pendiente** para un release posterior.
 
-El instalador NSIS/MSI instala la app; para sesiones persistentes por host
-instalá `@ancleto/code` (aporta `ancleto-code-host.exe`). El ZIP portable ya
-incluye el host junto al ejecutable.
+El `.zip` portable de la app y el ZIP de la CLI incluyen `ancleto-code-host.exe`;
+el instalador NSIS/MSI instala solo la app y puede usar el host de esos ZIP o el
+fallback in-process.
 - `SHA256SUMS` y `PKGBUILD` de Arch adjuntos al release.
 
 ## Requisitos
 
 - Windows 10/11 x64 con WebView2 (los instaladores lo bootstrapean si falta).
 - Node.js 24 para `ancleto`/`ancleto-writer` si se prueban los paneles spec/writer.
+- No hace falta npm para instalar la app en 0.0.1.
 - Al menos un CLI de agente instalado y autenticado: `claude`, `opencode`, `agy`
   o `cmd` (Command Code).
 - Opcional: WSL y PowerShell 7 para las pruebas de AncletoCMD.

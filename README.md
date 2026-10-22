@@ -139,28 +139,34 @@ npm run tauri dev
 | Debian/Ubuntu | `AncletoCode_0.0.1_amd64.deb` |
 | Arch/EndeavourOS | `PKGBUILD` de `ancleto-code-bin` / tarball |
 | Windows x64 | instalador NSIS, MSI (si está disponible) o ZIP portable |
-| CLI | `npm install -g @ancleto/code@0.0.1` |
-| AncletoCMD | `npm install -g @ancleto/cmd@0.0.1` |
+| CLI | `acode-0.0.1-linux-x86_64.tar.gz` (Linux) / `acode-0.0.1-windows-x64.zip` |
+| AncletoCMD | `AncletoCMD-0.0.1-*.tar.gz` / `AncletoCMD-0.0.1-windows-x64.zip` |
+| npm | **pendiente** para un release posterior |
 
 ```bash
 # Debian/Ubuntu
 sudo apt install ./AncletoCode_0.0.1_amd64.deb
 
-# CLI + host (necesario para sesiones persistentes)
-npm install -g @ancleto/code@0.0.1
+# CLI + host desde GitHub Release (hasta que se publique npm)
+# Linux: descomprimir acode-0.0.1-linux-x86_64.tar.gz
+# Windows: descomprimir acode-0.0.1-windows-x64.zip
+# npm queda pendiente para un release posterior.
 ```
 
 La app de escritorio incluye fallback in-process si el host no está disponible;
-para detach/attach entre superficies instalá el paquete npm de la CLI.
+para detach/attach entre superficies usá el tarball/ZIP de la CLI o el paquete AUR.
 En Arch, el `PKGBUILD` generado instala el host como dependencia.
 El checklist de Windows está en [`docs/windows-testing.md`](docs/windows-testing.md).
 
-Actualización y desinstalación:
+Actualización y desinstalación (cuando npm esté publicado):
 
 ```bash
 npm install -g @ancleto/code@latest
 npm uninstall -g @ancleto/code
 ```
+
+En 0.0.1 la actualización es manual: reemplazar el binario o reinstalar el
+`.deb`/instalador/`PKGBUILD` del release de GitHub.
 
 La CLI se publica con binarios por plataforma como `optionalDependencies`:
 

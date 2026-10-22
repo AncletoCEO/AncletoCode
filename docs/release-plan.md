@@ -17,7 +17,7 @@ probar y reportar.
 | Linux x86_64 glibc | `.deb`, `.tar.gz`, AUR generado | Se construye en Ubuntu 22.04 (glibc base) |
 | Arch/EndeavourOS | `ancleto-code-bin`, `ancleto-cmd-bin`, `ancleto-code-cli-bin` | PKGBUILDs generados con checksums del release |
 | Windows x64 | NSIS, MSI y ZIP portable | Para verificación del dev de Windows |
-| npm (Linux/Win/macOS) | `@ancleto/code`, `@ancleto/cmd` | Binarios por plataforma + launcher |
+| npm (Linux/Win/macOS) | `@ancleto/code`, `@ancleto/cmd` | **Pendiente** para un release posterior; workflow `npm-publish.yml` separado |
 | Linux ARM64 | npm `linux-arm64-gnu` | Incluido en npm; sin instalador de escritorio en 0.0.1 |
 | macOS | npm; DMG no incluido | Fuera de 0.0.1 |
 
@@ -38,14 +38,14 @@ probar y reportar.
 
 ## Pipeline
 
-1. **npm:** matriz nativa para CLI, host y AncletoCMD; publica paquetes por
-   plataforma y los meta paquetes.
-2. **desktop-linux:** Ubuntu 22.04; `npm run tauri -- build --bundles deb`;
+1. **desktop-linux:** Ubuntu 22.04; `npm run tauri -- build --bundles deb`;
    tarballs de escritorio, AncletoCMD y CLI/host; artefactos a GitHub Actions.
-3. **desktop-windows:** `windows-latest`; NSIS + MSI y ZIP portable.
-4. **release:** descarga artefactos, genera `SHA256SUMS`, genera PKGBUILDs AUR
+2. **desktop-windows:** `windows-latest`; NSIS + MSI y ZIP portable.
+3. **release:** descarga artefactos, genera `SHA256SUMS`, genera PKGBUILDs AUR
    con checksums reales y publica el GitHub Release con las notas de
    `docs/release-notes/<versión>.md`.
+4. **npm (pendiente):** `.github/workflows/npm-publish.yml`, manual, cuando se
+   decida publicar en npm.
 5. **Aprobación:** los jobs de publicación usan el entorno `release`; configurar
    revisores obligatorios en GitHub para el gate legal.
 
