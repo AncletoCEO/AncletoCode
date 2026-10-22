@@ -121,12 +121,12 @@ Issue: [#6](https://github.com/AncletoCEO/AncletoCode/issues/6)
 
 Issue: [#7](https://github.com/AncletoCEO/AncletoCode/issues/7)
 
-- [ ] 6.1 `sessionsStore` y modelo de tabs proyecto → sesiones.
-- [ ] 6.2 `ProjectTabs` con indicador de sesiones activas y de estado de providers.
-- [ ] 6.3 `AgentTabs` con dot de estado (`ready`, `busy`, `waiting_input`, `stopped`, `crashed`).
-- [ ] 6.4 Alta de sesión eligiendo driver disponible y `cwd` del proyecto.
-- [ ] 6.5 Acciones por tab: renombrar, cerrar, matar, reiniciar.
-- [ ] 6.6 Tests Vitest de stores y de estado de tabs.
+- [x] 6.1 `sessionsStore` y modelo de tabs proyecto → sesiones.
+- [x] 6.2 `ProjectTabs` con indicador de sesiones activas y de estado de providers.
+- [x] 6.3 `AgentTabs` con dot de estado (`ready`, `busy`, `waiting_input`, `stopped`, `crashed`).
+- [x] 6.4 Alta de sesión eligiendo driver disponible y `cwd` del proyecto.
+- [x] 6.5 Acciones por tab: renombrar, cerrar, matar, reiniciar.
+- [x] 6.6 Tests Vitest de stores y de estado de tabs.
 
 ## Fase 7 — Interacción entre dos agentes
 
