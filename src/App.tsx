@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from "react";
 import AboutDialog from "./components/AboutDialog";
 import AgentTabs from "./components/AgentTabs";
+import ConversationPanel from "./components/ConversationPanel";
 import ProjectActions from "./components/ProjectActions";
 import ProjectTabs from "./components/ProjectTabs";
 import ProjectTree from "./components/ProjectTree";
@@ -11,6 +12,7 @@ import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./st
 
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [conversationOpen, setConversationOpen] = useState(false);
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const selected = projects.projects.find((project) => project.id === projects.selectedId);
@@ -24,9 +26,20 @@ export default function App() {
       <section className="workspace">
         <header className="workspace-header">
           <span className="prompt">❯ AncletoCode</span>
-          <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
-            About
-          </button>
+          <span className="header-actions">
+            {selected ? (
+              <button
+                type="button"
+                onClick={() => setConversationOpen((open) => !open)}
+                aria-pressed={conversationOpen}
+              >
+                conversación
+              </button>
+            ) : null}
+            <button type="button" className="about-trigger" onClick={() => setAboutOpen(true)}>
+              About
+            </button>
+          </span>
         </header>
         <ProjectTabs />
         {selected ? (
@@ -34,6 +47,7 @@ export default function App() {
             <p className="project-path">{selected.rootPath}</p>
             <ProjectActions projectId={selected.id} />
             <AgentTabs project={selected} />
+            {conversationOpen ? <ConversationPanel project={selected} /> : null}
             {active ? (
               <TerminalView key={active.id} sessionId={active.id} />
             ) : projects.tree ? (

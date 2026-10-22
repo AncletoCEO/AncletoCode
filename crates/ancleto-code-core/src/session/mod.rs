@@ -49,6 +49,7 @@ pub struct SessionInfo {
     pub driver_id: String,
     pub status: SessionStatus,
     pub pid: Option<u32>,
+    pub cwd: String,
     pub buffer_bytes: usize,
 }
 
@@ -120,6 +121,7 @@ impl SessionManager {
             driver_id: spec.driver_id,
             status: SessionStatus::Ready,
             pid: child.process_id(),
+            cwd: spec.cwd.clone(),
             buffer_bytes: 0,
         };
 

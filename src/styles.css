@@ -381,3 +381,89 @@ body {
   white-space: nowrap;
   max-width: 40rem;
 }
+
+.header-actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.header-actions button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.conversation {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.conversation-form,
+.conversation-state {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+}
+
+.conversation-form select,
+.conversation-form input,
+.conversation-form button,
+.conversation-state button {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
+.conversation-form input[type="number"] {
+  width: 4rem;
+}
+
+.conversation-objective {
+  width: 100%;
+  margin-bottom: 0.375rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--fg);
+  font: inherit;
+  resize: vertical;
+}
+
+.conversation-state button:disabled {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.turn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.turn {
+  padding: 0.25rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.turn-meta {
+  color: var(--fg-muted);
+  font-size: 0.6875rem;
+}
+
+.turn-text {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+}

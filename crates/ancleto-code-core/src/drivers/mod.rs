@@ -215,6 +215,7 @@ impl AgentDriver for RawDriver {
     }
 }
 
+#[derive(Clone)]
 pub struct DriverRegistry {
     drivers: HashMap<String, Arc<dyn AgentDriver>>,
     fallback: Arc<dyn AgentDriver>,

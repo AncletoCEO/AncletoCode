@@ -19,6 +19,50 @@ pub struct FileNode {
     pub children: Vec<FileNode>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Conversation {
+    pub id: String,
+    pub session_a: String,
+    pub session_b: String,
+    pub objective: String,
+    pub max_turns: u32,
+    pub turn_budget_ms: u64,
+    pub state: ConversationState,
+    pub reason: Option<String>,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConversationState {
+    Running,
+    Paused,
+    Completed,
+    Aborted,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TurnMode {
+    OneShot,
+    Pty,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Turn {
+    pub conversation_id: String,
+    pub index: u32,
+    pub from_session: String,
+    pub to_session: String,
+    pub text: String,
+    pub mode: TurnMode,
+    pub duration_ms: u64,
+    pub created_at: i64,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum CoreError {
     #[error("no existe la ruta: {0}")]
@@ -33,6 +77,8 @@ pub enum CoreError {
     Pty(String),
     #[error("error de proceso: {0}")]
     Process(String),
+    #[error("entrada inválida: {0}")]
+    InvalidInput(String),
     #[error("error de base de datos: {0}")]
     Database(#[from] rusqlite::Error),
     #[error("error de E/S: {0}")]

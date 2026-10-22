@@ -1,7 +1,10 @@
 use std::fs;
 use std::sync::{Arc, Mutex};
 
-use ancleto_code_core::{DriverRegistry, ProjectService, SessionEvent, SessionManager};
+use ancleto_code_core::{
+    ConversationEvent, ConversationState, DriverRegistry, Orchestrator, ProjectService,
+    SessionEvent, SessionManager, Store,
+};
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
@@ -19,6 +22,13 @@ struct SessionOutputPayload {
 #[serde(rename_all = "camelCase")]
 struct SessionExitPayload {
     exit_code: Option<i32>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConversationStatePayload {
+    state: ConversationState,
+    reason: Option<String>,
 }
 
 fn session_manager(handle: tauri::AppHandle) -> SessionManager {
@@ -49,12 +59,41 @@ pub fn run() {
         .setup(|app| {
             let config_directory = app.path().app_config_dir()?;
             fs::create_dir_all(&config_directory)?;
-            let service = ProjectService::open(&config_directory.join("ancleto-code.sqlite"))?;
+            let database = config_directory.join("ancleto-code.sqlite");
+            let service = ProjectService::open(&database)?;
             let sessions = session_manager(app.handle().clone());
+            let drivers = DriverRegistry::new();
+            let handle = app.handle().clone();
+            let sink: ancleto_code_core::orch::ConversationSink = Arc::new(move |event| {
+                let result = match event {
+                    ConversationEvent::Turn {
+                        conversation_id,
+                        turn,
+                    } => handle.emit(&format!("conversation://turn/{conversation_id}"), turn),
+                    ConversationEvent::State {
+                        conversation_id,
+                        state,
+                        reason,
+                    } => handle.emit(
+                        &format!("conversation://state/{conversation_id}"),
+                        ConversationStatePayload { state, reason },
+                    ),
+                };
+                if let Err(error) = result {
+                    eprintln!("no se pudo emitir un evento de conversación: {error}");
+                }
+            });
+            let orchestrator = Orchestrator::new(
+                Store::open(&database)?,
+                sessions.clone(),
+                drivers.clone(),
+                Some(sink),
+            );
             app.manage(AppState {
                 projects: Mutex::new(service),
                 sessions,
-                drivers: DriverRegistry::new(),
+                drivers,
+                orchestrator,
             });
             Ok(())
         })
@@ -73,7 +112,14 @@ pub fn run() {
             commands::session_list,
             commands::drivers_list,
             commands::ide_open_antigravity,
-            commands::ide_sync_antigravity
+            commands::ide_sync_antigravity,
+            commands::conversation_start,
+            commands::conversation_pause,
+            commands::conversation_resume,
+            commands::conversation_abort,
+            commands::conversation_get,
+            commands::conversation_turns,
+            commands::conversation_list
         ])
         .build(tauri::generate_context!())
         .expect("error mientras se construía AncletoCode");

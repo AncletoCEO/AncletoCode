@@ -3,7 +3,7 @@ use std::path::Path;
 
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::domain::{Project, Result};
+use crate::domain::{Conversation, ConversationState, Project, Result, Turn, TurnMode};
 
 pub struct Store {
     connection: Connection,
@@ -36,8 +36,32 @@ impl Store {
                  key TEXT PRIMARY KEY,
                  value TEXT NOT NULL
              );
+             CREATE TABLE IF NOT EXISTS conversations (
+                 id TEXT PRIMARY KEY,
+                 session_a TEXT NOT NULL,
+                 session_b TEXT NOT NULL,
+                 objective TEXT NOT NULL,
+                 max_turns INTEGER NOT NULL,
+                 turn_budget_ms INTEGER NOT NULL,
+                 state TEXT NOT NULL,
+                 reason TEXT,
+                 created_at INTEGER NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS turns (
+                 conversation_id TEXT NOT NULL,
+                 turn_index INTEGER NOT NULL,
+                 from_session TEXT NOT NULL,
+                 to_session TEXT NOT NULL,
+                 text TEXT NOT NULL,
+                 mode TEXT NOT NULL,
+                 duration_ms INTEGER NOT NULL,
+                 created_at INTEGER NOT NULL,
+                 PRIMARY KEY (conversation_id, turn_index)
+             );
              INSERT OR IGNORE INTO schema_migrations (version, applied_at)
-                 VALUES (1, unixepoch());",
+                 VALUES (1, unixepoch());
+             INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+                 VALUES (2, unixepoch());",
         )?;
 
         Ok(Self { connection })
@@ -111,6 +135,99 @@ impl Store {
         Ok(affected > 0)
     }
 
+    pub fn create_conversation(&self, conversation: &Conversation) -> Result<()> {
+        self.connection.execute(
+            "INSERT INTO conversations
+             (id, session_a, session_b, objective, max_turns, turn_budget_ms, state, reason, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                conversation.id,
+                conversation.session_a,
+                conversation.session_b,
+                conversation.objective,
+                conversation.max_turns,
+                conversation.turn_budget_ms as i64,
+                state_to_str(conversation.state),
+                conversation.reason,
+                conversation.created_at
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_conversation_state(
+        &self,
+        id: &str,
+        state: ConversationState,
+        reason: Option<&str>,
+    ) -> Result<()> {
+        self.connection.execute(
+            "UPDATE conversations SET state = ?2, reason = ?3 WHERE id = ?1",
+            params![id, state_to_str(state), reason],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_conversation(&self, id: &str) -> Result<Option<Conversation>> {
+        self.connection
+            .query_row(
+                "SELECT id, session_a, session_b, objective, max_turns, turn_budget_ms,
+                        state, reason, created_at
+                 FROM conversations WHERE id = ?1",
+                params![id],
+                map_conversation,
+            )
+            .optional()
+            .map_err(Into::into)
+    }
+
+    pub fn list_conversations(&self) -> Result<Vec<Conversation>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, session_a, session_b, objective, max_turns, turn_budget_ms,
+                    state, reason, created_at
+             FROM conversations ORDER BY created_at DESC",
+        )?;
+        let rows = statement.query_map([], map_conversation)?;
+        let mut conversations = Vec::new();
+        for row in rows {
+            conversations.push(row?);
+        }
+        Ok(conversations)
+    }
+
+    pub fn add_turn(&self, turn: &Turn) -> Result<()> {
+        self.connection.execute(
+            "INSERT INTO turns
+             (conversation_id, turn_index, from_session, to_session, text, mode, duration_ms, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                turn.conversation_id,
+                turn.index,
+                turn.from_session,
+                turn.to_session,
+                turn.text,
+                mode_to_str(turn.mode),
+                turn.duration_ms as i64,
+                turn.created_at
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn list_turns(&self, conversation_id: &str) -> Result<Vec<Turn>> {
+        let mut statement = self.connection.prepare(
+            "SELECT conversation_id, turn_index, from_session, to_session, text, mode,
+                    duration_ms, created_at
+             FROM turns WHERE conversation_id = ?1 ORDER BY turn_index ASC",
+        )?;
+        let rows = statement.query_map(params![conversation_id], map_turn)?;
+        let mut turns = Vec::new();
+        for row in rows {
+            turns.push(row?);
+        }
+        Ok(turns)
+    }
+
     pub fn get_setting(&self, key: &str) -> Result<Option<String>> {
         self.connection
             .query_row(
@@ -130,6 +247,69 @@ impl Store {
         )?;
         Ok(())
     }
+}
+
+fn state_to_str(state: ConversationState) -> &'static str {
+    match state {
+        ConversationState::Running => "running",
+        ConversationState::Paused => "paused",
+        ConversationState::Completed => "completed",
+        ConversationState::Aborted => "aborted",
+        ConversationState::Failed => "failed",
+    }
+}
+
+fn state_from_str(value: &str) -> ConversationState {
+    match value {
+        "paused" => ConversationState::Paused,
+        "completed" => ConversationState::Completed,
+        "aborted" => ConversationState::Aborted,
+        "failed" => ConversationState::Failed,
+        _ => ConversationState::Running,
+    }
+}
+
+fn mode_to_str(mode: TurnMode) -> &'static str {
+    match mode {
+        TurnMode::OneShot => "one_shot",
+        TurnMode::Pty => "pty",
+    }
+}
+
+fn mode_from_str(value: &str) -> TurnMode {
+    match value {
+        "pty" => TurnMode::Pty,
+        _ => TurnMode::OneShot,
+    }
+}
+
+fn map_conversation(row: &rusqlite::Row<'_>) -> rusqlite::Result<Conversation> {
+    let state: String = row.get(6)?;
+    Ok(Conversation {
+        id: row.get(0)?,
+        session_a: row.get(1)?,
+        session_b: row.get(2)?,
+        objective: row.get(3)?,
+        max_turns: row.get(4)?,
+        turn_budget_ms: row.get::<_, i64>(5)? as u64,
+        state: state_from_str(&state),
+        reason: row.get(7)?,
+        created_at: row.get(8)?,
+    })
+}
+
+fn map_turn(row: &rusqlite::Row<'_>) -> rusqlite::Result<Turn> {
+    let mode: String = row.get(5)?;
+    Ok(Turn {
+        conversation_id: row.get(0)?,
+        index: row.get(1)?,
+        from_session: row.get(2)?,
+        to_session: row.get(3)?,
+        text: row.get(4)?,
+        mode: mode_from_str(&mode),
+        duration_ms: row.get::<_, i64>(6)? as u64,
+        created_at: row.get(7)?,
+    })
 }
 
 fn map_project(row: &rusqlite::Row<'_>) -> rusqlite::Result<Project> {

@@ -2,8 +2,8 @@ use std::sync::Mutex;
 
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::{
-    DriverRegistry, DriverStatus, FileNode, Project, ProjectService, SessionInfo, SessionManager,
-    SessionSpec,
+    Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, Orchestrator, Project,
+    ProjectService, SessionInfo, SessionManager, SessionSpec, StartConversation, Turn,
 };
 use tauri::State;
 
@@ -11,6 +11,7 @@ pub struct AppState {
     pub projects: Mutex<ProjectService>,
     pub sessions: SessionManager,
     pub drivers: DriverRegistry,
+    pub orchestrator: Orchestrator,
 }
 
 fn lock_error() -> String {
@@ -129,4 +130,82 @@ pub fn ide_open_antigravity(state: State<'_, AppState>, id: String) -> Result<()
 pub fn ide_sync_antigravity(state: State<'_, AppState>, id: String) -> Result<SyncResult, String> {
     let root = project_root(&state, &id)?;
     ancleto_code_core::ide::sync_antigravity_assets(&root).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_start(
+    state: State<'_, AppState>,
+    session_a: String,
+    session_b: String,
+    objective: String,
+    max_turns: Option<u32>,
+    turn_budget_ms: Option<u64>,
+) -> Result<Conversation, String> {
+    state
+        .orchestrator
+        .start(StartConversation {
+            session_a,
+            session_b,
+            objective,
+            max_turns,
+            turn_budget_ms,
+        })
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_pause(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ConversationState, String> {
+    state
+        .orchestrator
+        .pause(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_resume(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ConversationState, String> {
+    state
+        .orchestrator
+        .resume(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_abort(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<ConversationState, String> {
+    state
+        .orchestrator
+        .abort(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_get(state: State<'_, AppState>, id: String) -> Result<Conversation, String> {
+    state
+        .orchestrator
+        .conversation(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_turns(state: State<'_, AppState>, id: String) -> Result<Vec<Turn>, String> {
+    state
+        .orchestrator
+        .turns(&id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn conversation_list(state: State<'_, AppState>) -> Result<Vec<Conversation>, String> {
+    state
+        .orchestrator
+        .conversations()
+        .map_err(|error| error.to_string())
 }

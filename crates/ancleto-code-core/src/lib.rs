@@ -8,11 +8,13 @@ pub mod providers;
 pub mod session;
 pub mod vendored;
 
-pub use domain::{CoreError, FileNode, Project, Result};
+pub use domain::{
+    Conversation, ConversationState, CoreError, FileNode, Project, Result, Turn, TurnMode,
+};
 pub use drivers::{
     AgentDriver, AgentDriverDescriptor, Capabilities, DriverRegistry, DriverStatus, ToolStatus,
 };
-pub use orch::Orchestrator;
+pub use orch::{ConversationEvent, Orchestrator, StartConversation};
 pub use persistence::Store;
 pub use projects::ProjectService;
 pub use providers::Providers;
