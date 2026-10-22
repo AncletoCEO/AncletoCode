@@ -237,15 +237,15 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 
 Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
 
-- [ ] 14.1 Crear `packages/acode` (`acode`/`ancleto-code`) y `packages/acmd` (`acmd`/`ancleto-cmd`) con launchers Node mínimos.
-- [ ] 14.2 Launcher: detección de plataforma/arquitectura/libc, resolución del paquete opcional, verificación de checksum y `spawn` con stdio y señales heredados.
+- [x] 14.1 Crear `packages/acode` (`acode`/`ancleto-code`) y `packages/acmd` (`acmd`/`ancleto-cmd`) con launchers Node mínimos.
+- [x] 14.2 Launcher: detección de plataforma/arquitectura/libc, resolución del paquete opcional, verificación de checksum y `spawn` con stdio y señales heredados.
 - [ ] 14.3 Publicar paquetes por plataforma con `checksums.json`: CLI `acode` (win32 x64/arm64; linux gnu/musl x64/arm64; darwin x64/arm64) y AncletoCMD `acmd` (win32 x64/arm64; linux gnu x64/arm64; darwin x64/arm64).
 - [ ] 14.4 Matriz de CI en runners nativos: musl estático sólo para la CLI y glibc para la GUI; `npm publish --provenance`.
-- [ ] 14.5 Propagar una versión única a todos los paquetes y testear `acode --version` y `acmd --version` contra los `package.json`.
-- [ ] 14.6 Mensajes accionables para `optionalDependencies` ausentes, checksum inválido y plataforma no soportada.
-- [ ] 14.7 Incluir `LICENSE`, `THIRD_PARTY_NOTICES.md` y la declaración de fork de PandaCode en los paquetes publicados.
+- [x] 14.5 Propagar una versión única a todos los paquetes y testear `acode --version` y `acmd --version` contra los `package.json`.
+- [x] 14.6 Mensajes accionables para `optionalDependencies` ausentes, checksum inválido y plataforma no soportada.
+- [x] 14.7 Incluir `LICENSE`, `THIRD_PARTY_NOTICES.md` y la declaración de fork de PandaCode en los paquetes publicados.
 - [ ] 14.8 Smoke test de `npm i -g @ancleto/code` y `npm i -g @ancleto/cmd` en Windows (`cmd`/PowerShell) y Linux; abrir AncletoCMD y ejecutar `acode doctor`.
-- [ ] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
+- [x] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
 - [ ] 14.10 Empaquetar la app de escritorio (MSI/NSIS, DMG, AppImage/DEB) y verificar `acode ui`.
 - [ ] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
 - [ ] 14.12 Revisión legal de la convivencia AGPL-3.0 + condición de atribución antes del primer release público.
