@@ -105,6 +105,29 @@ impl SplitNode {
         }
     }
 
+    pub fn adjust_ratio(&mut self, target: &str, axis: Axis, delta: f32) -> bool {
+        match self {
+            SplitNode::Pane { .. } => false,
+            SplitNode::Split {
+                axis: node_axis,
+                ratio,
+                first,
+                second,
+            } => {
+                if first.adjust_ratio(target, axis, delta)
+                    || second.adjust_ratio(target, axis, delta)
+                {
+                    return true;
+                }
+                if *node_axis == axis && (contains(first, target) || contains(second, target)) {
+                    *ratio = (*ratio + delta).clamp(0.1, 0.9);
+                    return true;
+                }
+                false
+            }
+        }
+    }
+
     pub fn set_ratio_for(&mut self, target: &str, ratio: f32) -> bool {
         let ratio = ratio.clamp(0.1, 0.9);
         match self {
@@ -153,6 +176,24 @@ fn contains(node: &SplitNode, target: &str) -> bool {
         SplitNode::Pane { pane } => pane.id == target,
         SplitNode::Split { first, second, .. } => {
             contains(first, target) || contains(second, target)
+        }
+    }
+}
+
+fn find_pane<'a>(node: &'a SplitNode, id: &str) -> Option<&'a Pane> {
+    match node {
+        SplitNode::Pane { pane } => (pane.id == id).then_some(pane),
+        SplitNode::Split { first, second, .. } => {
+            find_pane(first, id).or_else(|| find_pane(second, id))
+        }
+    }
+}
+
+fn find_pane_mut<'a>(node: &'a mut SplitNode, id: &str) -> Option<&'a mut Pane> {
+    match node {
+        SplitNode::Pane { pane } => (pane.id == id).then_some(pane),
+        SplitNode::Split { first, second, .. } => {
+            find_pane_mut(first, id).or_else(|| find_pane_mut(second, id))
         }
     }
 }
@@ -304,6 +345,45 @@ impl TerminalLayout {
         Some(next)
     }
 
+    pub fn adjust_split_ratio(
+        &mut self,
+        tab_id: &str,
+        pane_id: &str,
+        axis: Axis,
+        delta: f32,
+    ) -> bool {
+        let Some(tab) = self.tabs.iter_mut().find(|tab| tab.id == tab_id) else {
+            return false;
+        };
+        tab.root.adjust_ratio(pane_id, axis, delta)
+    }
+
+    pub fn swap_sessions(&mut self, tab_id: &str, first: &str, second: &str) -> bool {
+        let Some(tab) = self.tabs.iter_mut().find(|tab| tab.id == tab_id) else {
+            return false;
+        };
+        if first == second || !tab.root.contains(first) || !tab.root.contains(second) {
+            return false;
+        }
+        let Some(source) = find_pane(&tab.root, first).cloned() else {
+            return false;
+        };
+        let Some(target) = find_pane(&tab.root, second).cloned() else {
+            return false;
+        };
+        if let Some(pane) = find_pane_mut(&mut tab.root, first) {
+            pane.session_id = target.session_id;
+            pane.title = target.title;
+            pane.kind = target.kind;
+        }
+        if let Some(pane) = find_pane_mut(&mut tab.root, second) {
+            pane.session_id = source.session_id;
+            pane.title = source.title;
+            pane.kind = source.kind;
+        }
+        true
+    }
+
     pub fn resize_split(&mut self, tab_id: &str, pane_id: &str, ratio: f32) -> bool {
         let Some(tab) = self.tabs.iter_mut().find(|tab| tab.id == tab_id) else {
             return false;
@@ -391,6 +471,27 @@ mod tests {
         assert_ne!(next, current);
         let back = layout.next_pane(&tab_id).unwrap();
         assert_eq!(back, current);
+    }
+
+    #[test]
+    fn adjusts_split_ratios_and_swaps_sessions() {
+        let mut layout = layout();
+        let tab_id = layout.tabs[0].id.clone();
+        let first = layout.tabs[0].focused_pane.clone();
+        let right = layout.split(&tab_id, &first, Axis::Horizontal).unwrap();
+
+        assert!(layout.adjust_split_ratio(&tab_id, &right, Axis::Horizontal, 0.1));
+        let initial = find_pane(&layout.tabs[0].root, &first)
+            .unwrap()
+            .session_id
+            .clone();
+
+        assert!(layout.swap_sessions(&tab_id, &first, &right));
+        let after = find_pane(&layout.tabs[0].root, &first)
+            .unwrap()
+            .session_id
+            .clone();
+        assert_ne!(after, initial);
     }
 
     #[test]

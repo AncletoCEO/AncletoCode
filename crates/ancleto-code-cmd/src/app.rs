@@ -617,6 +617,50 @@ impl AppState {
             self.window.request_redraw();
             return;
         }
+        if control && shift && self.modifiers.alt_key() {
+            let axis = match event.logical_key {
+                Key::Named(NamedKey::ArrowLeft) | Key::Named(NamedKey::ArrowRight) => {
+                    Some(Axis::Horizontal)
+                }
+                Key::Named(NamedKey::ArrowUp) | Key::Named(NamedKey::ArrowDown) => {
+                    Some(Axis::Vertical)
+                }
+                _ => None,
+            };
+            if let Some(axis) = axis {
+                let delta = if matches!(
+                    event.logical_key,
+                    Key::Named(NamedKey::ArrowRight) | Key::Named(NamedKey::ArrowDown)
+                ) {
+                    0.05
+                } else {
+                    -0.05
+                };
+                if let Some(pane_id) = self.focused_pane_id() {
+                    let tab_id = self.active_tab_id();
+                    self.layout
+                        .adjust_split_ratio(&tab_id, &pane_id, axis, delta);
+                    self.update_layout_geometry();
+                    self.update_chrome();
+                    self.window.request_redraw();
+                }
+                return;
+            }
+            if let Key::Character(text) = &event.logical_key {
+                if text.eq_ignore_ascii_case("m") {
+                    if let Some(pane_id) = self.focused_pane_id() {
+                        let tab_id = self.active_tab_id();
+                        if let Some(other) = next_pane_id(&self.layout, &tab_id, &pane_id) {
+                            self.layout.swap_sessions(&tab_id, &pane_id, &other);
+                            self.update_layout_geometry();
+                            self.update_chrome();
+                            self.window.request_redraw();
+                        }
+                    }
+                    return;
+                }
+            }
+        }
         if control && shift && matches!(event.logical_key, Key::Named(NamedKey::PageUp)) {
             self.scroll_focus(-10);
             return;
@@ -1519,6 +1563,16 @@ fn collect_geometry(node: &SplitNode, rect: Rect2, focused: &str, out: &mut Vec<
             }
         }
     }
+}
+
+fn next_pane_id(layout: &TerminalLayout, tab_id: &str, from: &str) -> Option<String> {
+    let tab = layout.tab(tab_id)?;
+    let ids = tab.pane_ids();
+    if ids.is_empty() {
+        return None;
+    }
+    let position = ids.iter().position(|id| id == from).unwrap_or(0);
+    Some(ids[(position + 1) % ids.len()].clone())
 }
 
 fn tab_for_pane(layout: &TerminalLayout, pane_id: &str) -> Option<String> {
