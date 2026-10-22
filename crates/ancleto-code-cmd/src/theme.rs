@@ -26,6 +26,33 @@ impl Default for Theme {
     }
 }
 
+pub const PRESETS: [&str; 6] = [
+    "ancleto-dark",
+    "carbon",
+    "solarized",
+    "nord",
+    "dracula",
+    "ancleto-light",
+];
+
+pub fn cycle(store: &Store) -> Theme {
+    let mut global = store
+        .get_setting("appearance.global")
+        .ok()
+        .flatten()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .unwrap_or_else(|| serde_json::json!({}));
+    let current = global
+        .get("themeId")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("ancleto-dark");
+    let index = PRESETS.iter().position(|id| *id == current).unwrap_or(0);
+    let next = PRESETS[(index + 1) % PRESETS.len()];
+    global["themeId"] = serde_json::Value::String(next.to_owned());
+    let _ = store.set_setting("appearance.global", &global.to_string());
+    load(store, Some(next))
+}
+
 pub fn load(store: &Store, requested: Option<&str>) -> Theme {
     let global = store
         .get_setting("appearance.global")

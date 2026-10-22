@@ -1222,6 +1222,65 @@ impl AppState {
             Action::NextCommand => self.navigate_command(false),
             Action::CopyCommandOutput => self.copy_command_output(),
             Action::CommandPalette => self.open_palette(),
+            Action::SpecPanel => self.open_spec_panel(),
+            Action::WriterPanel => self.open_writer_panel(),
+            Action::ConversationPanel => self.open_conversation_panel(),
+            Action::WriterBuild => self.writer_build(),
+            Action::ThemeCycle => {
+                self.theme = theme::cycle(&self.store);
+                self.window.request_redraw();
+            }
+            Action::NextProject => self.select_project(1),
+            Action::PreviousProject => self.select_project(-1),
+        }
+    }
+
+    fn writer_build(&mut self) {
+        let root = Path::new(&self.project_root);
+        let provider = WriterProvider::detect(root);
+        let mut lines = vec!["writer build".to_owned(), String::new()];
+        match provider.build(root) {
+            Ok(outcome) => {
+                lines.push(format!(
+                    "resultado: {}",
+                    if outcome.success { "ok" } else { "falló" }
+                ));
+                let text = if outcome.stdout.trim().is_empty() {
+                    outcome.stderr
+                } else {
+                    outcome.stdout
+                };
+                for line in text.lines().take(30) {
+                    lines.push(line.to_owned());
+                }
+            }
+            Err(error) => lines.push(format!("error: {error}")),
+        }
+        self.overlay = Some(Overlay::Spec(TextPanel { lines }));
+        self.update_overlay_buffer();
+        self.window.request_redraw();
+    }
+
+    fn select_project(&mut self, delta: i32) {
+        if self.projects.is_empty() {
+            return;
+        }
+        let current = self
+            .projects
+            .iter()
+            .position(|project| project.id == self.project_id)
+            .unwrap_or(0) as i32;
+        let next = (current + delta).rem_euclid(self.projects.len() as i32) as usize;
+        if let Some(project) = self.projects.get(next) {
+            self.project_id = project.id.clone();
+            self.project_root = project.root_path.clone();
+            if let Ok(pane) = self.create_session() {
+                self.layout.new_tab(self.profile.display_name.clone(), pane);
+                self.refresh_sidebar();
+                self.update_layout_geometry();
+                self.update_chrome();
+                self.window.request_redraw();
+            }
         }
     }
 

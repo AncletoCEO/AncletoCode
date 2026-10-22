@@ -10,6 +10,8 @@ import Sidebar from "./components/Sidebar";
 import SpecPanel from "./components/SpecPanel";
 import TerminalView from "./components/TerminalView";
 import WriterPanel from "./components/WriterPanel";
+import { invoke } from "@tauri-apps/api/core";
+import { catalog, getSnapshot as getAppearance, setTheme } from "./stores/appearanceStore";
 import { loadAppearance } from "./stores/appearanceStore";
 import {
   decreaseUiScale,
@@ -18,12 +20,19 @@ import {
   resetUiScale,
   setUiScale,
 } from "./lib/ui-size";
-import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
 import {
+  getSnapshot as getProjects,
+  selectProject,
+  subscribe as subscribeProjects,
+} from "./stores/projectsStore";
+import {
+  addSession,
   getSnapshot as getSessions,
+  killSession,
   restoreSessions,
   subscribe as subscribeSessions,
 } from "./stores/sessionsStore";
+import { defaultShell } from "./lib/shell";
 
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -56,6 +65,74 @@ export default function App() {
       if (!event.ctrlKey && !event.metaKey) {
         return;
       }
+      const key = event.key.toLowerCase();
+      const selected = projects.projects.find((project) => project.id === projects.selectedId);
+      if (event.shiftKey && event.altKey && key === "l") {
+        event.preventDefault();
+        const themes = catalog();
+        const current = themes.findIndex((theme) => theme.id === appearanceThemeId());
+        const next = themes[(current + 1) % themes.length];
+        if (next) {
+          void setTheme(next.id, "global");
+        }
+        return;
+      }
+      if (event.altKey && (event.key === "PageDown" || event.key === "PageUp")) {
+        event.preventDefault();
+        if (projects.projects.length > 0) {
+          const index = projects.projects.findIndex(
+            (project) => project.id === projects.selectedId,
+          );
+          const delta = event.key === "PageDown" ? 1 : -1;
+          const next =
+            projects.projects[
+              (index + delta + projects.projects.length) % projects.projects.length
+            ];
+          if (next) {
+            void selectProject(next.id);
+          }
+        }
+        return;
+      }
+      if (event.shiftKey && key === "n" && selected) {
+        event.preventDefault();
+        const shell = defaultShell();
+        void addSession(
+          {
+            projectId: selected.id,
+            driverId: "shell",
+            program: shell.program,
+            args: shell.args,
+            cwd: selected.rootPath,
+            env: [],
+            cols: 100,
+            rows: 30,
+          },
+          "Shell",
+        );
+        return;
+      }
+      if (event.shiftKey && key === "w") {
+        const active = sessions.sessions.find((session) => session.id === sessions.activeId);
+        if (active && window.confirm(`¿Terminar la sesión "${active.title}"?`)) {
+          event.preventDefault();
+          void killSession(active.id);
+        }
+        return;
+      }
+      if (event.shiftKey && key === "y") {
+        event.preventDefault();
+        setConversationOpen((open) => !open);
+        return;
+      }
+      if (event.shiftKey && key === "b") {
+        event.preventDefault();
+        setWriterOpen(true);
+        if (selected) {
+          void invoke("writer_build", { id: selected.id }).catch(() => undefined);
+        }
+        return;
+      }
       if (event.key === "=" || event.key === "+") {
         event.preventDefault();
         void setUiScale(increaseUiScale(uiScale)).then(setUiScaleValue);
@@ -69,7 +146,7 @@ export default function App() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [uiScale]);
+  }, [uiScale, projects, sessions]);
 
   return (
     <main className="layout">
@@ -144,4 +221,9 @@ export default function App() {
       {aboutOpen ? <AboutDialog onClose={() => setAboutOpen(false)} /> : null}
     </main>
   );
+}
+
+function appearanceThemeId(): string {
+  const id = getAppearance().resolved.theme.id;
+  return id;
 }

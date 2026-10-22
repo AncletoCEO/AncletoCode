@@ -32,6 +32,13 @@ pub enum Action {
     NextCommand,
     CopyCommandOutput,
     CommandPalette,
+    SpecPanel,
+    WriterPanel,
+    ConversationPanel,
+    WriterBuild,
+    ThemeCycle,
+    NextProject,
+    PreviousProject,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +67,13 @@ pub struct Keymap {
     pub next_command: String,
     pub copy_command_output: String,
     pub command_palette: String,
+    pub spec_panel: String,
+    pub writer_panel: String,
+    pub conversation_panel: String,
+    pub writer_build: String,
+    pub theme_cycle: String,
+    pub next_project: String,
+    pub previous_project: String,
 }
 
 impl Default for Keymap {
@@ -88,6 +102,13 @@ impl Default for Keymap {
             next_command: "ctrl+shift+down".to_owned(),
             copy_command_output: "ctrl+shift+o".to_owned(),
             command_palette: "ctrl+shift+p".to_owned(),
+            spec_panel: "ctrl+shift+alt+s".to_owned(),
+            writer_panel: "ctrl+shift+alt+w".to_owned(),
+            conversation_panel: "ctrl+shift+alt+c".to_owned(),
+            writer_build: "ctrl+shift+b".to_owned(),
+            theme_cycle: "ctrl+shift+alt+l".to_owned(),
+            next_project: "ctrl+alt+pagedown".to_owned(),
+            previous_project: "ctrl+alt+pageup".to_owned(),
         }
     }
 }
@@ -129,6 +150,13 @@ impl Keymap {
                 "nextCommand" => Some(&mut self.next_command),
                 "copyCommandOutput" => Some(&mut self.copy_command_output),
                 "commandPalette" => Some(&mut self.command_palette),
+                "specPanel" => Some(&mut self.spec_panel),
+                "writerPanel" => Some(&mut self.writer_panel),
+                "conversationPanel" => Some(&mut self.conversation_panel),
+                "writerBuild" => Some(&mut self.writer_build),
+                "themeCycle" => Some(&mut self.theme_cycle),
+                "nextProject" => Some(&mut self.next_project),
+                "previousProject" => Some(&mut self.previous_project),
                 _ => None,
             };
             if let Some(target) = target {
@@ -169,6 +197,13 @@ impl Keymap {
             (Action::NextCommand, self.next_command.as_str()),
             (Action::CopyCommandOutput, self.copy_command_output.as_str()),
             (Action::CommandPalette, self.command_palette.as_str()),
+            (Action::SpecPanel, self.spec_panel.as_str()),
+            (Action::WriterPanel, self.writer_panel.as_str()),
+            (Action::ConversationPanel, self.conversation_panel.as_str()),
+            (Action::WriterBuild, self.writer_build.as_str()),
+            (Action::ThemeCycle, self.theme_cycle.as_str()),
+            (Action::NextProject, self.next_project.as_str()),
+            (Action::PreviousProject, self.previous_project.as_str()),
         ]
     }
 }
