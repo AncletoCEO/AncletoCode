@@ -34,7 +34,7 @@ AncletoCMD es una **terminal real**, no una TUI dentro de otra terminal. La refe
 - **Ventana nativa** con `winit` y render GPU (`wgpu` + `glyphon`), parsing VT con `alacritty_terminal`/`vte` y PTY vía ConPTY/PTY nativo.
 - **Emulación completa**: 16/256/truecolor, alt screen, mouse, bracketed paste, OSC 8, wide chars, emoji, combinación, reflow al redimensionar y scrollback de 10k líneas.
 - **Gestor de terminales**: sidebar de proyectos, tabs, splits horizontales/verticales, búsqueda en scrollback, selección/copia, command palette y atajos configurables.
-- **Sesiones de agente** en panes, con detach/attach y el mismo estado que la app.
+- **Sesiones de agente** en paneles, con detach/attach y el mismo estado que la app.
 - **Integración de shell** con marcas OSC 133 en bash, zsh, fish y PowerShell: navegación entre comandos, exit status y copia de la salida de un comando. En `cmd.exe` hay fallback heurístico.
 - **Temas compartidos** con la app (sólo paleta y tipografía, sin transparencias ni wallpapers).
 - **Seguridad**: OSC 52 pide confirmación antes de escribir el clipboard y los hyperlinks OSC 8 no se abren solos.

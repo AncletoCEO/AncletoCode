@@ -15,6 +15,7 @@ use winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use winit::keyboard::{Key, ModifiersState, NamedKey};
 use winit::window::{Window, WindowId};
 
+use crate::keymap::{Action, Keymap};
 use crate::layout::{load_layout, save_layout, Axis, Pane, PaneKind, SplitNode, TerminalLayout};
 use crate::profiles::{default_profiles, ShellProfile};
 use crate::render::{rgba, Rect, RectRenderer};
@@ -177,6 +178,7 @@ struct AppState {
     dragging: Option<(String, i32, usize)>,
     last_click: Option<(std::time::Instant, i32, usize, u8)>,
     kill_on_close: bool,
+    keymap: Keymap,
     focused: bool,
     activity: std::collections::HashSet<String>,
     marks_seen: HashMap<String, usize>,
@@ -258,6 +260,7 @@ impl AppState {
         let (project_id, project_root) = resolve_project(options.project.as_deref())?;
         let profile = resolve_profile(options.shell.as_deref())?;
         let theme = theme::load(&store, options.theme.as_deref());
+        let keymap = Keymap::load(&store);
 
         let paths = HostPaths::discover(None);
         let client = Arc::new(
@@ -304,6 +307,7 @@ impl AppState {
             dragging: None,
             last_click: None,
             kill_on_close: options.kill_on_close,
+            keymap,
             focused: true,
             activity: std::collections::HashSet::new(),
             marks_seen: HashMap::new(),
@@ -529,166 +533,8 @@ impl AppState {
             return;
         }
 
-        let control = self.modifiers.control_key();
-        let shift = self.modifiers.shift_key();
-
-        if control && shift {
-            if let Key::Character(text) = &event.logical_key {
-                match text.to_lowercase().as_str() {
-                    "t" => {
-                        if let Ok(pane) = self.create_session() {
-                            self.layout.new_tab(self.profile.display_name.clone(), pane);
-                            self.update_layout_geometry();
-                        }
-                        return;
-                    }
-                    "w" => {
-                        if let Some(pane) = self.focused_pane_id() {
-                            self.modal = Some(Modal::ClosePane(pane));
-                            self.update_chrome();
-                            self.window.request_redraw();
-                        }
-                        return;
-                    }
-                    "e" | "d" => {
-                        let axis = if text.eq_ignore_ascii_case("e") {
-                            Axis::Horizontal
-                        } else {
-                            Axis::Vertical
-                        };
-                        self.split_focused(axis);
-                        return;
-                    }
-                    "c" => {
-                        self.copy_selection();
-                        return;
-                    }
-                    "v" => {
-                        self.paste();
-                        return;
-                    }
-                    "q" => {
-                        self.shutdown(event_loop, false);
-                        return;
-                    }
-                    "k" => {
-                        self.modal = Some(Modal::KillAll);
-                        self.update_chrome();
-                        self.window.request_redraw();
-                        return;
-                    }
-                    "+" | "=" => {
-                        self.zoom(1.0);
-                        return;
-                    }
-                    "-" => {
-                        self.zoom(-1.0);
-                        return;
-                    }
-                    "0" => {
-                        self.font_size = 13.0;
-                        self.recompute_metrics();
-                        return;
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        if control && !shift && matches!(event.logical_key, Key::Named(NamedKey::PageUp)) {
-            let index = self.layout.active_tab.saturating_sub(1);
-            self.layout.select_tab(index);
-            if let Some(tab) = self.layout.tabs.get(index) {
-                self.activity.remove(&tab.id.clone());
-            }
-            self.update_layout_geometry();
-            self.update_chrome();
-            self.window.request_redraw();
-            return;
-        }
-        if control && !shift && matches!(event.logical_key, Key::Named(NamedKey::PageDown)) {
-            let index = (self.layout.active_tab + 1).min(self.layout.tabs.len().saturating_sub(1));
-            self.layout.select_tab(index);
-            if let Some(tab) = self.layout.tabs.get(index) {
-                self.activity.remove(&tab.id.clone());
-            }
-            self.update_layout_geometry();
-            self.update_chrome();
-            self.window.request_redraw();
-            return;
-        }
-        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::ArrowUp)) {
-            self.navigate_command(true);
-            return;
-        }
-        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::ArrowDown)) {
-            self.navigate_command(false);
-            return;
-        }
-        if control
-            && shift
-            && matches!(&event.logical_key, Key::Character(text) if text.eq_ignore_ascii_case("o"))
-        {
-            self.copy_command_output();
-            return;
-        }
-        if control && shift && self.modifiers.alt_key() {
-            let axis = match event.logical_key {
-                Key::Named(NamedKey::ArrowLeft) | Key::Named(NamedKey::ArrowRight) => {
-                    Some(Axis::Horizontal)
-                }
-                Key::Named(NamedKey::ArrowUp) | Key::Named(NamedKey::ArrowDown) => {
-                    Some(Axis::Vertical)
-                }
-                _ => None,
-            };
-            if let Some(axis) = axis {
-                let delta = if matches!(
-                    event.logical_key,
-                    Key::Named(NamedKey::ArrowRight) | Key::Named(NamedKey::ArrowDown)
-                ) {
-                    0.05
-                } else {
-                    -0.05
-                };
-                if let Some(pane_id) = self.focused_pane_id() {
-                    let tab_id = self.active_tab_id();
-                    self.layout
-                        .adjust_split_ratio(&tab_id, &pane_id, axis, delta);
-                    self.update_layout_geometry();
-                    self.update_chrome();
-                    self.window.request_redraw();
-                }
-                return;
-            }
-            if let Key::Character(text) = &event.logical_key {
-                if text.eq_ignore_ascii_case("m") {
-                    if let Some(pane_id) = self.focused_pane_id() {
-                        let tab_id = self.active_tab_id();
-                        if let Some(other) = next_pane_id(&self.layout, &tab_id, &pane_id) {
-                            self.layout.swap_sessions(&tab_id, &pane_id, &other);
-                            self.update_layout_geometry();
-                            self.update_chrome();
-                            self.window.request_redraw();
-                        }
-                    }
-                    return;
-                }
-            }
-        }
-        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::PageUp)) {
-            self.scroll_focus(-10);
-            return;
-        }
-        if control && shift && matches!(event.logical_key, Key::Named(NamedKey::PageDown)) {
-            self.scroll_focus(10);
-            return;
-        }
-        if matches!(event.logical_key, Key::Named(NamedKey::Tab)) && control {
-            if let Some(tab_id) = self.layout.active().map(|tab| tab.id.clone()) {
-                self.layout.next_pane(&tab_id);
-                self.window.request_redraw();
-            }
+        if let Some(action) = self.keymap.action_for(event, self.modifiers) {
+            self.perform_action(event_loop, action);
             return;
         }
 
@@ -710,7 +556,7 @@ impl AppState {
                 let _ = self.client.kill_session(session_id);
             }
             self.sessions.remove(&pane.id);
-            self.status = Some("no se pudo dividir el pane".to_owned());
+            self.status = Some("no se pudo dividir el panel".to_owned());
             self.update_chrome();
             self.window.request_redraw();
             return;
@@ -725,6 +571,111 @@ impl AppState {
         self.update_layout_geometry();
         self.update_chrome();
         self.window.request_redraw();
+    }
+
+    fn perform_action(&mut self, event_loop: &ActiveEventLoop, action: Action) {
+        match action {
+            Action::NewTab => {
+                if let Ok(pane) = self.create_session() {
+                    self.layout.new_tab(self.profile.display_name.clone(), pane);
+                    self.update_layout_geometry();
+                    self.update_chrome();
+                    self.window.request_redraw();
+                }
+            }
+            Action::ClosePanel => {
+                if let Some(pane) = self.focused_pane_id() {
+                    self.modal = Some(Modal::ClosePane(pane));
+                    self.update_chrome();
+                    self.window.request_redraw();
+                }
+            }
+            Action::SplitHorizontal => self.split_focused(Axis::Horizontal),
+            Action::SplitVertical => self.split_focused(Axis::Vertical),
+            Action::Copy => self.copy_selection(),
+            Action::Paste => self.paste(),
+            Action::Quit => self.shutdown(event_loop, false),
+            Action::KillAll => {
+                self.modal = Some(Modal::KillAll);
+                self.update_chrome();
+                self.window.request_redraw();
+            }
+            Action::ZoomIn => self.zoom(1.0),
+            Action::ZoomOut => self.zoom(-1.0),
+            Action::ZoomReset => {
+                self.font_size = 13.0;
+                self.recompute_metrics();
+            }
+            Action::NextPanel => self.focus_next_panel(),
+            Action::PreviousTab => self.switch_tab(-1),
+            Action::NextTab => self.switch_tab(1),
+            Action::ResizeLeft => self.adjust_ratio(Axis::Horizontal, -0.05),
+            Action::ResizeRight => self.adjust_ratio(Axis::Horizontal, 0.05),
+            Action::ResizeUp => self.adjust_ratio(Axis::Vertical, -0.05),
+            Action::ResizeDown => self.adjust_ratio(Axis::Vertical, 0.05),
+            Action::SwapPanel => self.swap_with_next_panel(),
+            Action::PreviousCommand => self.navigate_command(true),
+            Action::NextCommand => self.navigate_command(false),
+            Action::CopyCommandOutput => self.copy_command_output(),
+        }
+    }
+
+    fn focus_next_panel(&mut self) {
+        let Some(tab_id) = self.active_tab_id_opt() else {
+            return;
+        };
+        self.layout.next_pane(&tab_id);
+        self.update_chrome();
+        self.window.request_redraw();
+    }
+
+    fn switch_tab(&mut self, delta: i32) {
+        if self.layout.tabs.is_empty() {
+            return;
+        }
+        let current = self.layout.active_tab as i32;
+        let next = (current + delta).clamp(0, self.layout.tabs.len() as i32 - 1) as usize;
+        if self.layout.select_tab(next) {
+            if let Some(tab) = self.layout.tabs.get(next) {
+                self.activity.remove(&tab.id.clone());
+            }
+            self.update_layout_geometry();
+            self.update_chrome();
+            self.window.request_redraw();
+        }
+    }
+
+    fn adjust_ratio(&mut self, axis: Axis, delta: f32) {
+        let Some(pane_id) = self.focused_pane_id() else {
+            return;
+        };
+        let tab_id = self.active_tab_id();
+        if self
+            .layout
+            .adjust_split_ratio(&tab_id, &pane_id, axis, delta)
+        {
+            self.update_layout_geometry();
+            self.update_chrome();
+            self.window.request_redraw();
+        }
+    }
+
+    fn swap_with_next_panel(&mut self) {
+        let Some(pane_id) = self.focused_pane_id() else {
+            return;
+        };
+        let tab_id = self.active_tab_id();
+        if let Some(other) = next_pane_id(&self.layout, &tab_id, &pane_id) {
+            if self.layout.swap_sessions(&tab_id, &pane_id, &other) {
+                self.update_layout_geometry();
+                self.update_chrome();
+                self.window.request_redraw();
+            }
+        }
+    }
+
+    fn active_tab_id_opt(&self) -> Option<String> {
+        self.layout.active().map(|tab| tab.id.clone())
     }
 
     fn handle_mouse_button(&mut self, state: ElementState, button: MouseButton) {
@@ -1098,9 +1049,14 @@ impl AppState {
             let exit = exit
                 .map(|code| format!(" · exit {code}"))
                 .unwrap_or_default();
+            let panels = if panes == 1 {
+                "1 panel".to_owned()
+            } else {
+                format!("{panes} paneles")
+            };
             format!(
-                "{} · {} panes · {} pt{exit} · Ctrl+Shift+T nueva tab · Q salir",
-                project, panes, self.font_size
+                "{} · {} · {} pt{exit} · Ctrl+Shift+T nueva tab · Q salir",
+                project, panels, self.font_size
             )
         });
         set_buffer_text(&mut self.font_system, &mut self.status_buffer, &status);
@@ -1108,7 +1064,7 @@ impl AppState {
 
         let modal = match &self.modal {
             Some(Modal::KillAll) => "¿Matar todas las sesiones y salir? [s/n]",
-            Some(Modal::ClosePane(_)) => "¿Cerrar el pane y terminar su sesión? [s/n]",
+            Some(Modal::ClosePane(_)) => "¿Cerrar el panel y terminar su sesión? [s/n]",
             Some(Modal::Clipboard(_)) => {
                 "Un programa quiere escribir el portapapeles (OSC 52). ¿Permitir? [s/n]"
             }

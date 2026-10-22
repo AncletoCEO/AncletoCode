@@ -1,4 +1,5 @@
 pub mod app;
+pub mod keymap;
 pub mod layout;
 pub mod profiles;
 pub mod render;

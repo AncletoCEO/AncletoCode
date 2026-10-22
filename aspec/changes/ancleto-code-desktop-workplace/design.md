@@ -235,7 +235,7 @@ AncletoCMD es la **versión terminal** de AncletoCode: una terminal real, rápid
 - **Render**: `wgpu` para compositing y `glyphon` (cosmic-text) para shaping/rasterizado de texto; fallback a render por software cuando no hay adaptador compatible o la GPU falla.
 - **Motor VT**: `alacritty_terminal` (`Term` + `vte::Parser`) alimentado por el stream del host. No se escribe un parser de escape propio.
 - **PTY**: `portable-pty` en el host (ConPTY en Windows, PTY en Linux/macOS). AncletoCMD es cliente del host, igual que la app y la CLI.
-- **Modelo de ventana**: árbol de layout con tabs y splits; cada pane referencia un `TerminalPane` (shell o agente) y su `sessionId`.
+- **Modelo de ventana**: árbol de layout con tabs y splits; cada panel referencia un `TerminalPane` (shell o agente) y su `sessionId`.
 - **Salida a pantalla**: daño parcial por frame, sin repintar la grilla completa; coalescing de output del host por frame.
 - **Objetivos de rendimiento**: p99 de tecla a frame < 30 ms, idle < 1 % de CPU, arranque < 300 ms, scrollback de 10.000 líneas por defecto configurable.
 

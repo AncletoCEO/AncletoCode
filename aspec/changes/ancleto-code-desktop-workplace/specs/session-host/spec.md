@@ -56,7 +56,7 @@ El sistema SHALL permitir que un cliente se desconecte de una sesión sin termin
 
 - **WHEN** el usuario cierra la ventana de AncletoCMD con sesiones activas
 - **THEN** las sesiones pasan a `detached` y sus procesos siguen vivos
-- **AND** al reabrir AncletoCMD se restauran los panes y el buffer reciente
+- **AND** al reabrir AncletoCMD se restauran los paneles y el buffer reciente
 
 #### Scenario: Attach desde otra versión
 

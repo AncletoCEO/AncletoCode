@@ -6,7 +6,7 @@ El sistema SHALL proveer AncletoCMD como una aplicación de terminal con ventana
 
 #### Scenario: Ejecutar un programa interactivo
 
-- **WHEN** el usuario ejecuta `vim`, `htop` o `tmux` en un pane de AncletoCMD
+- **WHEN** el usuario ejecuta `vim`, `htop` o `tmux` en un panel de AncletoCMD
 - **THEN** el programa se renderiza correctamente con alt screen, posicionamiento de cursor y colores
 - **AND** la entrada del teclado y el redimensionado llegan al proceso
 
@@ -29,13 +29,13 @@ AncletoCMD SHALL organizar terminales y sesiones de agente en proyectos, tabs y 
 #### Scenario: Restaurar layout
 
 - **WHEN** el usuario cierra y vuelve a abrir AncletoCMD
-- **THEN** se restauran tabs, splits, foco y panes del proyecto
-- **AND** los panes cuyas sesiones siguen vivas se reenganchan al host
+- **THEN** se restauran tabs, splits, foco y paneles del proyecto
+- **AND** los paneles cuyas sesiones siguen vivas se reenganchan al host
 
 #### Scenario: Crear una sesión de agente
 
 - **WHEN** el usuario crea una sesión de agente desde AncletoCMD
-- **THEN** elige un driver disponible y la sesión se abre en un pane
+- **THEN** elige un driver disponible y la sesión se abre en un panel
 - **AND** la sesión es visible y adjuntable desde la app de escritorio y la CLI
 
 ### Requirement: Sesiones persistentes
@@ -70,7 +70,7 @@ AncletoCMD SHALL mantener una latencia de entrada y un consumo de recursos compa
 
 #### Scenario: Entrada bajo carga
 
-- **WHEN** un pane recibe salida continua mientras el usuario escribe en otro pane
+- **WHEN** un panel recibe salida continua mientras el usuario escribe en otro panel
 - **THEN** la entrada se refleja con una latencia p99 menor a 30 ms
 - **AND** el uso de CPU en reposo se mantiene por debajo del 1 %
 
