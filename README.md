@@ -135,9 +135,27 @@ npm run tauri dev
 CLI y AncletoCMD instalados desde npm (cuando se publique el paquete):
 
 ```bash
-npm install -g @ancleto/code   # acode
+npm install -g @ancleto/code   # acode + ancleto-code-host
 npm install -g @ancleto/cmd    # acmd
 ```
+
+Actualización y desinstalación:
+
+```bash
+npm install -g @ancleto/code@latest
+npm uninstall -g @ancleto/code
+```
+
+La CLI se publica con binarios por plataforma como `optionalDependencies`:
+
+| Plataforma | `@ancleto/code` | `@ancleto/cmd` |
+|---|---|---|
+| Linux x64/arm64 glibc | sí | sí |
+| Linux x64/arm64 musl | sí | no |
+| Windows x64/arm64 | sí | sí |
+| macOS x64/arm64 | sí | sí |
+
+El launcher verifica el checksum del binario, propaga señales y, si falta el paquete de la plataforma, indica la plataforma detectada y el comando de instalación manual.
 
 ### CLI `acode`
 

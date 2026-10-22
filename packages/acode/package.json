@@ -1,0 +1,36 @@
+{
+  "name": "@ancleto/code",
+  "version": "0.1.0",
+  "description": "CLI headless de AncletoCode y host de sesiones",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/AncletoCEO/AncletoCode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AncletoCEO/AncletoCode.git"
+  },
+  "bin": {
+    "acode": "bin/acode.js",
+    "ancleto-code": "bin/acode.js"
+  },
+  "files": [
+    "bin",
+    "lib/launcher.mjs",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "@ancleto/code-linux-x64-gnu": "0.1.0",
+    "@ancleto/code-linux-arm64-gnu": "0.1.0",
+    "@ancleto/code-linux-x64-musl": "0.1.0",
+    "@ancleto/code-linux-arm64-musl": "0.1.0",
+    "@ancleto/code-win32-x64": "0.1.0",
+    "@ancleto/code-win32-arm64": "0.1.0",
+    "@ancleto/code-darwin-x64": "0.1.0",
+    "@ancleto/code-darwin-arm64": "0.1.0"
+  }
+}

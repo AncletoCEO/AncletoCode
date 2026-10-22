@@ -20,6 +20,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+      - run: npm run check:versions
 
   rust:
     runs-on: ubuntu-latest

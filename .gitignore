@@ -53,3 +53,7 @@ Desktop.ini
 *.local
 .temp/
 tmp/
+
+# Paquetes npm generados por plataforma
+packages/code-*/
+packages/cmd-*/

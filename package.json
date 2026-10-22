@@ -21,7 +21,11 @@
     "license:check:npm": "node scripts/npm-license-check.mjs",
     "license:check:rust": "cargo deny --manifest-path src-tauri/Cargo.toml check licenses advisories",
     "check:core-deps": "node scripts/check-core-deps.mjs",
-    "sync:pandacode": "node scripts/sync-pandacode.mjs"
+    "sync:pandacode": "node scripts/sync-pandacode.mjs",
+    "check:versions": "node scripts/check-versions.mjs",
+    "package:npm": "node scripts/package-npm.mjs",
+    "smoke:npm": "node scripts/smoke-npm.mjs",
+    "set:version": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

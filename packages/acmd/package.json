@@ -1,0 +1,34 @@
+{
+  "name": "@ancleto/cmd",
+  "version": "0.1.0",
+  "description": "AncletoCMD, emulador de terminal y gestor",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/AncletoCEO/AncletoCode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AncletoCEO/AncletoCode.git"
+  },
+  "bin": {
+    "acmd": "bin/acmd.js",
+    "ancleto-cmd": "bin/acmd.js"
+  },
+  "files": [
+    "bin",
+    "lib/launcher.mjs",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "@ancleto/cmd-linux-x64-gnu": "0.1.0",
+    "@ancleto/cmd-linux-arm64-gnu": "0.1.0",
+    "@ancleto/cmd-win32-x64": "0.1.0",
+    "@ancleto/cmd-win32-arm64": "0.1.0",
+    "@ancleto/cmd-darwin-x64": "0.1.0",
+    "@ancleto/cmd-darwin-arm64": "0.1.0"
+  }
+}
