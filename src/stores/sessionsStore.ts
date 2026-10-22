@@ -25,6 +25,14 @@ export type Session = {
   spec: SessionSpec;
 };
 
+export type SavedSession = {
+  id: string;
+  spec: SessionSpec;
+  status: SessionStatus;
+  pid: number | null;
+  createdAt: number;
+};
+
 type SessionInfo = {
   id: string;
   projectId: string;
@@ -110,6 +118,43 @@ export function resetSessionsStore() {
 
 export function setActiveSession(id: string | null) {
   update({ activeId: id });
+}
+
+export async function restoreSessions(): Promise<void> {
+  try {
+    const saved = await invoke<SavedSession[]>("session_saved");
+    const restored = saved
+      .filter(
+        (entry) =>
+          entry.status !== "stopped" &&
+          entry.status !== "crashed" &&
+          !state.sessions.some((session) => session.id === entry.id),
+      )
+      .map<Session>((entry) => ({
+        id: entry.id,
+        projectId: entry.spec.projectId,
+        driverId: entry.spec.driverId,
+        title: entry.spec.driverId === "shell" ? "Shell" : entry.spec.driverId,
+        status: entry.status,
+        pid: entry.pid,
+        spec: entry.spec,
+      }));
+
+    if (restored.length === 0) {
+      return;
+    }
+    update({
+      sessions: [...state.sessions, ...restored],
+      activeId: state.activeId ?? restored[0]?.id ?? null,
+    });
+    for (const session of restored) {
+      if (!unlisteners.has(session.id)) {
+        await attachListeners(session.id);
+      }
+    }
+  } catch (error) {
+    update({ error: messageOf(error) });
+  }
 }
 
 export async function addSession(spec: SessionSpec, title: string): Promise<string | null> {

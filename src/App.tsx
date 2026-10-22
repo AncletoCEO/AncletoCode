@@ -12,7 +12,11 @@ import TerminalView from "./components/TerminalView";
 import WriterPanel from "./components/WriterPanel";
 import { loadAppearance } from "./stores/appearanceStore";
 import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
-import { getSnapshot as getSessions, subscribe as subscribeSessions } from "./stores/sessionsStore";
+import {
+  getSnapshot as getSessions,
+  restoreSessions,
+  subscribe as subscribeSessions,
+} from "./stores/sessionsStore";
 
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -30,6 +34,10 @@ export default function App() {
   useEffect(() => {
     void loadAppearance(projects.selectedId ?? null);
   }, [projects.selectedId]);
+
+  useEffect(() => {
+    void restoreSessions();
+  }, []);
 
   return (
     <main className="layout">

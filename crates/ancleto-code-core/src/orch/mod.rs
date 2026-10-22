@@ -13,7 +13,7 @@ use crate::drivers::{
     AgentDriver, AgentSignal, CommandSpec, DriverRegistry, ParseState, SpawnContext,
 };
 use crate::persistence::Store;
-use crate::session::{SessionInfo, SessionManager};
+use crate::session::{SessionBackend, SessionInfo};
 
 const DEFAULT_MAX_TURNS: u32 = 6;
 const MAX_TURNS_LIMIT: u32 = 50;
@@ -64,7 +64,7 @@ enum TurnError {
 
 struct Inner {
     store: Mutex<Store>,
-    sessions: SessionManager,
+    sessions: Arc<dyn SessionBackend>,
     drivers: DriverRegistry,
     sink: Option<ConversationSink>,
     controls: Mutex<HashMap<String, Control>>,
@@ -78,7 +78,7 @@ pub struct Orchestrator {
 impl Orchestrator {
     pub fn new(
         store: Store,
-        sessions: SessionManager,
+        sessions: Arc<dyn SessionBackend>,
         drivers: DriverRegistry,
         sink: Option<ConversationSink>,
     ) -> Self {
@@ -105,7 +105,7 @@ impl Orchestrator {
             ));
         }
 
-        let sessions = self.inner.sessions.list()?;
+        let sessions = self.inner.sessions.list_sessions()?;
         for id in [&request.session_a, &request.session_b] {
             if !sessions.iter().any(|session| &session.id == id) {
                 return Err(CoreError::SessionNotFound(id.clone()));
@@ -176,7 +176,7 @@ impl Orchestrator {
 
     fn run(&self, conversation: Conversation) {
         let id = conversation.id.clone();
-        let sessions = match self.inner.sessions.list() {
+        let sessions = match self.inner.sessions.list_sessions() {
             Ok(sessions) => sessions,
             Err(error) => {
                 self.finalize(&id, ConversationState::Failed, &error.to_string());
@@ -367,12 +367,12 @@ impl Orchestrator {
         let baseline = self
             .inner
             .sessions
-            .snapshot(session_id)
+            .snapshot_session(session_id)
             .map_err(|error| TurnError::Failed(error.to_string()))?
             .len();
         self.inner
             .sessions
-            .write(session_id, format!("{prompt}\n").as_bytes())
+            .write_session(session_id, format!("{prompt}\n").as_bytes())
             .map_err(|error| TurnError::Failed(error.to_string()))?;
 
         let deadline = Instant::now() + Duration::from_millis(conversation.turn_budget_ms);
@@ -392,7 +392,7 @@ impl Orchestrator {
             let snapshot = self
                 .inner
                 .sessions
-                .snapshot(session_id)
+                .snapshot_session(session_id)
                 .map_err(|error| TurnError::Failed(error.to_string()))?;
 
             if snapshot.len() > consumed {
@@ -417,7 +417,7 @@ impl Orchestrator {
         let snapshot = self
             .inner
             .sessions
-            .snapshot(session_id)
+            .snapshot_session(session_id)
             .map_err(|error| TurnError::Failed(error.to_string()))?;
         Ok(String::from_utf8_lossy(&snapshot[baseline..])
             .trim()
@@ -543,6 +543,7 @@ fn unix_timestamp() -> i64 {
 mod tests {
     use super::*;
     use crate::drivers::{AgentDriverDescriptor, Capabilities, DriverStatus, ToolStatus};
+    use crate::session::SessionManager;
     use crate::session::SessionSpec;
     use std::sync::Mutex;
 
@@ -626,7 +627,8 @@ mod tests {
         let events = Arc::new(Mutex::new(Vec::new()));
         let recorded = events.clone();
         let sink: ConversationSink = Arc::new(move |event| recorded.lock().unwrap().push(event));
-        let orchestrator = Orchestrator::new(store, sessions.clone(), drivers, Some(sink));
+        let orchestrator =
+            Orchestrator::new(store, Arc::new(sessions.clone()), drivers, Some(sink));
 
         let first = sessions.create(session_spec(&driver_id)).unwrap();
         let second = sessions.create(session_spec(&driver_id)).unwrap();
@@ -702,7 +704,7 @@ mod tests {
             Some("max_turns")
         );
 
-        sessions.kill_all().unwrap();
+        sessions.kill_all_sessions().unwrap();
     }
 
     #[test]
@@ -724,7 +726,7 @@ mod tests {
         assert_eq!(conversation.reason.as_deref(), Some("repetition"));
         assert_eq!(orchestrator.turns(&conversation.id).unwrap().len(), 3);
 
-        sessions.kill_all().unwrap();
+        sessions.kill_all_sessions().unwrap();
     }
 
     #[test]
@@ -760,7 +762,7 @@ mod tests {
             ConversationState::Aborted
         ));
 
-        sessions.kill_all().unwrap();
+        sessions.kill_all_sessions().unwrap();
     }
 
     #[test]
@@ -789,6 +791,6 @@ mod tests {
             .unwrap_err();
         assert!(matches!(same, CoreError::InvalidInput(_)));
 
-        sessions.kill_all().unwrap();
+        sessions.kill_all_sessions().unwrap();
     }
 }

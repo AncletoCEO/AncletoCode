@@ -62,6 +62,46 @@ pub enum SessionEvent {
 
 pub type Sink = Arc<dyn Fn(SessionEvent) + Send + Sync>;
 
+pub trait SessionBackend: Send + Sync {
+    fn create_session(&self, spec: SessionSpec) -> Result<SessionInfo>;
+    fn write_session(&self, id: &str, data: &[u8]) -> Result<()>;
+    fn resize_session(&self, id: &str, cols: u16, rows: u16) -> Result<()>;
+    fn kill_session(&self, id: &str) -> Result<()>;
+    fn kill_all_sessions(&self) -> Result<()>;
+    fn snapshot_session(&self, id: &str) -> Result<Vec<u8>>;
+    fn list_sessions(&self) -> Result<Vec<SessionInfo>>;
+}
+
+impl SessionBackend for SessionManager {
+    fn create_session(&self, spec: SessionSpec) -> Result<SessionInfo> {
+        self.create(spec)
+    }
+
+    fn write_session(&self, id: &str, data: &[u8]) -> Result<()> {
+        self.write(id, data)
+    }
+
+    fn resize_session(&self, id: &str, cols: u16, rows: u16) -> Result<()> {
+        self.resize(id, cols, rows)
+    }
+
+    fn kill_session(&self, id: &str) -> Result<()> {
+        self.kill(id)
+    }
+
+    fn kill_all_sessions(&self) -> Result<()> {
+        self.kill_all()
+    }
+
+    fn snapshot_session(&self, id: &str) -> Result<Vec<u8>> {
+        self.snapshot(id)
+    }
+
+    fn list_sessions(&self) -> Result<Vec<SessionInfo>> {
+        self.list()
+    }
+}
+
 struct SessionEntry {
     info: SessionInfo,
     master: Box<dyn MasterPty + Send>,
@@ -210,6 +250,21 @@ impl SessionManager {
         self.emit(SessionEvent::State {
             id: id.to_owned(),
             status: SessionStatus::Stopped,
+        });
+        Ok(())
+    }
+
+    pub fn set_status(&self, id: &str, status: SessionStatus) -> Result<()> {
+        {
+            let mut sessions = self.sessions()?;
+            let entry = sessions
+                .get_mut(id)
+                .ok_or_else(|| CoreError::SessionNotFound(id.to_owned()))?;
+            entry.info.status = status;
+        }
+        self.emit(SessionEvent::State {
+            id: id.to_owned(),
+            status,
         });
         Ok(())
     }

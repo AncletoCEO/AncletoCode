@@ -6,6 +6,7 @@ import {
   subscribe as subscribeDrivers,
 } from "../stores/driversStore";
 import type { Project } from "../stores/projectsStore";
+import { invoke } from "@tauri-apps/api/core";
 import {
   addSession,
   closeSession,
@@ -15,6 +16,7 @@ import {
   restartSession,
   setActiveSession,
   subscribe as subscribeSessions,
+  type SavedSession,
 } from "../stores/sessionsStore";
 
 type AgentTabsProps = {
@@ -31,10 +33,18 @@ export default function AgentTabs({ project }: AgentTabsProps) {
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
   const [driverId, setDriverId] = useState("shell");
+  const [saved, setSaved] = useState<SavedSession[]>([]);
+  const [recovered, setRecovered] = useState<string[]>([]);
 
   useEffect(() => {
     void loadDrivers();
   }, []);
+
+  useEffect(() => {
+    void invoke<SavedSession[]>("session_saved")
+      .then(setSaved)
+      .catch(() => undefined);
+  }, [project.id, sessions.sessions.length]);
 
   const options = useMemo<DriverOption[]>(() => {
     const shell = defaultShell();
@@ -48,6 +58,17 @@ export default function AgentTabs({ project }: AgentTabsProps) {
 
   const projectSessions = sessions.sessions.filter((session) => session.projectId === project.id);
   const active = projectSessions.find((session) => session.id === sessions.activeId);
+  const recoverable = saved.filter(
+    (entry) =>
+      entry.spec.projectId === project.id &&
+      entry.status === "crashed" &&
+      !recovered.includes(entry.id),
+  );
+
+  async function recover(entry: SavedSession) {
+    await addSession(entry.spec, entry.spec.driverId === "shell" ? "Shell" : entry.spec.driverId);
+    setRecovered((current) => [...current, entry.id]);
+  }
 
   async function createSession() {
     const option = options.find((entry) => entry.id === driverId) ?? options[0];
@@ -116,6 +137,16 @@ export default function AgentTabs({ project }: AgentTabsProps) {
           </button>
         </span>
       </div>
+      {recoverable.length > 0 ? (
+        <div className="recoverable">
+          <span className="muted">sesiones recuperables</span>
+          {recoverable.map((entry) => (
+            <button key={entry.id} type="button" onClick={() => void recover(entry)}>
+              recrear {entry.spec.driverId}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {active ? (
         <div className="tab-actions">
           <span className={`status-dot ${active.status}`} />

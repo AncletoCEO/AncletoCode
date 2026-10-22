@@ -4,6 +4,17 @@ use std::path::Path;
 use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::domain::{Conversation, ConversationState, Project, Result, Turn, TurnMode};
+use crate::session::{SessionSpec, SessionStatus};
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedSession {
+    pub id: String,
+    pub spec: SessionSpec,
+    pub status: SessionStatus,
+    pub pid: Option<u32>,
+    pub created_at: i64,
+}
 
 pub struct Store {
     connection: Connection,
@@ -60,8 +71,17 @@ impl Store {
              );
              INSERT OR IGNORE INTO schema_migrations (version, applied_at)
                  VALUES (1, unixepoch());
+             CREATE TABLE IF NOT EXISTS host_sessions (
+                 id TEXT PRIMARY KEY,
+                 spec TEXT NOT NULL,
+                 status TEXT NOT NULL,
+                 pid INTEGER,
+                 created_at INTEGER NOT NULL
+             );
              INSERT OR IGNORE INTO schema_migrations (version, applied_at)
-                 VALUES (2, unixepoch());",
+                 VALUES (2, unixepoch());
+             INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+                 VALUES (3, unixepoch());",
         )?;
 
         Ok(Self { connection })
@@ -226,6 +246,82 @@ impl Store {
             turns.push(row?);
         }
         Ok(turns)
+    }
+
+    pub fn save_session(&self, session: &SavedSession) -> Result<()> {
+        let spec = serde_json::to_string(&session.spec)
+            .map_err(|error| crate::domain::CoreError::InvalidInput(error.to_string()))?;
+        let status = serde_json::to_value(session.status)
+            .ok()
+            .and_then(|value| value.as_str().map(str::to_owned))
+            .unwrap_or_else(|| "crashed".to_owned());
+        self.connection.execute(
+            "INSERT INTO host_sessions (id, spec, status, pid, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(id) DO UPDATE SET
+                 spec = excluded.spec,
+                 status = excluded.status,
+                 pid = excluded.pid",
+            params![session.id, spec, status, session.pid, session.created_at],
+        )?;
+        Ok(())
+    }
+
+    pub fn set_session_status(&self, id: &str, status: SessionStatus) -> Result<()> {
+        let status = serde_json::to_value(status)
+            .ok()
+            .and_then(|value| value.as_str().map(str::to_owned))
+            .unwrap_or_else(|| "crashed".to_owned());
+        self.connection.execute(
+            "UPDATE host_sessions SET status = ?2 WHERE id = ?1",
+            params![id, status],
+        )?;
+        Ok(())
+    }
+
+    pub fn saved_sessions(&self) -> Result<Vec<SavedSession>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, spec, status, pid, created_at FROM host_sessions
+             ORDER BY created_at DESC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            let spec: String = row.get(1)?;
+            let status: String = row.get(2)?;
+            Ok((
+                row.get::<_, String>(0)?,
+                spec,
+                status,
+                row.get(3)?,
+                row.get(4)?,
+            ))
+        })?;
+
+        let mut sessions = Vec::new();
+        for row in rows {
+            let (id, spec, status, pid, created_at) = row?;
+            let Ok(spec) = serde_json::from_str::<SessionSpec>(&spec) else {
+                continue;
+            };
+            let status = serde_json::from_value::<SessionStatus>(serde_json::Value::String(status))
+                .unwrap_or(SessionStatus::Crashed);
+            sessions.push(SavedSession {
+                id,
+                spec,
+                status,
+                pid,
+                created_at,
+            });
+        }
+        Ok(sessions)
+    }
+
+    pub fn crash_active_sessions(&self) -> Result<usize> {
+        let affected = self.connection.execute(
+            "UPDATE host_sessions SET status = 'crashed'
+             WHERE status NOT IN ('stopped', 'crashed')",
+            [],
+        )?;
+        Ok(affected)
     }
 
     pub fn get_setting(&self, key: &str) -> Result<Option<String>> {

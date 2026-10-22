@@ -79,6 +79,8 @@ pub enum CoreError {
     Process(String),
     #[error("entrada inválida: {0}")]
     InvalidInput(String),
+    #[error("error del host de sesiones: {0}")]
+    Host(String),
     #[error("error de base de datos: {0}")]
     Database(#[from] rusqlite::Error),
     #[error("error de E/S: {0}")]

@@ -2,8 +2,8 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 
 use ancleto_code_core::{
-    ConversationEvent, ConversationState, DriverRegistry, Orchestrator, ProjectService,
-    SessionEvent, SessionManager, Store,
+    ConversationEvent, ConversationState, DriverRegistry, HostClient, HostPaths, Orchestrator,
+    ProjectService, SessionBackend, SessionEvent, SessionManager, Store,
 };
 use serde::Serialize;
 use tauri::{Emitter, Manager};
@@ -31,7 +31,7 @@ struct ConversationStatePayload {
     reason: Option<String>,
 }
 
-fn session_manager(handle: tauri::AppHandle) -> SessionManager {
+fn local_sessions(handle: tauri::AppHandle) -> SessionManager {
     SessionManager::new(Some(Arc::new(move |event| {
         let result = match event {
             SessionEvent::Output { id, data } => handle.emit(
@@ -53,6 +53,60 @@ fn session_manager(handle: tauri::AppHandle) -> SessionManager {
     })))
 }
 
+fn forward_host_events(handle: tauri::AppHandle, client: Arc<HostClient>) {
+    let events = client.events();
+    std::thread::spawn(move || {
+        while let Ok(notification) = events.recv() {
+            let Some(id) = notification
+                .params
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+            else {
+                continue;
+            };
+            let result = match notification.method.as_str() {
+                "session.output" => {
+                    let data = notification
+                        .params
+                        .get("data")
+                        .cloned()
+                        .unwrap_or_else(|| serde_json::json!([]));
+                    match serde_json::from_value::<Vec<u8>>(data) {
+                        Ok(data) => handle.emit(
+                            &format!("session://output/{id}"),
+                            SessionOutputPayload { data },
+                        ),
+                        Err(_) => Ok(()),
+                    }
+                }
+                "session.state" => {
+                    let status = notification
+                        .params
+                        .get("status")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
+                    handle.emit(&format!("session://state/{id}"), status)
+                }
+                "session.exit" => {
+                    let exit_code = notification
+                        .params
+                        .get("exitCode")
+                        .and_then(serde_json::Value::as_i64)
+                        .and_then(|code| i32::try_from(code).ok());
+                    handle.emit(
+                        &format!("session://exit/{id}"),
+                        SessionExitPayload { exit_code },
+                    )
+                }
+                _ => Ok(()),
+            };
+            if let Err(error) = result {
+                eprintln!("no se pudo reenviar un evento del host: {error}");
+            }
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -61,8 +115,23 @@ pub fn run() {
             fs::create_dir_all(&config_directory)?;
             let database = config_directory.join("ancleto-code.sqlite");
             let service = ProjectService::open(&database)?;
-            let sessions = session_manager(app.handle().clone());
             let drivers = DriverRegistry::new();
+            let paths = HostPaths::discover(None);
+            let (host, sessions): (Option<Arc<HostClient>>, Arc<dyn SessionBackend>) =
+                match HostClient::connect_or_start(&paths, &database) {
+                    Ok(client) => {
+                        let client = Arc::new(client);
+                        forward_host_events(app.handle().clone(), Arc::clone(&client));
+                        (Some(Arc::clone(&client)), client as Arc<dyn SessionBackend>)
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "ancleto-code: host no disponible ({error}); sesiones in-process"
+                        );
+                        let manager = local_sessions(app.handle().clone());
+                        (None, Arc::new(manager))
+                    }
+                };
             let handle = app.handle().clone();
             let sink: ancleto_code_core::orch::ConversationSink = Arc::new(move |event| {
                 let result = match event {
@@ -92,6 +161,7 @@ pub fn run() {
             app.manage(AppState {
                 projects: Mutex::new(service),
                 sessions,
+                host,
                 drivers,
                 orchestrator,
                 config_dir: config_directory,
@@ -111,6 +181,7 @@ pub fn run() {
             commands::session_kill,
             commands::session_snapshot,
             commands::session_list,
+            commands::session_saved,
             commands::drivers_list,
             commands::ide_open_antigravity,
             commands::ide_sync_antigravity,
@@ -155,7 +226,9 @@ pub fn run() {
     app.run(|app_handle, event| {
         if matches!(event, tauri::RunEvent::Exit) {
             if let Some(state) = app_handle.try_state::<AppState>() {
-                let _ = state.sessions.kill_all();
+                if state.host.is_none() {
+                    let _ = state.sessions.kill_all_sessions();
+                }
             }
         }
     });

@@ -1,5 +1,6 @@
 pub mod domain;
 pub mod drivers;
+pub mod host;
 pub mod ide;
 pub mod orch;
 pub mod persistence;
@@ -14,11 +15,14 @@ pub use domain::{
 pub use drivers::{
     AgentDriver, AgentDriverDescriptor, Capabilities, DriverRegistry, DriverStatus, ToolStatus,
 };
+pub use host::{HostClient, HostPaths};
 pub use orch::{ConversationEvent, Orchestrator, StartConversation};
-pub use persistence::Store;
+pub use persistence::{SavedSession, Store};
 pub use projects::ProjectService;
 pub use providers::Providers;
-pub use session::{SessionEvent, SessionInfo, SessionManager, SessionSpec, SessionStatus};
+pub use session::{
+    SessionBackend, SessionEvent, SessionInfo, SessionManager, SessionSpec, SessionStatus,
+};
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use std::path::Path;
+use std::sync::Arc;
 
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
@@ -8,15 +9,17 @@ use ancleto_code_core::providers::{
     SpecsCheck, WriterCheck, WriterConfig, WriterProvider, WriterState,
 };
 use ancleto_code_core::{
-    Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, Orchestrator, Project,
-    ProjectService, SessionInfo, SessionManager, SessionSpec, StartConversation, Turn,
+    Conversation, ConversationState, DriverRegistry, DriverStatus, FileNode, HostClient,
+    Orchestrator, Project, ProjectService, SavedSession, SessionBackend, SessionInfo, SessionSpec,
+    StartConversation, Turn,
 };
 use tauri::State;
 
 pub struct AppState {
     pub config_dir: std::path::PathBuf,
     pub projects: Mutex<ProjectService>,
-    pub sessions: SessionManager,
+    pub sessions: Arc<dyn SessionBackend>,
+    pub host: Option<Arc<HostClient>>,
     pub drivers: DriverRegistry,
     pub orchestrator: Orchestrator,
 }
@@ -71,7 +74,7 @@ pub fn session_create(
 ) -> Result<SessionInfo, String> {
     state
         .sessions
-        .create(spec)
+        .create_session(spec)
         .map_err(|error| error.to_string())
 }
 
@@ -79,7 +82,7 @@ pub fn session_create(
 pub fn session_write(state: State<'_, AppState>, id: String, data: Vec<u8>) -> Result<(), String> {
     state
         .sessions
-        .write(&id, &data)
+        .write_session(&id, &data)
         .map_err(|error| error.to_string())
 }
 
@@ -92,26 +95,40 @@ pub fn session_resize(
 ) -> Result<(), String> {
     state
         .sessions
-        .resize(&id, cols, rows)
+        .resize_session(&id, cols, rows)
         .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn session_kill(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.sessions.kill(&id).map_err(|error| error.to_string())
+    state
+        .sessions
+        .kill_session(&id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn session_snapshot(state: State<'_, AppState>, id: String) -> Result<Vec<u8>, String> {
     state
         .sessions
-        .snapshot(&id)
+        .snapshot_session(&id)
         .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn session_list(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, String> {
-    state.sessions.list().map_err(|error| error.to_string())
+    state
+        .sessions
+        .list_sessions()
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn session_saved(state: State<'_, AppState>) -> Result<Vec<SavedSession>, String> {
+    match state.host.as_ref() {
+        Some(host) => host.saved_sessions().map_err(|error| error.to_string()),
+        None => Ok(Vec::new()),
+    }
 }
 
 #[tauri::command]
