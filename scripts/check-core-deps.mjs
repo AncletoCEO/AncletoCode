@@ -22,10 +22,13 @@ const forbiddenCrates = new Set([
 const forbiddenImports = [
   "ancleto_code_cmd",
   "ancleto_code_host",
-  "glyphon",
-  "tauri",
-  "wgpu",
-  "winit",
+  "glyphon::",
+  "tauri::",
+  "use tauri",
+  "use wgpu",
+  "use winit",
+  "wgpu::",
+  "winit::",
 ];
 
 if (!existsSync(manifestPath)) {
