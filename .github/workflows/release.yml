@@ -215,7 +215,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [publish-meta, desktop-linux, desktop-windows]
+    needs: [desktop-linux, desktop-windows]
     environment: release
     runs-on: ubuntu-latest
     steps:
