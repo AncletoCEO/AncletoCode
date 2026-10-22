@@ -31,6 +31,18 @@ const cargo = readFileSync(cargoPath, "utf8").replace(
 );
 writeFileSync(cargoPath, cargo);
 
+const tauriPath = join(root, "src-tauri", "tauri.conf.json");
+const tauri = JSON.parse(readFileSync(tauriPath, "utf8"));
+tauri.version = version;
+writeFileSync(tauriPath, `${JSON.stringify(tauri, null, 2)}\n`);
+
+const aboutPath = join(root, "src", "components", "AboutDialog.tsx");
+const about = readFileSync(aboutPath, "utf8").replace(
+  /Versión \d+\.\d+\.\d+(?:[-+][^<\s]+)?/,
+  `Versión ${version}`,
+);
+writeFileSync(aboutPath, about);
+
 const lockPath = join(root, "package-lock.json");
 try {
   const lock = JSON.parse(readFileSync(lockPath, "utf8"));

@@ -28,6 +28,15 @@ for (const name of ["acode", "acmd"]) {
   }
 }
 
+const tauri = JSON.parse(readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8"));
+if (tauri.version !== expected) {
+  failures.push(`tauri.conf.json=${tauri.version} vs ${expected}`);
+}
+const about = readFileSync(join(root, "src", "components", "AboutDialog.tsx"), "utf8");
+if (!about.includes(`Versión ${expected}`)) {
+  failures.push(`AboutDialog no muestra la versión ${expected}`);
+}
+
 const binary = process.argv[2] ?? join(root, "target", "debug", "acode");
 if (existsSync(binary)) {
   const output = execFileSync(binary, ["--version"], { encoding: "utf8" }).trim();

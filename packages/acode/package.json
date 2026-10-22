@@ -1,6 +1,6 @@
 {
   "name": "@ancleto/code",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "CLI headless de AncletoCode y host de sesiones",
   "type": "module",
   "license": "AGPL-3.0-only",
@@ -24,13 +24,13 @@
     "node": ">=18"
   },
   "optionalDependencies": {
-    "@ancleto/code-linux-x64-gnu": "0.1.0",
-    "@ancleto/code-linux-arm64-gnu": "0.1.0",
-    "@ancleto/code-linux-x64-musl": "0.1.0",
-    "@ancleto/code-linux-arm64-musl": "0.1.0",
-    "@ancleto/code-win32-x64": "0.1.0",
-    "@ancleto/code-win32-arm64": "0.1.0",
-    "@ancleto/code-darwin-x64": "0.1.0",
-    "@ancleto/code-darwin-arm64": "0.1.0"
+    "@ancleto/code-linux-x64-gnu": "0.0.1",
+    "@ancleto/code-linux-arm64-gnu": "0.0.1",
+    "@ancleto/code-linux-x64-musl": "0.0.1",
+    "@ancleto/code-linux-arm64-musl": "0.0.1",
+    "@ancleto/code-win32-x64": "0.0.1",
+    "@ancleto/code-win32-arm64": "0.0.1",
+    "@ancleto/code-darwin-x64": "0.0.1",
+    "@ancleto/code-darwin-arm64": "0.0.1"
   }
 }

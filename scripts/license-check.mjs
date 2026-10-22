@@ -58,6 +58,17 @@ requireText("THIRD_PARTY_NOTICES.md", requireFile("THIRD_PARTY_NOTICES.md"), [
   "Software Mansion",
 ]);
 
+for (const [bundled, source] of [
+  ["src-tauri/resources/LICENSE", "LICENSE"],
+  ["src-tauri/resources/THIRD_PARTY_NOTICES.md", "THIRD_PARTY_NOTICES.md"],
+]) {
+  const copied = requireFile(bundled);
+  const original = requireFile(source);
+  if (copied && original && copied !== original) {
+    fail(`${bundled} no coincide con ${source}`);
+  }
+}
+
 const provenance = requireFile("docs/provenance.md");
 const upstream = requireFile("third_party/pandacode/UPSTREAM.md");
 const pandacodeRoot = join(root, "third_party", "pandacode");

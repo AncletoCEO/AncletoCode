@@ -1,7 +1,7 @@
 {
   "name": "ancleto-code",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "engines": {
     "node": ">=22.12"
@@ -26,7 +26,9 @@
     "package:npm": "node scripts/package-npm.mjs",
     "smoke:npm": "node scripts/smoke-npm.mjs",
     "set:version": "node scripts/set-version.mjs",
-    "perf:cmd": "node scripts/perf-cmd.mjs"
+    "perf:cmd": "node scripts/perf-cmd.mjs",
+    "package:desktop": "node scripts/package-desktop-tarball.mjs",
+    "package:aur": "node scripts/package-aur.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

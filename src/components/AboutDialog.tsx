@@ -21,7 +21,7 @@ export default function AboutDialog({ onClose }: AboutDialogProps) {
           </button>
         </header>
         <p>Workspace de agentes de código para escritorio y terminal.</p>
-        <p>Versión 0.1.0</p>
+        <p>Versión 0.0.1</p>
         <p>Licencia AGPL-3.0-only.</p>
         <p>
           This is a fork of PandaCode —{" "}
