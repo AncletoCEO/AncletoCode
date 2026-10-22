@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { captureTranscriptAnchor } from "../../third_party/pandacode/src/transcript-scroll.ts";
+import Markdown from "./Markdown";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { Project } from "../stores/projectsStore";
 import {
@@ -256,7 +257,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
                   #{turn.index} {labelOf(projectSessions, turn.fromSession)} →{" "}
                   {labelOf(projectSessions, turn.toSession)} · {turn.mode} · {turn.durationMs} ms
                 </div>
-                <pre className="turn-text">{turn.text}</pre>
+                <Markdown value={turn.text} />
               </li>
             ))}
           </ol>

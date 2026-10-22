@@ -651,3 +651,50 @@ body::after {
   font: inherit;
   cursor: pointer;
 }
+
+.markdown {
+  margin-top: 0.25rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.markdown p {
+  margin: 0.25rem 0;
+}
+
+.markdown pre {
+  margin: 0.35rem 0;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  overflow-x: auto;
+}
+
+.markdown code {
+  font-family: inherit;
+}
+
+.markdown blockquote {
+  margin: 0.35rem 0;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--accent);
+  color: var(--fg-muted);
+}
+
+.markdown table {
+  border-collapse: collapse;
+}
+
+.markdown td,
+.markdown th {
+  border: 1px solid var(--border);
+  padding: 0.15rem 0.35rem;
+}
+
+.markdown a {
+  color: var(--accent);
+}
+
+.md-fallback {
+  white-space: pre-wrap;
+}
