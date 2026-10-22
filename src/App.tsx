@@ -11,6 +11,13 @@ import SpecPanel from "./components/SpecPanel";
 import TerminalView from "./components/TerminalView";
 import WriterPanel from "./components/WriterPanel";
 import { loadAppearance } from "./stores/appearanceStore";
+import {
+  decreaseUiScale,
+  increaseUiScale,
+  loadUiScale,
+  resetUiScale,
+  setUiScale,
+} from "./lib/ui-size";
 import { getSnapshot as getProjects, subscribe as subscribeProjects } from "./stores/projectsStore";
 import {
   getSnapshot as getSessions,
@@ -24,6 +31,7 @@ export default function App() {
   const [specOpen, setSpecOpen] = useState(false);
   const [writerOpen, setWriterOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [uiScale, setUiScaleValue] = useState(1);
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const selected = projects.projects.find((project) => project.id === projects.selectedId);
@@ -38,6 +46,30 @@ export default function App() {
   useEffect(() => {
     void restoreSessions();
   }, []);
+
+  useEffect(() => {
+    void loadUiScale().then(setUiScaleValue);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+      if (event.key === "=" || event.key === "+") {
+        event.preventDefault();
+        void setUiScale(increaseUiScale(uiScale)).then(setUiScaleValue);
+      } else if (event.key === "-") {
+        event.preventDefault();
+        void setUiScale(decreaseUiScale(uiScale)).then(setUiScaleValue);
+      } else if (event.key === "0") {
+        event.preventDefault();
+        void setUiScale(resetUiScale()).then(setUiScaleValue);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [uiScale]);
 
   return (
     <main className="layout">

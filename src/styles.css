@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg-base: #0d1117;
   --bg-panel: #161b22;
@@ -8,7 +16,7 @@
   --warning: #d29922;
   --danger: #f85149;
   --border: #30363d;
-  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
   color-scheme: dark;
 }
 

@@ -235,6 +235,9 @@ impl AppState {
         surface.configure(&device, &surface_config);
 
         let mut font_system = FontSystem::new();
+        font_system.db_mut().load_font_data(
+            include_bytes!("../../../public/fonts/IBMPlexMono-Regular.ttf").to_vec(),
+        );
         let (cell_width, cell_height) = measure_cell(&mut font_system, 13.0);
         let swash_cache = SwashCache::new();
         let cache = Cache::new(&device);
@@ -1393,7 +1396,7 @@ impl AppState {
             entry.buffer.set_size(Some(width), Some(height));
             entry.buffer.set_text(
                 &text,
-                &Attrs::new().family(Family::Monospace),
+                &Attrs::new().family(Family::Name("IBM Plex Mono")),
                 Shaping::Basic,
                 None,
             );
@@ -1604,7 +1607,7 @@ fn resolve_profile(requested: Option<&str>) -> Result<ShellProfile, String> {
 fn set_buffer_text(font_system: &mut FontSystem, buffer: &mut Buffer, text: &str) {
     buffer.set_text(
         text,
-        &Attrs::new().family(Family::Monospace),
+        &Attrs::new().family(Family::Name("IBM Plex Mono")),
         Shaping::Basic,
         None,
     );
@@ -1617,7 +1620,7 @@ fn measure_cell(font_system: &mut FontSystem, font_size: f32) -> (f32, f32) {
     buffer.set_size(Some(1000.0), Some(1000.0));
     buffer.set_text(
         "M",
-        &Attrs::new().family(Family::Monospace),
+        &Attrs::new().family(Family::Name("IBM Plex Mono")),
         Shaping::Advanced,
         None,
     );

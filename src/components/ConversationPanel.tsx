@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { captureTranscriptAnchor } from "../../third_party/pandacode/src/transcript-scroll.ts";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { Project } from "../stores/projectsStore";
 import {
@@ -56,6 +57,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const unlisteners = useRef<UnlistenFn[]>([]);
+  const listRef = useRef<HTMLOListElement>(null);
 
   const effectiveA = sessionA || (projectSessions[0]?.id ?? "");
   const effectiveB = sessionB || (projectSessions[1]?.id ?? "");
@@ -70,7 +72,9 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     let disposed = false;
 
     void listen<Turn>(`conversation://turn/${id}`, (event) => {
+      const restore = listRef.current ? captureTranscriptAnchor(listRef.current) : null;
       setTurns((current) => [...current, event.payload]);
+      requestAnimationFrame(() => restore?.());
     }).then((stop) => {
       if (disposed) {
         stop();
@@ -208,7 +212,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
               abortar
             </button>
           </div>
-          <ol className="turn-list">
+          <ol className="turn-list" ref={listRef}>
             {turns.map((turn) => (
               <li key={`${turn.conversationId}-${turn.index}`} className="turn">
                 <div className="turn-meta">
