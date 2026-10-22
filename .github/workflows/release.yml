@@ -153,6 +153,8 @@ jobs:
           merge-multiple: true
       - name: Generate AUR PKGBUILDs
         run: node scripts/package-aur.mjs --dist dist --version "$VERSION"
+      - name: Bundle AUR PKGBUILDs
+        run: tar -czf "dist/ancleto-aur-${VERSION}.tar.gz" -C dist/aur .
       - name: Generate checksums
         shell: bash
         run: |
@@ -172,4 +174,3 @@ jobs:
             dist/**/*.msi
             dist/**/*.exe
             dist/SHA256SUMS
-            dist/aur/**/PKGBUILD

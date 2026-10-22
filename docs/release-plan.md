@@ -42,7 +42,7 @@ probar y reportar.
    tarballs de escritorio, AncletoCMD y CLI/host; artefactos a GitHub Actions.
 2. **desktop-windows:** `windows-latest`; NSIS + MSI y ZIP portable.
 3. **release:** descarga artefactos, genera `SHA256SUMS`, genera PKGBUILDs AUR
-   con checksums reales y publica el GitHub Release con las notas de
+   con checksums reales y los empaqueta en `ancleto-aur-<versión>.tar.gz` y publica el GitHub Release con las notas de
    `docs/release-notes/<versión>.md`.
 4. **npm (pendiente):** `.github/workflows/npm-publish.yml`, manual, cuando se
    decida publicar en npm.
