@@ -8,6 +8,7 @@ description = "Host local de sesiones de AncletoCode"
 
 [dependencies]
 ancleto-code-core.workspace = true
+ctrlc.workspace = true
 interprocess.workspace = true
 serde.workspace = true
 serde_json.workspace = true

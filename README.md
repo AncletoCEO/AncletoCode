@@ -2,7 +2,7 @@
 
 Workspace de agentes de código con **dos versiones**: la app de escritorio **AncletoCode** (Tauri 2) y **AncletoCMD**, un emulador de terminal nativo, rápido y GPU-acelerado que además funciona como gestor de proyectos y sesiones. Ambas comparten el mismo núcleo, la misma configuración y las mismas sesiones, junto con una CLI headless para automatización.
 
-> **Estado:** especificación. El proyecto está en fase de propuesta: todavía no hay implementación. Los artefactos de diseño viven en [`aspec/changes/ancleto-code-desktop-workplace/`](aspec/changes/ancleto-code-desktop-workplace/).
+> **Estado:** implementación en curso. El núcleo, el host de sesiones, la app de escritorio y la CLI `acode` ya existen; AncletoCMD y el empaquetado están en desarrollo. El plan vive en [`aspec/changes/ancleto-code-desktop-workplace/`](aspec/changes/ancleto-code-desktop-workplace/).
 
 ## Qué va a hacer
 
@@ -123,7 +123,7 @@ Es un Cargo workspace: un núcleo compartido, un host de sesiones y tres consumi
 - Las CLIs de agente que quieras usar, ya instaladas y autenticadas.
 - Shells soportadas: `cmd`, PowerShell y WSL en Windows; bash, zsh y fish en Linux/macOS.
 
-## Uso (previsto)
+## Uso
 
 App de escritorio en desarrollo:
 
@@ -132,23 +132,51 @@ npm install
 npm run tauri dev
 ```
 
-CLI y AncletoCMD instalados desde npm:
+CLI y AncletoCMD instalados desde npm (cuando se publique el paquete):
 
 ```bash
 npm install -g @ancleto/code   # acode
 npm install -g @ancleto/cmd    # acmd
 ```
 
+### CLI `acode`
+
+```text
+acode [--json] [--no-input] [--no-host] [--project <id|ruta>] <comando>
+```
+
+| Comando | Propósito |
+|---|---|
+| `acode project add <ruta>` / `list` / `remove <id>` / `open <id>` | Gestión de proyectos compartida |
+| `acode agents [--json]` | Detección de drivers y capacidades |
+| `acode doctor [--json]` | Node, drivers, providers, host, plataforma y base |
+| `acode session start --driver <id> --project <id>` | Crear una sesión PTY en el host |
+| `acode session list` / `attach <id>` / `send <id> "texto"` / `kill <id>` | Ciclo de vida y attach |
+| `acode run "<prompt>" --driver <id> [--project <id>]` | One-shot; streaming si la salida es TTY |
+| `acode converse --a <id> --b <id> --objective "..."` | Conversación agente-a-agente con límites |
+| `acode spec <init|install|update|upgrade|check|doctor|specs…>` | Passthrough de `@ancleto/spec` |
+| `acode writer <init|build|check|lint|impact|human|doctor>` | Passthrough de `@ancleto/writer` |
+| `acode host start` / `stop` / `status` | Control del host de sesiones |
+| `acode ui` | Abrir la app de escritorio instalada |
+| `acode completions <bash|zsh|fish|powershell>` | Completions de shell |
+
+- `--json` emite un sobre `{ "schemaVersion": 1, "ok": true|false, "data"|"error" }` por stdout.
+- Sin TTY no se emiten secuencias ANSI ni se piden confirmaciones.
+- Códigos de salida: `0` ok, `2` uso inválido, `3` dependencia ausente, `4` error de sesión/host, `5` estado incompatible, `6` cancelado.
+- `--no-host` ejecuta los one-shot in-process, sin sesión persistente.
+- Las sesiones viven en el host local: cerrar la app o la CLI no mata a los agentes.
+
 Ejemplos:
 
 ```bash
-acmd                                  # abrir AncletoCMD
-acode doctor                          # estado de Node, drivers, providers y host
+acode doctor
+acode --json agents
+acode project add .
 acode run "explicá este módulo" --driver claude --project .
-acode session list --json
+acode session start --driver opencode --project .
+acode --json session list
+acode completions bash >> ~/.bashrc
 ```
-
-Estos comandos todavía no existen: se crearán durante la implementación.
 
 ## Documentación
 

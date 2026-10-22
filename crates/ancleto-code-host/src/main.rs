@@ -233,6 +233,11 @@ fn start(paths: &HostPaths, options: Options) {
 
     spawn_idle_watchdog(Arc::clone(&shared));
 
+    let signal_shared = Arc::clone(&shared);
+    let _ = ctrlc::set_handler(move || {
+        request_shutdown(&signal_shared);
+    });
+
     for incoming in listener {
         match incoming {
             Ok(stream) => {

@@ -113,7 +113,7 @@ pub fn run() {
         .setup(|app| {
             let config_directory = app.path().app_config_dir()?;
             fs::create_dir_all(&config_directory)?;
-            let database = config_directory.join("ancleto-code.sqlite");
+            let database = ancleto_code_core::host::transport::default_database_path();
             let service = ProjectService::open(&database)?;
             let drivers = DriverRegistry::new();
             let paths = HostPaths::discover(None);
