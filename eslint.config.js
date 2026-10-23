@@ -16,6 +16,7 @@ export default tseslint.config(
       "src-tauri/resources/ancleto",
       "src-tauri/binaries",
       ".cache",
+      ".opencode",
     ],
   },
   js.configs.recommended,

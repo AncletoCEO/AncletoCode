@@ -13,3 +13,6 @@ packages/cmd-*
 src-tauri/resources/ancleto
 src-tauri/binaries
 .cache
+.opencode/
+.ancletorc
+PRODUCT.md
