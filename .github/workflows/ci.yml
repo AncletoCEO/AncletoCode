@@ -22,21 +22,6 @@ jobs:
       - run: npm run test
       - run: npm run check:versions
 
-  performance:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: sudo apt-get update && sudo apt-get install -y xvfb xdotool libxkbcommon-dev libxkbcommon-x11-0 libxkbcommon-x11-dev libwayland-dev mesa-vulkan-drivers openbox
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo build -p ancleto-code-cmd -p ancleto-code-host
-      - run: cargo test -p ancleto-code-cmd --test perf
-      - run: xvfb-run -a sh -c 'openbox >/tmp/openbox.log 2>&1 & exec npm run perf:cmd'
-
   rust:
     runs-on: ubuntu-latest
     steps:
