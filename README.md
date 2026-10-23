@@ -18,7 +18,7 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
 
 ## Qué incluye
 
-- **UI híbrida PandaCode + Orca:** shell de tres columnas, tabs/threads, inspector,
+- **UI híbrida:** shell de tres columnas, tabs/threads, inspector,
   command palette y temas configurables.
 - **Sesiones PTY persistentes:** cerrar la ventana hace *detach*, no mata al agente.
 - **Tareas y worktrees:** board por proyecto; iniciar una tarea crea su rama
