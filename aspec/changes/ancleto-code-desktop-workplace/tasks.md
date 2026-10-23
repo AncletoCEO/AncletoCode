@@ -304,8 +304,8 @@ se registra en `docs/provenance.md`.
 - [ ] 16.6 (en progreso: primer shell con sidebar/topbar/thread/inspector/composer/palette) Implementar el shell visual: navegación lateral por proyecto/tarea, workspace central con threads/tabs, inspector derecho (contexto, cambios, Git) y composer inferior; paneles redimensionables y layout persistente.
 - [ ] 16.7 Modelo `Task`/`Thread`/`Worktree`: una tarea puede tener rama y worktree propios; estado, proyecto, agente, PR/MR y resultado; migraciones SQLite y recuperación.
 - [ ] 16.8 `WorktreeManager`: crear/listar/eliminar worktrees, abrir el proyecto en el worktree correcto, detectar colisiones y limpiar sin perder cambios; tests con repos temporales.
-- [ ] 16.9 Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
-- [ ] 16.10 Branch chip y panel de ramas: rama actual, ahead/behind, dirty state, cambiar/crear rama, worktree asociado y acciones seguras; sin comandos destructivos sin confirmación explícita.
+- [ ] 16.9 (en progreso: status, ramas, crear/cambiar rama; faltan diff/staging/commit/merge) Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
+- [ ] 16.10 (en progreso: branch chip y panel con ramas/estado) Branch chip y panel de ramas: rama actual, ahead/behind, dirty state, cambiar/crear rama, worktree asociado y acciones seguras; sin comandos destructivos sin confirmación explícita.
 - [ ] 16.11 Revisión de cambios: diff unificado/split, archivos por turno, staging por hunk, comentarios por línea y envío del comentario al agente.
 - [ ] 16.12 Abstracción `GitHostProvider` para GitHub/GitLab/Bitbucket/Azure y remotos genéricos: detección por URL, autenticación delegada a CLIs, capacidades declaradas y errores accionables.
 - [ ] 16.13 GitHub nativo con `gh`: detectar login, listar repos/PRs/issues/checks, abrir PR, revisar y mergear; enlazar PR con tarea y rama.

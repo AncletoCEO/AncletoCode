@@ -1540,3 +1540,169 @@
   flex-basis: 100%;
   font-size: 10px;
 }
+
+.shell-branch-chip.is-dirty {
+  border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+}
+
+.shell-branch-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.shell-branch-current {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.shell-branch-current strong {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-branch-current span {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+.shell-branch-dirty-label {
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, var(--border));
+  border-radius: 99px;
+  padding: 1px 5px;
+  color: var(--warning) !important;
+}
+
+.shell-git-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 7px;
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.shell-git-files,
+.shell-git-branches {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shell-git-file,
+.shell-git-branch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 25px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 10px;
+  text-align: left;
+}
+
+.shell-git-branch {
+  cursor: pointer;
+}
+
+.shell-git-branch:hover:not(:disabled) {
+  color: var(--fg);
+  background: rgb(var(--bg-elevated-rgb) / 40%);
+}
+
+.shell-git-branch.is-current {
+  color: var(--fg);
+}
+
+.shell-git-branch:disabled {
+  cursor: default;
+}
+
+.shell-git-branch > span:nth-child(2),
+.shell-git-file > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-git-branch > .shell-muted,
+.shell-git-file > .shell-muted {
+  margin-left: auto;
+  font-size: 9px;
+}
+
+.shell-git-status {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  flex: none;
+}
+
+.shell-git-status.modified {
+  background: var(--warning);
+}
+
+.shell-git-status.added {
+  background: var(--success);
+}
+
+.shell-git-status.deleted {
+  background: var(--danger);
+}
+
+.shell-git-status.conflict {
+  background: var(--danger);
+}
+
+.shell-git-status.untracked {
+  background: var(--shell-accent);
+}
+
+.shell-branch-form {
+  display: flex;
+  gap: 3px;
+  margin-top: 7px;
+}
+
+.shell-branch-form input {
+  min-width: 0;
+  flex: 1;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgb(var(--bg-base-rgb) / 45%);
+  color: var(--fg);
+  padding: 0 7px;
+  outline: 0;
+  font-size: 10px;
+}
+
+.shell-branch-form input:focus {
+  border-color: var(--shell-accent);
+}
+
+.shell-branch-form button {
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 0 8px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.shell-branch-form button:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}

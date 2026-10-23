@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   BookOpen,
   CircleDot,
@@ -17,6 +17,7 @@ import {
   loadDrivers,
   subscribe as subscribeDrivers,
 } from "../stores/driversStore";
+import { useGitStore } from "../stores/gitStore";
 import { cn } from "../ui/cn";
 import type { InspectorTab, ShellView } from "./types";
 
@@ -47,10 +48,32 @@ export default function Inspector({
   onAux,
 }: InspectorProps) {
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
+  const git = useGitStore();
+  const [branchName, setBranchName] = useState("");
 
   useEffect(() => {
     void loadDrivers();
   }, []);
+
+  const projectId = project?.id;
+  const loadGit = git.load;
+
+  useEffect(() => {
+    if (projectId && tab === "git") {
+      void loadGit(projectId);
+    }
+  }, [projectId, tab, loadGit]);
+
+  async function createBranch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!branchName.trim()) {
+      return;
+    }
+    const created = await git.createBranch(branchName.trim(), true);
+    if (created) {
+      setBranchName("");
+    }
+  }
 
   return (
     <aside className="shell-inspector">
@@ -130,14 +153,101 @@ export default function Inspector({
         ) : null}
 
         {tab === "git" ? (
-          <div className="shell-empty">
-            <GitBranch size={22} />
-            <strong>Git está en preparación</strong>
-            <p>Ramas, worktrees, PRs y checks. La UI ya reserva este espacio.</p>
-            <button type="button" className="shell-ghost-button" disabled>
-              <GitPullRequest size={14} />
-              Conectar repositorio
-            </button>
+          <div className="shell-inspector-stack">
+            {git.loading ? <p className="shell-muted">Leyendo repositorio…</p> : null}
+            {git.error ? <p className="shell-error">{git.error}</p> : null}
+            {!git.loading && git.status && !git.status.isRepo ? (
+              <div className="shell-empty">
+                <GitBranch size={22} />
+                <strong>Este proyecto no es un repo Git</strong>
+                <p>
+                  Inicializá el repositorio desde la terminal del proyecto para ver ramas y cambios.
+                </p>
+              </div>
+            ) : null}
+            {git.status?.isRepo ? (
+              <>
+                <section className="shell-card">
+                  <div className="shell-card-title">
+                    <GitBranch size={13} /> Rama actual
+                  </div>
+                  <div className="shell-branch-current">
+                    <strong>{git.status.branch ?? "detached"}</strong>
+                    {git.status.upstream ? <span>{git.status.upstream}</span> : null}
+                    {git.status.dirty ? (
+                      <span className="shell-branch-dirty-label">cambios</span>
+                    ) : null}
+                  </div>
+                  <div className="shell-git-meta">
+                    <span>↑ {git.status.ahead}</span>
+                    <span>↓ {git.status.behind}</span>
+                    <span>{git.status.files.length} archivos</span>
+                  </div>
+                </section>
+
+                <section className="shell-card">
+                  <div className="shell-card-title">Cambios</div>
+                  {git.status.files.length === 0 ? (
+                    <p className="shell-muted">Árbol limpio.</p>
+                  ) : (
+                    <div className="shell-git-files">
+                      {git.status.files.slice(0, 12).map((file) => (
+                        <div key={`${file.path}-${file.staged}`} className="shell-git-file">
+                          <span className={`shell-git-status ${file.status}`} />
+                          <span>{file.path}</span>
+                          <span className="shell-muted">
+                            {file.staged ? "staged" : file.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="shell-card">
+                  <div className="shell-card-title">Ramas</div>
+                  <div className="shell-git-branches">
+                    {git.branches.map((branch) => (
+                      <button
+                        key={branch.name}
+                        type="button"
+                        className={cn("shell-git-branch", branch.current && "is-current")}
+                        onClick={() => {
+                          if (!branch.current) {
+                            void git.checkout(branch.name);
+                          }
+                        }}
+                        disabled={branch.current}
+                      >
+                        <GitBranch size={12} />
+                        <span>{branch.name}</span>
+                        {branch.current ? <span className="shell-muted">actual</span> : null}
+                      </button>
+                    ))}
+                  </div>
+                  <form
+                    className="shell-branch-form"
+                    onSubmit={(event) => void createBranch(event)}
+                  >
+                    <input
+                      value={branchName}
+                      onChange={(event) => setBranchName(event.target.value)}
+                      placeholder="nueva-rama"
+                      aria-label="Nombre de la nueva rama"
+                      spellCheck={false}
+                    />
+                    <button type="submit" disabled={!branchName.trim()}>
+                      Crear
+                    </button>
+                  </form>
+                </section>
+
+                <button type="button" className="shell-ghost-button" disabled>
+                  <GitPullRequest size={14} />
+                  Conectar PR / MR
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
 

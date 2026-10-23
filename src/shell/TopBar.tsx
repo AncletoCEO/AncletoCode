@@ -1,4 +1,6 @@
 import { Command, GitBranch, PanelRight, Plus, Settings2 } from "lucide-react";
+import { useEffect } from "react";
+import { useGitStore } from "../stores/gitStore";
 import type { Project } from "../stores/projectsStore";
 import type { Session } from "../stores/sessionsStore";
 import { cn } from "../ui/cn";
@@ -11,6 +13,7 @@ type TopBarProps = {
   onPalette: () => void;
   onNewSession: () => void;
   onSettings: () => void;
+  onGit: () => void;
 };
 
 export default function TopBar({
@@ -21,7 +24,24 @@ export default function TopBar({
   onPalette,
   onNewSession,
   onSettings,
+  onGit,
 }: TopBarProps) {
+  const git = useGitStore();
+  const projectId = project?.id;
+  const loadGit = git.load;
+
+  useEffect(() => {
+    if (projectId) {
+      void loadGit(projectId);
+    }
+  }, [projectId, loadGit]);
+
+  const gitLabel = git.loading
+    ? "Git…"
+    : git.status?.isRepo
+      ? (git.status.branch ?? "detached")
+      : "Sin Git";
+
   return (
     <header className="shell-topbar">
       <div className="shell-breadcrumb">
@@ -45,13 +65,19 @@ export default function TopBar({
       <div className="shell-topbar-actions">
         <button
           type="button"
-          className="shell-branch-chip"
-          title="La integración Git se está preparando"
-          onClick={onPalette}
+          className={git.status?.dirty ? "shell-branch-chip is-dirty" : "shell-branch-chip"}
+          title={git.status?.isRepo ? `Rama ${gitLabel}` : "El proyecto no es un repositorio Git"}
+          onClick={onGit}
         >
           <GitBranch size={13} />
-          <span>Git</span>
-          <span className="shell-chip-muted">próximamente</span>
+          <span>{gitLabel}</span>
+          {git.status?.dirty ? <span className="shell-branch-dirty" /> : null}
+          {git.status && git.status.ahead > 0 ? (
+            <span className="shell-chip-muted">↑{git.status.ahead}</span>
+          ) : null}
+          {git.status && git.status.behind > 0 ? (
+            <span className="shell-chip-muted">↓{git.status.behind}</span>
+          ) : null}
         </button>
 
         <button type="button" className="shell-search-trigger" onClick={onPalette}>

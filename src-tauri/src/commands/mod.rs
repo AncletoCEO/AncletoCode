@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use std::path::Path;
 use std::sync::Arc;
 
+use ancleto_code_core::git::{GitBranch, GitStatus};
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
     CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
@@ -554,4 +555,40 @@ pub fn project_search(
     service
         .search(&id, &query, limit)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_status(state: State<'_, AppState>, id: String) -> Result<GitStatus, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_branches(state: State<'_, AppState>, id: String) -> Result<Vec<GitBranch>, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::branches(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_create_branch(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    checkout: bool,
+) -> Result<GitStatus, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::create_branch(Path::new(&root), &name, checkout)
+        .map_err(|error| error.to_string())?;
+    ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_checkout(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<GitStatus, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::checkout(Path::new(&root), &name).map_err(|error| error.to_string())?;
+    ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
 }

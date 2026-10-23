@@ -157,6 +157,11 @@ export default function DesktopShell() {
           onPalette={() => setPaletteOpen(true)}
           onNewSession={() => void createSession("shell")}
           onSettings={() => setSettingsOpen(true)}
+          onGit={() => {
+            preferences.setInspectorOpen(true);
+            setInspectorTab("git");
+            setView("workspace");
+          }}
         />
 
         <div className="app-body">
