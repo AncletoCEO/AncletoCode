@@ -198,6 +198,11 @@ export default function AgentTabs({ project }: AgentTabsProps) {
           </button>
         </span>
       </div>
+      {models.errors[driverId] ? (
+        <p className="agent-model-error" title={models.errors[driverId]}>
+          modelos: {models.errors[driverId]}
+        </p>
+      ) : null}
       {recoverable.length > 0 ? (
         <div className="recoverable">
           <span className="muted">sesiones recuperables</span>

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::Read;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -10,7 +11,7 @@ use uuid::Uuid;
 
 use crate::domain::{Conversation, ConversationState, CoreError, Result, Turn, TurnMode};
 use crate::drivers::{
-    AgentDriver, AgentSignal, CommandSpec, DriverRegistry, ParseState, SpawnContext,
+    resolve_binary, AgentDriver, AgentSignal, CommandSpec, DriverRegistry, ParseState, SpawnContext,
 };
 use crate::persistence::Store;
 use crate::session::{SessionBackend, SessionInfo};
@@ -31,6 +32,13 @@ pub enum ConversationEvent {
     Turn {
         conversation_id: String,
         turn: Turn,
+    },
+    TurnStarted {
+        conversation_id: String,
+        index: u32,
+        from_session: String,
+        to_session: String,
+        model: Option<String>,
     },
     State {
         conversation_id: String,
@@ -221,6 +229,13 @@ impl Orchestrator {
             } else {
                 conversation.model_b.as_deref()
             };
+            self.emit(ConversationEvent::TurnStarted {
+                conversation_id: id.clone(),
+                index: index + 1,
+                from_session: current.id.clone(),
+                to_session: other.id.clone(),
+                model: model.map(str::to_owned),
+            });
 
             match self.run_turn(&conversation, &current, model, &prompt, index) {
                 Ok((text, mode)) => {
@@ -284,7 +299,7 @@ impl Orchestrator {
         let driver = self.inner.drivers.resolve(&current.driver_id);
         let capabilities = driver.descriptor().capabilities;
         let context = SpawnContext {
-            program: current.program.clone(),
+            program: resolve_program(&current.program, driver.descriptor().binary.as_str()),
             args: args_with_model(&current.args, model, &current.driver_id),
             continue_session: index > 0,
             ..SpawnContext::default()
@@ -530,6 +545,20 @@ fn extract_text(driver: &dyn AgentDriver, output: &[u8]) -> String {
     }
 
     text.trim().to_owned()
+}
+
+fn resolve_program(program: &str, fallback: &str) -> String {
+    let candidate = if program.trim().is_empty() {
+        fallback
+    } else {
+        program
+    };
+    if Path::new(candidate).components().count() > 1 {
+        return candidate.to_owned();
+    }
+    resolve_binary(candidate)
+        .map(|path| path.to_string_lossy().into_owned())
+        .unwrap_or_else(|| candidate.to_owned())
 }
 
 fn args_with_model(args: &[String], model: Option<&str>, driver_id: &str) -> Vec<String> {

@@ -48,23 +48,12 @@ pub struct DriverStatus {
     pub capabilities: Capabilities,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SpawnContext {
     pub program: String,
     pub args: Vec<String>,
     pub continue_session: bool,
     pub max_turns: Option<u32>,
-}
-
-impl Default for SpawnContext {
-    fn default() -> Self {
-        Self {
-            program: "sh".to_owned(),
-            args: Vec::new(),
-            continue_session: false,
-            max_turns: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -135,9 +124,13 @@ impl AgentDriver for CliDriver {
         detect_binary(&self.descriptor, Some(self.install_hint.to_owned()))
     }
 
-    fn spawn(&self, _context: &SpawnContext) -> CommandSpec {
+    fn spawn(&self, context: &SpawnContext) -> CommandSpec {
         CommandSpec {
-            program: self.descriptor.binary.clone(),
+            program: if context.program.is_empty() {
+                self.descriptor.binary.clone()
+            } else {
+                context.program.clone()
+            },
             args: Vec::new(),
         }
     }
@@ -165,7 +158,11 @@ impl AgentDriver for CliDriver {
         }
 
         Some(CommandSpec {
-            program: self.descriptor.binary.clone(),
+            program: if context.program.is_empty() {
+                self.descriptor.binary.clone()
+            } else {
+                context.program.clone()
+            },
             args,
         })
     }

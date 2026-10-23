@@ -44,6 +44,13 @@ type StatePayload = {
   reason: string | null;
 };
 
+type TurnStartedPayload = {
+  index: number;
+  fromSession: string;
+  toSession: string;
+  model: string | null;
+};
+
 type ConversationPanelProps = {
   project: Project;
 };
@@ -66,6 +73,9 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [activeTurn, setActiveTurn] = useState<TurnStartedPayload | null>(null);
+  const [activeSince, setActiveSince] = useState(0);
+  const [activeElapsed, setActiveElapsed] = useState(0);
   const [busy, setBusy] = useState(false);
   const unlisteners = useRef<UnlistenFn[]>([]);
   const listRef = useRef<HTMLOListElement>(null);
@@ -152,9 +162,22 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     const id = conversationId;
     let disposed = false;
 
+    void listen<TurnStartedPayload>(`conversation://turn-started/${id}`, (event) => {
+      setActiveTurn(event.payload);
+      setActiveSince(Date.now());
+      setActiveElapsed(0);
+    }).then((stop) => {
+      if (disposed) {
+        stop();
+      } else {
+        unlisteners.current.push(stop);
+      }
+    });
+
     void listen<Turn>(`conversation://turn/${id}`, (event) => {
       const restore = listRef.current ? captureTranscriptAnchor(listRef.current) : null;
       setTurns((current) => [...current, event.payload]);
+      setActiveTurn(null);
       requestAnimationFrame(() => restore?.());
     }).then((stop) => {
       if (disposed) {
@@ -170,6 +193,9 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
           ? { ...current, state: event.payload.state, reason: event.payload.reason }
           : current,
       );
+      if (event.payload.state !== "running") {
+        setActiveTurn(null);
+      }
     }).then((stop) => {
       if (disposed) {
         stop();
@@ -187,6 +213,18 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     };
   }, [conversationId]);
 
+  useEffect(() => {
+    if (!activeTurn) {
+      return;
+    }
+    const started = activeSince || Date.now();
+    const timer = window.setInterval(
+      () => setActiveElapsed(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [activeTurn, activeSince]);
+
   async function start() {
     if (!effectiveA || !effectiveB || effectiveA === effectiveB || !objective.trim()) {
       setError("Elegí dos sesiones distintas y un objetivo.");
@@ -195,6 +233,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     setBusy(true);
     setError(null);
     setTurns([]);
+    setActiveTurn(null);
     try {
       const created = await invoke<Conversation>("conversation_start", {
         sessionA: effectiveA,
@@ -240,6 +279,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     }
     setConversation(null);
     setTurns([]);
+    setActiveTurn(null);
     setError(null);
   }
 
@@ -451,8 +491,30 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
                 <Markdown value={turn.text} />
               </li>
             ))}
-            {turns.length === 0 ? (
-              <li className="conversation-waiting">Esperando el primer turno…</li>
+            {activeTurn ? (
+              <li className="conversation-waiting is-active">
+                <span className="conversation-spinner" />
+                <div>
+                  <strong>
+                    Turno {activeTurn.index} ·{" "}
+                    {sessionLabelOf(projectSessions, activeTurn.fromSession)}
+                  </strong>
+                  <p>El agente está procesando el turno; la respuesta aparece al terminar.</p>
+                  <small>
+                    {activeTurn.model ?? "modelo de la sesión"} · {activeElapsed}s
+                  </small>
+                </div>
+              </li>
+            ) : turns.length === 0 ? (
+              <li className="conversation-waiting">
+                <span className="conversation-spinner" />
+                <div>
+                  <strong>Esperando el primer turno…</strong>
+                  <p>
+                    La conversación ya empezó; si no aparece respuesta, revisá la cuota del modelo.
+                  </p>
+                </div>
+              </li>
             ) : null}
           </ol>
         </div>

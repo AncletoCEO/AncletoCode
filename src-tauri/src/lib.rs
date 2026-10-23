@@ -34,6 +34,15 @@ struct ConversationStatePayload {
     reason: Option<String>,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConversationTurnStartedPayload {
+    index: u32,
+    from_session: String,
+    to_session: String,
+    model: Option<String>,
+}
+
 fn local_sessions(handle: tauri::AppHandle) -> SessionManager {
     SessionManager::new(Some(Arc::new(move |event| {
         let result = match event {
@@ -146,6 +155,21 @@ pub fn run() {
                         conversation_id,
                         turn,
                     } => handle.emit(&format!("conversation://turn/{conversation_id}"), turn),
+                    ConversationEvent::TurnStarted {
+                        conversation_id,
+                        index,
+                        from_session,
+                        to_session,
+                        model,
+                    } => handle.emit(
+                        &format!("conversation://turn-started/{conversation_id}"),
+                        ConversationTurnStartedPayload {
+                            index,
+                            from_session,
+                            to_session,
+                            model,
+                        },
+                    ),
                     ConversationEvent::State {
                         conversation_id,
                         state,

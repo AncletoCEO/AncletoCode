@@ -2989,3 +2989,53 @@
   color: var(--fg);
   border-color: var(--shell-accent);
 }
+
+.agent-model-error {
+  margin: 4px 0 0;
+  color: var(--danger);
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.conversation-waiting.is-active {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--shell-accent) 30%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--shell-accent) 6%, transparent);
+  color: var(--fg-muted);
+}
+
+.conversation-waiting > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conversation-waiting strong {
+  color: var(--fg);
+  font-size: 11px;
+}
+
+.conversation-waiting p {
+  margin: 0;
+  font-size: 10px;
+}
+
+.conversation-waiting small {
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.conversation-spinner {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  margin-top: 2px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--shell-accent);
+  border-radius: 50%;
+  animation: spec-spin 800ms linear infinite;
+}
