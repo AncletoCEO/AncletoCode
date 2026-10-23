@@ -198,6 +198,7 @@ pub fn run() {
             commands::session_list,
             commands::session_saved,
             commands::drivers_list,
+            commands::driver_models,
             commands::git_status,
             commands::git_branches,
             commands::git_create_branch,

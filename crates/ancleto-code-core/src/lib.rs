@@ -3,6 +3,7 @@ pub mod drivers;
 pub mod git;
 pub mod host;
 pub mod ide;
+pub mod models;
 pub mod orch;
 pub mod persistence;
 pub mod projects;
@@ -22,6 +23,7 @@ pub use git::{
     GitWorktree,
 };
 pub use host::{HostClient, HostPaths};
+pub use models::DriverModel;
 pub use orch::{ConversationEvent, Orchestrator, StartConversation};
 pub use persistence::{SavedSession, Store};
 pub use projects::{FileEntry, ProjectService};

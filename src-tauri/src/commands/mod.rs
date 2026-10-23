@@ -771,3 +771,18 @@ pub fn git_issues(state: State<'_, AppState>, id: String) -> Result<Vec<GitIssue
 pub fn usage_report() -> Vec<crate::usage::ProviderUsage> {
     crate::usage::report()
 }
+
+#[tauri::command]
+pub fn driver_models(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Vec<ancleto_code_core::DriverModel>, String> {
+    let binary = state
+        .drivers
+        .descriptors()
+        .into_iter()
+        .find(|descriptor| descriptor.id == id)
+        .map(|descriptor| descriptor.binary)
+        .ok_or_else(|| "driver desconocido".to_owned())?;
+    ancleto_code_core::models::list(&id, &binary).map_err(|error| error.to_string())
+}

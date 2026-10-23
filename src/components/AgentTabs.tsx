@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { defaultShell } from "../lib/shell";
+import { modelArguments } from "../lib/model-args";
+import { useModelsStore } from "../stores/modelsStore";
 import {
   getSnapshot as getDrivers,
   loadDrivers,
@@ -32,13 +34,22 @@ type DriverOption = {
 export default function AgentTabs({ project }: AgentTabsProps) {
   const sessions = useSyncExternalStore(subscribeSessions, getSessions);
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
+  const models = useModelsStore();
+  const loadModels = models.load;
   const [driverId, setDriverId] = useState("shell");
+  const [modelId, setModelId] = useState("");
   const [saved, setSaved] = useState<SavedSession[]>([]);
   const [recovered, setRecovered] = useState<string[]>([]);
 
   useEffect(() => {
     void loadDrivers();
   }, []);
+
+  useEffect(() => {
+    if (driverId !== "shell") {
+      void loadModels(driverId);
+    }
+  }, [driverId, loadModels]);
 
   useEffect(() => {
     void invoke<SavedSession[]>("session_saved")
@@ -80,7 +91,7 @@ export default function AgentTabs({ project }: AgentTabsProps) {
         projectId: project.id,
         driverId: option.id,
         program: option.program,
-        args: option.id === "shell" ? defaultShell().args : [],
+        args: option.id === "shell" ? defaultShell().args : modelArguments(option.id, modelId),
         cwd: project.rootPath,
         env: [],
         cols: 80,
@@ -123,7 +134,10 @@ export default function AgentTabs({ project }: AgentTabsProps) {
         <span className="agent-create">
           <select
             value={driverId}
-            onChange={(event) => setDriverId(event.target.value)}
+            onChange={(event) => {
+              setDriverId(event.target.value);
+              setModelId("");
+            }}
             aria-label="Driver"
           >
             {options.map((option) => (
@@ -132,6 +146,23 @@ export default function AgentTabs({ project }: AgentTabsProps) {
               </option>
             ))}
           </select>
+          {driverId !== "shell" ? (
+            <select
+              value={modelId}
+              onChange={(event) => setModelId(event.target.value)}
+              aria-label="Modelo"
+              title="Modelo de la nueva sesión"
+            >
+              <option value="">
+                {models.loading === driverId ? "cargando modelos…" : "modelo por defecto"}
+              </option>
+              {(models.byDriver[driverId] ?? []).map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.label || model.id}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button type="button" onClick={() => void createSession()}>
             + sesión
           </button>
