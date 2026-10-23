@@ -167,6 +167,7 @@ jobs:
           files: |
             dist/**/*.deb
             dist/**/*.AppImage
+            dist/**/*.tar.gz
             dist/**/*.zip
             dist/**/*.msi
             dist/**/*.exe
