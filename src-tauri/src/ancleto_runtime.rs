@@ -230,3 +230,19 @@ pub fn update(config_dir: &Path, resource_dir: &Path) -> Result<AncletoRuntimeSt
     activate(config_dir, &target.join("package/src/cli/index.js"))?;
     Ok(status(config_dir, resource_dir, true))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reports_the_bundled_package_version() {
+        let resource_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let config_dir =
+            std::env::temp_dir().join(format!("ancleto-runtime-test-{}", std::process::id()));
+        let status = status(&config_dir, &resource_dir, false);
+        assert_eq!(status.bundled_version.as_deref(), Some("0.14.0"));
+        assert!(status.active_version.is_some());
+        let _ = std::fs::remove_dir_all(config_dir);
+    }
+}

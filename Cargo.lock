@@ -106,6 +106,7 @@ dependencies = [
  "tar",
  "tauri",
  "tauri-build",
+ "tempfile",
  "uuid",
  "window-vibrancy",
 ]
