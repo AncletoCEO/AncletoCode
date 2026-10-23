@@ -35,8 +35,10 @@ Cada issue corresponde a un bloque de features y está asociado a las tareas de 
 | [#13](https://github.com/AncletoCEO/AncletoCode/issues/13) | CLI headless `acode` (deferida) | Fase 12 (12.1–12.13) |
 | [#14](https://github.com/AncletoCEO/AncletoCode/issues/14) | AncletoCMD (deferida) | Fase 13 (13.1–13.15) |
 | [#15](https://github.com/AncletoCEO/AncletoCode/issues/15) | Empaquetado de escritorio y release | Fase 14 (14.1–14.15) |
-| [#16](https://github.com/AncletoCEO/AncletoCode/issues/16) | Hardening y cierre | Fase 15 (15.1–15.6) |
-| por crear | Desktop 0.2: UI híbrida, Git y release AppImage | Fase 16 (16.1–16.23) |
+| [#16](https://github.com/AncletoCEO/AncletoCode/issues/16) | Hardening y cierre (cerrado; reemplazado por #17) | Fase 15 histórica |
+| [#17](https://github.com/AncletoCEO/AncletoCode/issues/17) | Desktop 0.1: UI híbrida, Git y Ancleto embebido | Fase 16 (16.1–16.23) |
+| [#18](https://github.com/AncletoCEO/AncletoCode/issues/18) | Ancleto SDD embebido y actualización administrada | Tarea 16.23 |
+| [#19](https://github.com/AncletoCEO/AncletoCode/issues/19) | Release desktop 0.1 (Windows/Linux) | Fases 14 (14.10, 14.13–14.15) |
 
 ## Fase 0 — Cumplimiento de licencia y vendorización (bloqueante)
 
@@ -257,7 +259,7 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 
 ## Fase 14 — Empaquetado de escritorio y release
 
-Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
+Issue: [#19](https://github.com/AncletoCEO/AncletoCode/issues/19)
 
 - [x] 14.1 Crear `packages/acode` (`acode`/`ancleto-code`) y `packages/acmd` (`acmd`/`ancleto-cmd`) con launchers Node mínimos.
 - [x] 14.2 Launcher: detección de plataforma/arquitectura/libc, resolución del paquete opcional, verificación de checksum y `spawn` con stdio y señales heredados.
@@ -277,7 +279,7 @@ Issue: [#15](https://github.com/AncletoCEO/AncletoCode/issues/15)
 
 ## Fase 15 — Hardening y cierre
 
-Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16)
+Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16) (cerrado; reemplazado por #17)
 
 - [x] 15.1 Persistencia de configuración: idioma, host, tier, límites de conversación, overrides de binarios, preferencias de writer, apariencia y layout de AncletoCMD.
 - [x] 15.2 Atajos: nueva sesión, cambiar proyecto, matar sesión, iniciar conversación, rebuild de writer, cambiar tema y equivalentes en AncletoCMD.
@@ -286,9 +288,9 @@ Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16)
 - [x] 15.5 `cargo test`, `cargo clippy`, `npm run test`, `npm run typecheck` y `npm run lint` en verde.
 - [x] 15.6 Empaquetado (`npm run tauri build`) y verificación de cierre limpio de procesos. La matriz npm queda deferida.
 
-## Fase 16 — Desktop 0.2: UI híbrida PandaCode + Orca, Git y worktrees
+## Fase 16 — Desktop 0.1: UI híbrida PandaCode + Orca, Git y worktrees
 
-Issue: por crear
+Issue: [#17](https://github.com/AncletoCEO/AncletoCode/issues/17)
 
 Objetivo: convertir la app en un workspace visualmente moderno y fácil de usar,
 tomando la calma y densidad de PandaCode y la organización de flotas/worktrees de
@@ -318,4 +320,4 @@ se registra en `docs/provenance.md`.
 - [ ] 16.20 Tests: fixtures de repos bare, worktrees, conflictos, providers mockeados (`gh`/`glab`), stores y componentes; snapshots visuales de las vistas principales.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
-- [ ] 16.23 Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.
+- [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.
