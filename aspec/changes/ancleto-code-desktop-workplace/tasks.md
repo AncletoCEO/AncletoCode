@@ -36,7 +36,7 @@ Cada issue corresponde a un bloque de features y está asociado a las tareas de 
 | [#14](https://github.com/AncletoCEO/AncletoCode/issues/14) | AncletoCMD (deferida) | Fase 13 (13.1–13.15) |
 | [#15](https://github.com/AncletoCEO/AncletoCode/issues/15) | Empaquetado de escritorio y release | Fase 14 (14.1–14.15) |
 | [#16](https://github.com/AncletoCEO/AncletoCode/issues/16) | Hardening y cierre | Fase 15 (15.1–15.6) |
-| por crear | Desktop 0.2: UI híbrida, Git y release AppImage | Fase 16 (16.1–16.21) |
+| por crear | Desktop 0.2: UI híbrida, Git y release AppImage | Fase 16 (16.1–16.23) |
 
 ## Fase 0 — Cumplimiento de licencia y vendorización (bloqueante)
 
@@ -317,3 +317,5 @@ se registra en `docs/provenance.md`.
 - [ ] 16.19 Accesibilidad y rendimiento: foco, teclado, contraste, reduced motion, virtualización de listas/diffs y presupuesto de render.
 - [ ] 16.20 Tests: fixtures de repos bare, worktrees, conflictos, providers mockeados (`gh`/`glab`), stores y componentes; snapshots visuales de las vistas principales.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
+- [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
+- [ ] 16.23 Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.

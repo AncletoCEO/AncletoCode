@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Palette, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { Check, Download, Palette, RefreshCw, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import {
   catalog,
@@ -10,6 +10,7 @@ import {
 } from "../stores/appearanceStore";
 import { cn } from "../ui/cn";
 import { useShellPreferences } from "./preferences";
+import { useUpdatesStore } from "../stores/updatesStore";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -26,6 +27,7 @@ export default function SettingsDialog({
 }: SettingsDialogProps) {
   const appearance = useSyncExternalStore(subscribeAppearance, getAppearance);
   const preferences = useShellPreferences();
+  const updates = useUpdatesStore();
   const themes = catalog();
   const theme = appearance.resolved.theme;
   const opacity = appearance.resolved.opacity;
@@ -169,6 +171,44 @@ export default function SettingsDialog({
                 />
                 <output>{Math.round(opacity.panels * 100)}%</output>
               </label>
+            </section>
+
+            <section className="shell-settings-section">
+              <h3>
+                <Download size={14} /> Actualizaciones
+              </h3>
+              <div className="shell-update-row">
+                <div>
+                  <strong>AncletoCode {updates.currentVersion}</strong>
+                  <span>
+                    {updates.latest
+                      ? `Última detectada: ${updates.latest.version}`
+                      : updates.checkedAt
+                        ? "Sin actualizaciones detectadas."
+                        : "Todavía no se chequeó."}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="shell-ghost-button"
+                  onClick={() => void updates.check(true)}
+                  disabled={updates.checking}
+                >
+                  <RefreshCw size={13} className={updates.checking ? "animate-spin" : ""} />
+                  Buscar ahora
+                </button>
+              </div>
+              {updates.error ? <p className="shell-error">{updates.error}</p> : null}
+              {updates.latest && updates.latest.version !== updates.currentVersion ? (
+                <a
+                  className="shell-update-link"
+                  href={updates.latest.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Ver AncletoCode {updates.latest.version}
+                </a>
+              ) : null}
             </section>
 
             <section className="shell-settings-section shell-settings-advanced">

@@ -1872,3 +1872,53 @@
   color: var(--shell-accent);
   background: color-mix(in srgb, var(--shell-accent) 7%, transparent);
 }
+
+.shell-update-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--shell-accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--shell-accent) 9%, var(--bg-panel));
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.shell-update-banner strong {
+  color: var(--fg);
+}
+
+.shell-update-banner a {
+  color: var(--shell-accent);
+  margin-left: 2px;
+}
+
+.shell-update-banner .icon-button {
+  margin-left: auto;
+}
+
+.shell-update-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shell-update-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.shell-update-row span {
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.shell-update-link {
+  align-self: flex-start;
+  color: var(--shell-accent);
+  font-size: 10px;
+}

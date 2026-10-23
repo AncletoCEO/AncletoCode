@@ -36,8 +36,10 @@ import Composer from "./Composer";
 import Inspector from "./Inspector";
 import Sidebar from "./Sidebar";
 import SettingsDialog from "./SettingsDialog";
+import UpdatesBanner from "./UpdatesBanner";
 import TopBar from "./TopBar";
 import { useShellPreferences } from "./preferences";
+import { useUpdatesStore } from "../stores/updatesStore";
 import type { InspectorTab, ShellView } from "./types";
 
 export default function DesktopShell() {
@@ -46,6 +48,7 @@ export default function DesktopShell() {
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
   const appearance = useSyncExternalStore(subscribeAppearance, getAppearance);
   const preferences = useShellPreferences();
+  const checkUpdates = useUpdatesStore((state) => state.check);
 
   const [view, setView] = useState<ShellView>("workspace");
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("context");
@@ -64,7 +67,8 @@ export default function DesktopShell() {
   useEffect(() => {
     void restoreSessions();
     void loadDrivers();
-  }, []);
+    void checkUpdates();
+  }, [checkUpdates]);
 
   useEffect(() => {
     void loadAppearance(project?.id ?? null);
@@ -149,6 +153,7 @@ export default function DesktopShell() {
       />
 
       <section className="app-main">
+        <UpdatesBanner />
         <TopBar
           project={project}
           session={session}
