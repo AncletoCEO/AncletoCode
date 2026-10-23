@@ -10,7 +10,7 @@
 Workspace de agentes de código para escritorio: proyectos, sesiones persistentes,
 tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
 
-> **Estado:** `0.0.5`, release interno/beta desktop-only. Windows todavía no está
+> **Estado:** `0.0.6`, release interno/beta desktop-only. Windows todavía no está
 > validado manualmente por maintainers. AncletoCMD, CLI `acode`, npm y AUR están
 > fuera de alcance por ahora.
 
@@ -43,32 +43,32 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
 
 ## Instalación
 
-Artefactos en [Releases](https://github.com/AncletoCEO/AncletoCode/releases/tag/v0.0.5).
+Artefactos en [Releases](https://github.com/AncletoCEO/AncletoCode/releases/tag/v0.0.6).
 Verificá siempre `SHA256SUMS`.
 
 ### Linux
 
 ```bash
 # Debian/Ubuntu
-sudo apt install ./AncletoCode_0.0.5_amd64.deb
+sudo apt install ./AncletoCode_0.0.6_amd64.deb
 
 # Arch/EndeavourOS y otras distros
-chmod +x AncletoCode_0.0.5_amd64.AppImage
-./AncletoCode_0.0.5_amd64.AppImage
+chmod +x AncletoCode_0.0.6_amd64.AppImage
+./AncletoCode_0.0.6_amd64.AppImage
 
 # Si FUSE no está disponible
-./AncletoCode_0.0.5_amd64.AppImage --appimage-extract-and-run
+./AncletoCode_0.0.6_amd64.AppImage --appimage-extract-and-run
 ```
 
 Requisitos: WebKitGTK 4.1, GTK 3, libsoup 3 y librsvg.
 
 ### Windows 10/11 x64
 
-Usá `AncletoCode_0.0.5_x64-setup.exe` (NSIS) o
-`AncletoCode_0.0.5_x64_en-US.msi`. También hay ZIP portable:
+Usá `AncletoCode_0.0.6_x64-setup.exe` (NSIS) o
+`AncletoCode_0.0.6_x64_en-US.msi`. También hay ZIP portable:
 
 ```powershell
-Expand-Archive .\AncletoCode-0.0.5-windows-x64-portable.zip -DestinationPath .\AncletoCode
+Expand-Archive .\AncletoCode-0.0.6-windows-x64-portable.zip -DestinationPath .\AncletoCode
 .\AncletoCode\ancleto-code-desktop.exe
 ```
 
@@ -173,7 +173,7 @@ Para un release estable se recomienda revisión legal externa.
 
 - [Sistema de diseño](docs/design/desktop-ui.md)
 - [Plan de release](docs/release-plan.md)
-- [Notas 0.0.5](docs/release-notes/0.0.5.md)
+- [Notas 0.0.6](docs/release-notes/0.0.6.md)
 - [Propuesta vigente](aspec/changes/ancleto-code-desktop-workplace/proposal.md)
 - [Tareas](aspec/changes/ancleto-code-desktop-workplace/tasks.md)
 
