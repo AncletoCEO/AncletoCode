@@ -11,6 +11,7 @@ use tauri::{Emitter, Manager};
 pub mod ancleto_runtime;
 pub mod commands;
 pub mod usage;
+pub mod writer_languages;
 
 use commands::AppState;
 
@@ -117,6 +118,7 @@ pub fn run() {
             fs::create_dir_all(&config_directory)?;
             let resource_directory = app.path().resource_dir()?;
             ancleto_runtime::configure(&config_directory, &resource_directory);
+            writer_languages::configure(&config_directory);
             let database = ancleto_code_core::host::transport::default_database_path();
             let service = ProjectService::open(&database)?;
             let settings_store = Store::open(&database)?;
@@ -175,6 +177,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::writer_languages_status,
+            commands::writer_languages_install,
             commands::usage_report,
             commands::ancleto_runtime_status,
             commands::ancleto_runtime_update,

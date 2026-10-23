@@ -786,3 +786,17 @@ pub fn driver_models(
         .ok_or_else(|| "driver desconocido".to_owned())?;
     ancleto_code_core::models::list(&id, &binary).map_err(|error| error.to_string())
 }
+
+#[tauri::command]
+pub fn writer_languages_status(
+    state: State<'_, AppState>,
+) -> crate::writer_languages::WriterLanguagesStatus {
+    crate::writer_languages::status(&state.config_dir)
+}
+
+#[tauri::command]
+pub fn writer_languages_install(
+    state: State<'_, AppState>,
+) -> Result<crate::writer_languages::WriterLanguagesStatus, String> {
+    crate::writer_languages::install(&state.config_dir)
+}

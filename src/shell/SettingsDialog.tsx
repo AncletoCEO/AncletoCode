@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import {
+  BookOpen,
   Check,
   Download,
   Palette,
@@ -21,6 +22,7 @@ import { cn } from "../ui/cn";
 import { useShellPreferences } from "./preferences";
 import { useUpdatesStore } from "../stores/updatesStore";
 import { useAncletoRuntimeStore } from "../stores/ancletoRuntimeStore";
+import { useWriterLanguagesStore } from "../stores/writerLanguagesStore";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -40,13 +42,18 @@ export default function SettingsDialog({
   const updates = useUpdatesStore();
   const ancleto = useAncletoRuntimeStore();
   const loadAncleto = ancleto.load;
+  const writerLanguages = useWriterLanguagesStore();
+  const loadWriterLanguages = writerLanguages.load;
   const themes = catalog();
 
   useEffect(() => {
     if (open && !ancleto.status) {
       void loadAncleto(false);
     }
-  }, [open, ancleto.status, loadAncleto]);
+    if (open && !writerLanguages.status) {
+      void loadWriterLanguages();
+    }
+  }, [open, ancleto.status, loadAncleto, writerLanguages.status, loadWriterLanguages]);
   const theme = appearance.resolved.theme;
   const opacity = appearance.resolved.opacity;
 
@@ -265,6 +272,42 @@ export default function SettingsDialog({
                   Última en npm: {ancleto.status.latestVersion}
                   {ancleto.status.updateAvailable ? " · actualización disponible" : ""}
                 </p>
+              ) : null}
+            </section>
+
+            <section className="shell-settings-section">
+              <h3>
+                <BookOpen size={14} /> Writer · pack de lenguajes
+              </h3>
+              <div className="shell-update-row">
+                <div>
+                  <strong>
+                    {writerLanguages.status?.installed
+                      ? `Lenguajes ${writerLanguages.status.version ?? "instalados"}`
+                      : "Pack de lenguajes no instalado"}
+                  </strong>
+                  <span>
+                    Añade Python, Go, Rust, C/C++, Java, C#, PHP, Ruby, Swift y Kotlin a writer.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="shell-ghost-button"
+                  onClick={() => void writerLanguages.install()}
+                  disabled={writerLanguages.installing}
+                >
+                  <Download
+                    size={13}
+                    className={writerLanguages.installing ? "animate-pulse" : ""}
+                  />
+                  {writerLanguages.installing ? "Instalando…" : "Instalar pack"}
+                </button>
+              </div>
+              {writerLanguages.error ? (
+                <p className="shell-error">{writerLanguages.error}</p>
+              ) : null}
+              {writerLanguages.status?.message ? (
+                <p className="shell-muted">{writerLanguages.status.message}</p>
               ) : null}
             </section>
 

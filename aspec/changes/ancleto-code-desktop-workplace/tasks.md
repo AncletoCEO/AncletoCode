@@ -323,6 +323,7 @@ se registra en `docs/provenance.md`.
 - [x] 16.26 Vista dedicada de conversación agente-a-agente: configuración, transcript, pausa/reanudar/abortar y estado.
 - [x] 16.27 Incluir `@ancleto/writer` en el runtime embebido y resolverlo con `ANCLETO_WRITER_NODE`/`ANCLETO_WRITER_JS`; el pack nativo de lenguajes queda opcional.
 - [x] 16.28 Feedback de regeneración de discovery: mensaje de progreso, tiempo transcurrido y salida/errores de repomix visibles en el panel.
+- [x] 16.29 Botón en Ajustes para instalar `@ancleto/writer-languages` bajo demanda y exponerlo a writer vía `NODE_PATH`.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
 - [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) (en progreso: sidecar Node, paquete incluido, update administrado y UI; falta E2E/rollback) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.

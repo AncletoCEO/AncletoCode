@@ -28,7 +28,8 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
 - **GitHub:** remoto, PRs e issues vía `gh`. GitLab queda diferido.
 - **Ancleto SDD embebido:** Node, `@ancleto/spec` y `@ancleto/writer` incluidos;
   actualización de spec administrada desde Ajustes con verificación de integridad
-  y rollback. `@ancleto/writer-languages` sigue siendo un pack nativo opcional.
+  y rollback. `@ancleto/writer-languages` se instala bajo demanda desde
+  **Ajustes → Writer · pack de lenguajes**; es un pack nativo y requiere npm.
 - **Updates de la app:** chequeo al iniciar y aviso de nueva versión.
 - **Uso de proveedores:** panel inspirado en Orca; OpenCode reporta tokens/costo
   local y Antigravity cuotas reales vía `agy -p /usage`. Claude y Command Code
