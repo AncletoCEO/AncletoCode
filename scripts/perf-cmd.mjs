@@ -49,7 +49,7 @@ try {
   }
   if (!window) throw new Error("no apareció la ventana de AncletoCMD");
 
-  execFileSync("xdotool", ["windowactivate", "--sync", window]);
+  execFileSync("xdotool", ["windowfocus", "--sync", window]);
   await sleep(600);
 
   const ticks = () => {
