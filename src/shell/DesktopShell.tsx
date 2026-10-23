@@ -126,7 +126,7 @@ export default function DesktopShell() {
       {
         projectId: project.id,
         driverId: isShell ? "shell" : driverId,
-        program: isShell ? shell.program : (driver?.binary ?? shell.program),
+        program: isShell ? shell.program : (driver?.binaryPath ?? driver?.binary ?? shell.program),
         args: isShell ? shell.args : [],
         cwd: project.rootPath,
         env: [],

@@ -63,7 +63,11 @@ export default function AgentTabs({ project }: AgentTabsProps) {
       { id: "shell", label: "Shell", program: shell.program },
       ...drivers.drivers
         .filter((driver) => driver.status === "available")
-        .map((driver) => ({ id: driver.id, label: driver.displayName, program: driver.binary })),
+        .map((driver) => ({
+          id: driver.id,
+          label: driver.displayName,
+          program: driver.binaryPath ?? driver.binary,
+        })),
     ];
   }, [drivers.drivers]);
 
