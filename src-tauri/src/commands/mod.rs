@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use std::path::Path;
 use std::sync::Arc;
 
-use ancleto_code_core::git::{GitBranch, GitStatus};
+use ancleto_code_core::git::{GitBranch, GitStatus, GitWorktree};
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
     CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
@@ -631,4 +631,33 @@ pub fn git_commit(
     ancleto_code_core::git::commit(Path::new(&root), &message)
         .map_err(|error| error.to_string())?;
     ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_worktrees(state: State<'_, AppState>, id: String) -> Result<Vec<GitWorktree>, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::worktrees(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_worktree_add(
+    state: State<'_, AppState>,
+    id: String,
+    branch: String,
+) -> Result<GitWorktree, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::add_worktree(Path::new(&root), &branch)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_worktree_remove(
+    state: State<'_, AppState>,
+    id: String,
+    path: String,
+    force: bool,
+) -> Result<(), String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::remove_worktree(Path::new(&root), &path, force)
+        .map_err(|error| error.to_string())
 }

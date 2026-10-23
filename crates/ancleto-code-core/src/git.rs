@@ -220,6 +220,100 @@ pub fn commit(root: &Path, message: &str) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitWorktree {
+    pub path: String,
+    pub branch: Option<String>,
+    pub head: Option<String>,
+    pub is_main: bool,
+}
+
+pub fn worktrees(root: &Path) -> Result<Vec<GitWorktree>> {
+    if !is_repo(root)? {
+        return Ok(Vec::new());
+    }
+    let output = ensure_success(git(root, &["worktree", "list", "--porcelain"])?)?;
+    let mut entries = Vec::new();
+    let mut current: Option<GitWorktree> = None;
+    for line in output.lines() {
+        if let Some(path) = line.strip_prefix("worktree ") {
+            if let Some(entry) = current.take() {
+                entries.push(entry);
+            }
+            current = Some(GitWorktree {
+                path: path.to_owned(),
+                branch: None,
+                head: None,
+                is_main: false,
+            });
+        } else if let Some(head) = line.strip_prefix("HEAD ") {
+            if let Some(entry) = current.as_mut() {
+                entry.head = Some(head.to_owned());
+            }
+        } else if let Some(branch) = line.strip_prefix("branch refs/heads/") {
+            if let Some(entry) = current.as_mut() {
+                entry.branch = Some(branch.to_owned());
+            }
+        } else if line == "bare" {
+            if let Some(entry) = current.as_mut() {
+                entry.is_main = true;
+            }
+        }
+    }
+    if let Some(entry) = current {
+        entries.push(entry);
+    }
+    if let Some(first) = entries.first_mut() {
+        first.is_main = true;
+    }
+    Ok(entries)
+}
+
+fn worktree_path(root: &Path, branch: &str) -> Result<std::path::PathBuf> {
+    let name = root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("repo");
+    let parent = root
+        .parent()
+        .ok_or_else(|| GitError::Command("ruta sin padre".to_owned()))?;
+    let safe = branch.replace(['/', '\\'], "-");
+    Ok(parent.join(format!("{name}-{safe}")))
+}
+
+pub fn add_worktree(root: &Path, branch: &str) -> Result<GitWorktree> {
+    validate_branch(root, branch)?;
+    let target = worktree_path(root, branch)?;
+    if target.exists() {
+        return Err(GitError::Command(format!(
+            "el worktree ya existe en {}",
+            target.display()
+        )));
+    }
+    let target_text = target.to_string_lossy().into_owned();
+    ensure_success(git(
+        root,
+        &["worktree", "add", "-b", branch, &target_text, "HEAD"],
+    )?)?;
+    worktrees(root)?
+        .into_iter()
+        .find(|entry| entry.path == target_text)
+        .ok_or_else(|| GitError::Command("git no listó el worktree creado".to_owned()))
+}
+
+pub fn remove_worktree(root: &Path, path: &str, force: bool) -> Result<()> {
+    let mut args = vec!["worktree", "remove"];
+    if force {
+        args.push("--force");
+    }
+    args.push(path);
+    ensure_success(git(root, &args)?)?;
+    let _ = git(root, &["worktree", "prune"]);
+    Ok(())
+}
+
 pub fn branches(root: &Path) -> Result<Vec<GitBranch>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -385,6 +479,19 @@ mod tests {
             stage(dir.path(), &["../escape".to_owned()]),
             Err(GitError::Command(_))
         ));
+    }
+
+    #[test]
+    fn creates_lists_and_removes_worktrees() {
+        let dir = init_repo();
+        let worktree = add_worktree(dir.path(), "wt/test").expect("add worktree");
+        assert!(Path::new(&worktree.path).is_dir());
+        assert_eq!(worktree.branch.as_deref(), Some("wt/test"));
+        let all = worktrees(dir.path()).expect("worktrees");
+        assert!(all.iter().any(|entry| entry.path == worktree.path));
+        assert!(all.iter().any(|entry| entry.is_main));
+        remove_worktree(dir.path(), &worktree.path, true).expect("remove worktree");
+        assert!(!Path::new(&worktree.path).exists());
     }
 
     #[test]

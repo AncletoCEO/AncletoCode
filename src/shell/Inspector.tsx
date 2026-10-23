@@ -51,6 +51,7 @@ export default function Inspector({
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
   const git = useGitStore();
   const [branchName, setBranchName] = useState("");
+  const [worktreeBranch, setWorktreeBranch] = useState("");
   const [commitMessage, setCommitMessage] = useState("");
 
   useEffect(() => {
@@ -74,6 +75,17 @@ export default function Inspector({
     const created = await git.createBranch(branchName.trim(), true);
     if (created) {
       setBranchName("");
+    }
+  }
+
+  async function createWorktree(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!worktreeBranch.trim()) {
+      return;
+    }
+    const created = await git.addWorktree(worktreeBranch.trim());
+    if (created) {
+      setWorktreeBranch("");
     }
   }
 
@@ -251,6 +263,52 @@ export default function Inspector({
                     />
                     <button type="submit" disabled={!branchName.trim()}>
                       Crear
+                    </button>
+                  </form>
+                </section>
+
+                <section className="shell-card">
+                  <div className="shell-card-title">Worktrees</div>
+                  <div className="shell-git-branches">
+                    {git.worktrees.map((worktree) => (
+                      <div key={worktree.path} className="shell-worktree-row">
+                        <span className="shell-git-status" />
+                        <div>
+                          <strong>{worktree.branch ?? "detached"}</strong>
+                          <span>{worktree.path}</span>
+                        </div>
+                        {worktree.isMain ? (
+                          <span className="shell-muted">principal</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="shell-git-action"
+                            title="Eliminar worktree"
+                            onClick={() => {
+                              if (window.confirm(`¿Eliminar el worktree ${worktree.path}?`)) {
+                                void git.removeWorktree(worktree.path);
+                              }
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <form
+                    className="shell-branch-form"
+                    onSubmit={(event) => void createWorktree(event)}
+                  >
+                    <input
+                      value={worktreeBranch}
+                      onChange={(event) => setWorktreeBranch(event.target.value)}
+                      placeholder="rama para worktree"
+                      aria-label="Rama del worktree"
+                      spellCheck={false}
+                    />
+                    <button type="submit" disabled={!worktreeBranch.trim()}>
+                      Agregar
                     </button>
                   </form>
                 </section>

@@ -1922,3 +1922,45 @@
   color: var(--shell-accent);
   font-size: 10px;
 }
+
+.shell-worktree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  font-size: 10px;
+}
+
+.shell-worktree-row:hover {
+  background: rgb(var(--bg-elevated-rgb) / 30%);
+}
+
+.shell-worktree-row > div {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shell-worktree-row strong {
+  font-weight: 600;
+}
+
+.shell-worktree-row span {
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-worktree-row .shell-git-status {
+  margin-top: 4px;
+  background: var(--success);
+}
+
+.shell-worktree-row .shell-muted {
+  margin-left: auto;
+  flex: none;
+}

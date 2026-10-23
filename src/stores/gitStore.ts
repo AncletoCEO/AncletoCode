@@ -23,16 +23,26 @@ export type GitBranch = {
   upstream: string | null;
 };
 
+export type GitWorktree = {
+  path: string;
+  branch: string | null;
+  head: string | null;
+  isMain: boolean;
+};
+
 type GitState = {
   projectId: string | null;
   status: GitStatus | null;
   branches: GitBranch[];
+  worktrees: GitWorktree[];
   loading: boolean;
   error: string | null;
   diff: { path: string; staged: boolean; text: string } | null;
   load: (projectId: string) => Promise<void>;
   createBranch: (name: string, checkout: boolean) => Promise<boolean>;
   checkout: (name: string) => Promise<boolean>;
+  addWorktree: (branch: string) => Promise<boolean>;
+  removeWorktree: (path: string) => Promise<boolean>;
   openDiff: (path: string, staged: boolean) => Promise<void>;
   closeDiff: () => void;
   stage: (path: string) => Promise<void>;
@@ -49,17 +59,19 @@ export const useGitStore = create<GitState>()((set, get) => ({
   projectId: null,
   status: null,
   branches: [],
+  worktrees: [],
   loading: false,
   error: null,
   diff: null,
   load: async (projectId) => {
     set({ projectId, loading: true, error: null });
     try {
-      const [status, branches] = await Promise.all([
+      const [status, branches, worktrees] = await Promise.all([
         invoke<GitStatus>("git_status", { id: projectId }),
         invoke<GitBranch[]>("git_branches", { id: projectId }),
+        invoke<GitWorktree[]>("git_worktrees", { id: projectId }),
       ]);
-      set({ status, branches, loading: false });
+      set({ status, branches, worktrees, loading: false });
     } catch (error) {
       set({ status: null, branches: [], loading: false, error: messageOf(error) });
     }
@@ -94,6 +106,36 @@ export const useGitStore = create<GitState>()((set, get) => ({
       const status = await invoke<GitStatus>("git_checkout", { id: projectId, name });
       const branches = await invoke<GitBranch[]>("git_branches", { id: projectId });
       set({ status, branches });
+      return true;
+    } catch (error) {
+      set({ error: messageOf(error) });
+      return false;
+    }
+  },
+  addWorktree: async (branch) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return false;
+    }
+    set({ error: null });
+    try {
+      await invoke<GitWorktree>("git_worktree_add", { id: projectId, branch });
+      await get().load(projectId);
+      return true;
+    } catch (error) {
+      set({ error: messageOf(error) });
+      return false;
+    }
+  },
+  removeWorktree: async (path) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return false;
+    }
+    set({ error: null });
+    try {
+      await invoke("git_worktree_remove", { id: projectId, path, force: false });
+      await get().load(projectId);
       return true;
     } catch (error) {
       set({ error: messageOf(error) });
