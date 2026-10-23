@@ -27,7 +27,7 @@
 - [ ] 3.4 Limpieza asistida con cambios sin commit.
 - [ ] 3.5 Tests de repos bare, worktrees huérfanos y conflictos.
 
-## 4. Updates firmados (#24)
+## 4. Updates firmados (#23)
 
 - [ ] 4.1 Configurar firma/endpoint de updates y canal stable/prerelease.
 - [ ] 4.2 Descarga con progreso, verificación y rollback.
@@ -35,7 +35,7 @@
 - [ ] 4.4 Tests de firma inválida, descarga fallida y fallback.
 - [ ] 4.5 Documentar claves y rotación.
 
-## 5. Validación Windows (#23)
+## 5. Validación Windows (#24)
 
 - [ ] 5.1 Instalar NSIS y MSI; abrir app y About.
 - [ ] 5.2 Smoke de ZIP portable y host.

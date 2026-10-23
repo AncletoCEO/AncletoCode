@@ -14,8 +14,8 @@ desde worktrees, updates instalables y validación Windows.
 | [#20](https://github.com/AncletoCEO/AncletoCode/issues/20) | Cuotas de usage por proveedor |
 | [#21](https://github.com/AncletoCEO/AncletoCode/issues/21) | GitHub PR review, checks y merge |
 | [#22](https://github.com/AncletoCEO/AncletoCode/issues/22) | Abrir worktree y completar Task/Thread |
-| [#23](https://github.com/AncletoCEO/AncletoCode/issues/23) | Validación manual de Windows |
-| [#24](https://github.com/AncletoCEO/AncletoCode/issues/24) | Updates firmados e instalación desde la app |
+| [#23](https://github.com/AncletoCEO/AncletoCode/issues/23) | Updates firmados e instalación desde la app |
+| [#24](https://github.com/AncletoCEO/AncletoCode/issues/24) | Validación manual de Windows |
 | [#25](https://github.com/AncletoCEO/AncletoCode/issues/25) | Hardening de update/rollback de Ancleto |
 
 ## In scope
@@ -36,4 +36,4 @@ GitLab y otros hosts Git, AncletoCMD, CLI `acode`, npm, AUR y macOS.
 - Un usuario puede pasar de tarea a worktree, PR, review y merge sin salir de la app.
 - Las cuotas muestran fuente y estado; los proveedores sin datos no muestran 0%.
 - Una actualización fallida de la app o de Ancleto deja la versión anterior operativa.
-- Windows pasa el checklist de #23.
+- Windows pasa el checklist de #24.
