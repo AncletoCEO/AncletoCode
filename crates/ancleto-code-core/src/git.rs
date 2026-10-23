@@ -229,6 +229,40 @@ pub struct GitWorktree {
     pub is_main: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitActionOutcome {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+fn action(root: &Path, args: &[&str]) -> Result<GitActionOutcome> {
+    let output = git(root, args)?;
+    Ok(GitActionOutcome {
+        success: output.status.success(),
+        stdout: String::from_utf8_lossy(&output.stdout).trim().to_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+    })
+}
+
+pub fn fetch(root: &Path) -> Result<GitActionOutcome> {
+    action(root, &["fetch", "--all", "--prune"])
+}
+
+pub fn pull(root: &Path) -> Result<GitActionOutcome> {
+    action(root, &["pull", "--ff-only"])
+}
+
+pub fn push(root: &Path) -> Result<GitActionOutcome> {
+    action(root, &["push"])
+}
+
+pub fn merge(root: &Path, branch: &str) -> Result<GitActionOutcome> {
+    validate_branch(root, branch)?;
+    action(root, &["merge", branch])
+}
+
 pub fn worktrees(root: &Path) -> Result<Vec<GitWorktree>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -492,6 +526,15 @@ mod tests {
         assert!(all.iter().any(|entry| entry.is_main));
         remove_worktree(dir.path(), &worktree.path, true).expect("remove worktree");
         assert!(!Path::new(&worktree.path).exists());
+    }
+
+    #[test]
+    fn fetch_pull_push_and_merge_report_outcomes() {
+        let dir = init_repo();
+        let fetch = fetch(dir.path()).expect("fetch");
+        assert!(fetch.success);
+        let merge = merge(dir.path(), "main").expect("merge");
+        assert!(merge.success || !merge.stderr.is_empty());
     }
 
     #[test]

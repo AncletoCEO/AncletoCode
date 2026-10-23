@@ -30,12 +30,20 @@ export type GitWorktree = {
   isMain: boolean;
 };
 
+export type GitActionOutcome = {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+};
+
 type GitState = {
   projectId: string | null;
   status: GitStatus | null;
   branches: GitBranch[];
   worktrees: GitWorktree[];
   loading: boolean;
+  actionBusy: boolean;
+  message: string | null;
   error: string | null;
   diff: { path: string; staged: boolean; text: string } | null;
   load: (projectId: string) => Promise<void>;
@@ -47,6 +55,7 @@ type GitState = {
   closeDiff: () => void;
   stage: (path: string) => Promise<void>;
   unstage: (path: string) => Promise<void>;
+  runAction: (action: "fetch" | "pull" | "push" | "merge", branch?: string) => Promise<void>;
   commit: (message: string) => Promise<boolean>;
   reset: () => void;
 };
@@ -61,6 +70,8 @@ export const useGitStore = create<GitState>()((set, get) => ({
   branches: [],
   worktrees: [],
   loading: false,
+  actionBusy: false,
+  message: null,
   error: null,
   diff: null,
   load: async (projectId) => {
@@ -180,6 +191,31 @@ export const useGitStore = create<GitState>()((set, get) => ({
       await get().load(projectId);
     } catch (error) {
       set({ error: messageOf(error) });
+    }
+  },
+  runAction: async (action, branch) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return;
+    }
+    set({ actionBusy: true, error: null, message: null });
+    try {
+      const command = `git_${action}`;
+      const outcome = await invoke<GitActionOutcome>(command, {
+        id: projectId,
+        ...(branch ? { branch } : {}),
+      });
+      set({
+        actionBusy: false,
+        message: outcome.stdout || outcome.stderr || "Acción completada.",
+        error: outcome.success ? null : outcome.stderr || "Git terminó con error.",
+      });
+      await get().load(projectId);
+    } catch (error) {
+      set({
+        actionBusy: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
   commit: async (message) => {

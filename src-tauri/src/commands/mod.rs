@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use std::path::Path;
 use std::sync::Arc;
 
-use ancleto_code_core::git::{GitBranch, GitStatus, GitWorktree};
+use ancleto_code_core::git::{GitActionOutcome, GitBranch, GitStatus, GitWorktree};
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
     CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
@@ -680,4 +680,32 @@ pub fn git_worktree_remove(
     let root = project_root(&state, &id)?;
     ancleto_code_core::git::remove_worktree(Path::new(&root), &path, force)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_fetch(state: State<'_, AppState>, id: String) -> Result<GitActionOutcome, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::fetch(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_pull(state: State<'_, AppState>, id: String) -> Result<GitActionOutcome, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::pull(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_push(state: State<'_, AppState>, id: String) -> Result<GitActionOutcome, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::push(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_merge(
+    state: State<'_, AppState>,
+    id: String,
+    branch: String,
+) -> Result<GitActionOutcome, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::merge(Path::new(&root), &branch).map_err(|error| error.to_string())
 }

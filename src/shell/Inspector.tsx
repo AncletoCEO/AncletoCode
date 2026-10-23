@@ -4,8 +4,12 @@ import {
   CircleDot,
   FileDiff,
   GitBranch,
+  Download,
+  GitMerge,
   GitPullRequest,
   PanelRightClose,
+  RefreshCw,
+  Upload,
   Play,
   Users,
 } from "lucide-react";
@@ -208,6 +212,30 @@ export default function Inspector({
                     <span>↓ {git.status.behind}</span>
                     <span>{git.status.files.length} archivos</span>
                   </div>
+                  <div className="shell-git-actions">
+                    <button
+                      type="button"
+                      onClick={() => void git.runAction("fetch")}
+                      disabled={git.actionBusy}
+                    >
+                      <RefreshCw size={12} /> Fetch
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void git.runAction("pull")}
+                      disabled={git.actionBusy}
+                    >
+                      <Download size={12} /> Pull
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void git.runAction("push")}
+                      disabled={git.actionBusy}
+                    >
+                      <Upload size={12} /> Push
+                    </button>
+                  </div>
+                  {git.message ? <p className="shell-git-message">{git.message}</p> : null}
                 </section>
 
                 <section className="shell-card">
@@ -233,21 +261,40 @@ export default function Inspector({
                   <div className="shell-card-title">Ramas</div>
                   <div className="shell-git-branches">
                     {git.branches.map((branch) => (
-                      <button
+                      <div
                         key={branch.name}
-                        type="button"
                         className={cn("shell-git-branch", branch.current && "is-current")}
-                        onClick={() => {
-                          if (!branch.current) {
-                            void git.checkout(branch.name);
-                          }
-                        }}
-                        disabled={branch.current}
                       >
-                        <GitBranch size={12} />
-                        <span>{branch.name}</span>
-                        {branch.current ? <span className="shell-muted">actual</span> : null}
-                      </button>
+                        <button
+                          type="button"
+                          className="shell-git-branch-main"
+                          onClick={() => {
+                            if (!branch.current) {
+                              void git.checkout(branch.name);
+                            }
+                          }}
+                          disabled={branch.current}
+                        >
+                          <GitBranch size={12} />
+                          <span>{branch.name}</span>
+                          {branch.current ? <span className="shell-muted">actual</span> : null}
+                        </button>
+                        {branch.current ? null : (
+                          <button
+                            type="button"
+                            className="shell-git-merge"
+                            title={`Merge ${branch.name} en la rama actual`}
+                            aria-label={`Merge ${branch.name}`}
+                            onClick={() => {
+                              if (window.confirm(`¿Merge de ${branch.name} en la rama actual?`)) {
+                                void git.runAction("merge", branch.name);
+                              }
+                            }}
+                          >
+                            <GitMerge size={11} />
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                   <form

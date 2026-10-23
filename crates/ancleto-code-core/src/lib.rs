@@ -16,7 +16,7 @@ pub use domain::{
 pub use drivers::{
     AgentDriver, AgentDriverDescriptor, Capabilities, DriverRegistry, DriverStatus, ToolStatus,
 };
-pub use git::{GitBranch, GitError, GitFile, GitStatus, GitWorktree};
+pub use git::{GitActionOutcome, GitBranch, GitError, GitFile, GitStatus, GitWorktree};
 pub use host::{HostClient, HostPaths};
 pub use orch::{ConversationEvent, Orchestrator, StartConversation};
 pub use persistence::{SavedSession, Store};
