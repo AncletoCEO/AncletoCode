@@ -2,11 +2,11 @@
 
 Workspace de agentes de código con **dos versiones**: la app de escritorio **AncletoCode** (Tauri 2) y **AncletoCMD**, un emulador de terminal nativo, rápido y GPU-acelerado que además funciona como gestor de proyectos y sesiones. Ambas comparten el mismo núcleo, la misma configuración y las mismas sesiones, junto con una CLI headless para automatización.
 
-> **Estado:** `0.0.1`, release desktop-only para Linux y Windows. Incluye UI
+> **Estado:** `0.0.2`, release desktop-only para Linux y Windows. Incluye UI
 > híbrida PandaCode + Orca, Git/worktrees, GitHub y Ancleto SDD embebido. La
 > revisión técnica de licencias está completada; para un release estable se
 > recomienda revisión legal externa. Ver [`docs/release-plan.md`](docs/release-plan.md)
-> y [`docs/release-notes/0.0.1.md`](docs/release-notes/0.0.1.md).
+> y [`docs/release-notes/0.0.2.md`](docs/release-notes/0.0.2.md).
 >
 > AncletoCMD, CLI `acode`, npm y AUR quedan fuera de este release.
 
@@ -144,36 +144,36 @@ npm run tauri dev
 El release se construye con `npm run tauri -- build --bundles deb,appimage` en
 Linux y `--bundles nsis,msi` en Windows.
 
-## Instalación 0.0.1
+## Instalación 0.0.2
 
 Todos los artefactos están en
-[Releases v0.0.1](https://github.com/AncletoCEO/AncletoCode/releases/tag/v0.0.1).
+[Releases v0.0.2](https://github.com/AncletoCEO/AncletoCode/releases/tag/v0.0.2).
 Verificá `SHA256SUMS` antes de instalar.
 
 ### Linux — Debian/Ubuntu
 
 ```bash
-sudo apt install ./AncletoCode_0.0.1_amd64.deb
+sudo apt install ./AncletoCode_0.0.2_amd64.deb
 ancleto-code-desktop
 ```
 
 ### Linux — Arch/EndeavourOS y otras distros
 
 ```bash
-chmod +x AncletoCode_0.0.1_amd64.AppImage
-./AncletoCode_0.0.1_amd64.AppImage
+chmod +x AncletoCode_0.0.2_amd64.AppImage
+./AncletoCode_0.0.2_amd64.AppImage
 ```
 
 Si FUSE no está disponible:
 
 ```bash
-./AncletoCode_0.0.1_amd64.AppImage --appimage-extract-and-run
+./AncletoCode_0.0.2_amd64.AppImage --appimage-extract-and-run
 ```
 
 ### Windows 10/11 x64
 
-1. Descargá `AncletoCode_0.0.1_x64-setup.exe` (NSIS) o
-   `AncletoCode_0.0.1_x64_en-US.msi`.
+1. Descargá `AncletoCode_0.0.2_x64-setup.exe` (NSIS) o
+   `AncletoCode_0.0.2_x64_en-US.msi`.
 2. Si SmartScreen advierte por ser una build interna sin firma, verificá el hash
    y elegí **Más información → Ejecutar de todos modos**.
 3. Abrí **AncletoCode** desde el menú Inicio.
@@ -181,13 +181,13 @@ Si FUSE no está disponible:
 El **ZIP portable** incluye la app y el host:
 
 ```powershell
-Expand-Archive .\AncletoCode-0.0.1-windows-x64-portable.zip -DestinationPath .\AncletoCode
+Expand-Archive .\AncletoCode-0.0.2-windows-x64-portable.zip -DestinationPath .\AncletoCode
 .\AncletoCode\ancleto-code-desktop.exe
 ```
 
 ### macOS
 
-No hay artefactos en 0.0.1.
+No hay artefactos en 0.0.2.
 
 ## Uso
 
@@ -225,10 +225,10 @@ sha256sum -c SHA256SUMS
 
 ```powershell
 # Windows PowerShell
-Get-FileHash .\AncletoCode_0.0.1_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\AncletoCode_0.0.2_x64-setup.exe -Algorithm SHA256
 ```
 
-## Limitaciones de 0.0.1
+## Limitaciones de 0.0.2
 
 - Windows no fue validado manualmente por maintainers en esta build.
 - GitLab y otros hosts quedan fuera de alcance por ahora. Checks/review de PRs y
