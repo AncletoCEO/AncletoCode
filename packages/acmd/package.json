@@ -1,6 +1,6 @@
 {
   "name": "@ancleto/cmd",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AncletoCMD, emulador de terminal y gestor",
   "type": "module",
   "license": "AGPL-3.0-only",
@@ -24,12 +24,12 @@
     "node": ">=18"
   },
   "optionalDependencies": {
-    "@ancleto/cmd-linux-x64-gnu": "0.0.1",
-    "@ancleto/cmd-linux-arm64-gnu": "0.0.1",
-    "@ancleto/cmd-win32-x64": "0.0.1",
-    "@ancleto/cmd-win32-arm64": "0.0.1",
-    "@ancleto/cmd-darwin-x64": "0.0.1",
-    "@ancleto/cmd-darwin-arm64": "0.0.1"
+    "@ancleto/cmd-linux-x64-gnu": "0.0.2",
+    "@ancleto/cmd-linux-arm64-gnu": "0.0.2",
+    "@ancleto/cmd-win32-x64": "0.0.2",
+    "@ancleto/cmd-win32-arm64": "0.0.2",
+    "@ancleto/cmd-darwin-x64": "0.0.2",
+    "@ancleto/cmd-darwin-arm64": "0.0.2"
   },
   "publishConfig": {
     "access": "public"

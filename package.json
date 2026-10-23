@@ -1,7 +1,7 @@
 {
   "name": "ancleto-code",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Workspace de agentes de código para escritorio y terminal: AncletoCode, AncletoCMD y CLI acode.",
   "type": "module",
   "engines": {
