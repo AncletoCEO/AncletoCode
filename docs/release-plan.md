@@ -40,7 +40,7 @@ Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
 ## Limitaciones de esta etapa
 
 - Windows aún sin validación manual de maintainers.
-- GitLab/`glab` y review/merge de PRs pendientes.
+- GitLab/`glab` fuera de alcance por ahora; review/merge de PRs pendiente.
 - AUR, npm, CLI y AncletoCMD fuera de alcance.
 
 La revisión técnica de licencias está completada; antes de un release estable se

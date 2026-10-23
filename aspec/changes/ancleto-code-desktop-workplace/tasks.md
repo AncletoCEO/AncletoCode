@@ -294,7 +294,7 @@ Issue: [#17](https://github.com/AncletoCEO/AncletoCode/issues/17)
 
 Objetivo: convertir la app en un workspace visualmente moderno y fácil de usar,
 tomando la calma y densidad de PandaCode y la organización de flotas/worktrees de
-Orca, sin perder los diferenciadores Ancleto (spec, writer, conversación y
+Orca, sin perder los diferenciadores Ancleto; GitHub es el único host Git activo (spec, writer, conversación y
 sesiones persistentes). Todo código reutilizado se vendoriza, se marca con SPDX y
 se registra en `docs/provenance.md`.
 
@@ -309,10 +309,10 @@ se registra en `docs/provenance.md`.
 - [ ] 16.9 (en progreso: status, ramas, diff, staging, commit, fetch/pull/push y merge; falta rebase) Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
 - [ ] 16.10 (en progreso: branch chip y panel con ramas/estado) Branch chip y panel de ramas: rama actual, ahead/behind, dirty state, cambiar/crear rama, worktree asociado y acciones seguras; sin comandos destructivos sin confirmación explícita.
 - [ ] 16.11 (en progreso: diff unificado con staging; faltan split y comentarios por línea) Revisión de cambios: diff unificado/split, archivos por turno, staging por hunk, comentarios por línea y envío del comentario al agente.
-- [ ] 16.12 (en progreso: detección de remoto y proveedor GitHub/GitLab/Bitbucket/Azure; falta auth y capacidades) Abstracción `GitHostProvider` para GitHub/GitLab/Bitbucket/Azure y remotos genéricos: detección por URL, autenticación delegada a CLIs, capacidades declaradas y errores accionables.
+- [ ] 16.12 (en progreso: detección de remoto GitHub y proveedor; falta auth/capacidades) Abstracción `GitHostProvider` con **GitHub** como único proveedor activo; GitLab/Bitbucket/Azure quedan diferidos.
 - [ ] 16.13 (en progreso: listar PRs; faltan issues/checks/review/merge) GitHub nativo con `gh`: detectar login, listar repos/PRs/issues/checks, abrir PR, revisar y mergear; enlazar PR con tarea y rama.
-- [ ] 16.14 GitLab con `glab`: login, MRs/issues/pipelines, abrir MR, revisar y mergear; misma interfaz de provider que GitHub.
-- [ ] 16.15 Otros gestores: Bitbucket/Azure o remoto genérico con fallback a URL web; no almacenar tokens en la app, delegar en la CLI o el credential helper.
+- [ ] 16.14 (deferido) GitLab con `glab`. Fuera de alcance por ahora.
+- [ ] 16.15 (deferido) Bitbucket/Azure/remoto genérico. Fuera de alcance por ahora.
 - [ ] 16.16 Crear PR/MR desde una tarea: rama, base, título/cuerpo, reviewers, issue link y checks; estado visible en el thread.
 - [ ] 16.17 Command palette y quick switcher: proyectos, tareas, ramas, worktrees, PRs/MRs, comandos Git y acciones Ancleto; atajos configurables.
 - [ ] 16.18 Integrar los paneles Ancleto (spec, writer, conversación, sesiones) en el nuevo shell sin regresiones; el estado sigue viniendo de las CLIs.

@@ -231,8 +231,8 @@ Get-FileHash .\AncletoCode_0.0.1_x64-setup.exe -Algorithm SHA256
 ## Limitaciones de 0.0.1
 
 - Windows no fue validado manualmente por maintainers en esta build.
-- GitLab, checks/review de PRs y abrir el proyecto desde el worktree quedan
-  pendientes.
+- GitLab y otros hosts quedan fuera de alcance por ahora. Checks/review de PRs y
+  abrir el proyecto desde el worktree siguen pendientes.
 - AncletoCMD, CLI `acode`, npm y AUR están fuera de este release.
 - La atribución de fork y la revisión técnica de licencias están incluidas; para
   un release estable se recomienda revisión legal externa.
