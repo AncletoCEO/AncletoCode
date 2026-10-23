@@ -113,6 +113,8 @@ vista de apariencia avanzada.
 
 ![Ajustes, temas y Ancleto embebido](desktop-settings-0.1.png)
 
+![Board de tareas](desktop-tasks-0.1.png)
+
 ## Implementación
 
 Tauri 2 + React 19 + TypeScript + Tailwind 4 + Radix/shadcn + Zustand. El core Rust y el host de sesiones no se reescriben en esta fase.
