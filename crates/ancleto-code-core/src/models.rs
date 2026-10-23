@@ -63,6 +63,76 @@ fn parse_lines(text: &str) -> Vec<DriverModel> {
         .collect()
 }
 
+fn title_token(token: &str) -> String {
+    let mut chars = token.chars();
+    let Some(first) = chars.next() else {
+        return String::new();
+    };
+    if first.is_ascii_digit() {
+        let mut value = token.to_owned();
+        if let Some(last) = value.chars().last() {
+            if last.is_ascii_alphabetic() {
+                let upper = last.to_ascii_uppercase();
+                value.pop();
+                value.push(upper);
+            }
+        }
+        return value;
+    }
+    let mut value = first.to_uppercase().collect::<String>();
+    value.push_str(chars.as_str());
+    value
+}
+
+fn title_case(value: &str) -> String {
+    value
+        .split('-')
+        .filter(|part| !part.is_empty())
+        .map(title_token)
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn humanize_model_id(id: &str) -> String {
+    let name = id.rsplit('/').next().unwrap_or(id);
+    let lower = name.to_lowercase();
+    let brands = [
+        ("deepseek", "DeepSeek"),
+        ("minimax", "MiniMax"),
+        ("moonshotai", "Moonshot"),
+        ("glm", "GLM"),
+        ("mimo", "MiMo"),
+        ("kimi", "Kimi"),
+        ("claude", "Claude"),
+        ("gemini", "Gemini"),
+        ("grok", "Grok"),
+        ("gpt-oss", "GPT-OSS"),
+        ("gpt", "GPT"),
+        ("openai", "OpenAI"),
+        ("qwen", "Qwen"),
+        ("ornith", "Ornith"),
+        ("longcat", "LongCat"),
+        ("step", "Step"),
+    ];
+    for (prefix, brand) in brands {
+        if lower == prefix {
+            return brand.to_owned();
+        }
+        if lower.starts_with(&format!("{prefix}-")) {
+            let rest = title_case(&name[prefix.len() + 1..]);
+            return if rest.is_empty() {
+                brand.to_owned()
+            } else {
+                format!("{brand} {rest}")
+            };
+        }
+        if prefix == "qwen" && lower.starts_with("qwen") {
+            return format!("Qwen {}", title_case(&name[4..]));
+        }
+    }
+    title_case(name)
+}
+
 fn parse_cmd(text: &str) -> Vec<DriverModel> {
     text.lines()
         .filter_map(|line| {
@@ -82,7 +152,7 @@ fn parse_cmd(text: &str) -> Vec<DriverModel> {
             }
             Some(DriverModel {
                 id: id.to_owned(),
-                label: parts.collect::<Vec<_>>().join(" "),
+                label: humanize_model_id(id),
             })
         })
         .collect()
@@ -102,11 +172,22 @@ mod tests {
     }
 
     #[test]
+    fn humanizes_command_code_ids() {
+        assert_eq!(
+            humanize_model_id("deepseek/deepseek-v4-flash"),
+            "DeepSeek V4 Flash"
+        );
+        assert_eq!(humanize_model_id("xiaomi/mimo-v2.6-pro"), "MiMo V2.6 Pro");
+        assert_eq!(humanize_model_id("z-ai/glm-5.3-flash"), "GLM 5.3 Flash");
+        assert_eq!(humanize_model_id("moonshotai/kimi-k3"), "Kimi K3");
+    }
+
+    #[test]
     fn parses_command_code_models() {
         let models = parse_cmd(
             "Available models\n\nOpen Source\n\ndeepseek/deepseek-v4-flash  fast reasoning\n",
         );
         assert_eq!(models[0].id, "deepseek/deepseek-v4-flash");
-        assert_eq!(models[0].label, "fast reasoning");
+        assert_eq!(models[0].label, "DeepSeek V4 Flash");
     }
 }
