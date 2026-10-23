@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use ancleto_code_core::git::{
-    GitActionOutcome, GitBranch, GitPullRequest, GitRemote, GitStatus, GitWorktree,
+    GitActionOutcome, GitBranch, GitIssue, GitPullRequest, GitRemote, GitStatus, GitWorktree,
 };
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{

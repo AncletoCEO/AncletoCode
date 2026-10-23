@@ -238,6 +238,12 @@ mod tests {
     #[test]
     fn reports_the_bundled_package_version() {
         let resource_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        if !resource_dir
+            .join("resources/ancleto/package/src/cli/index.js")
+            .is_file()
+        {
+            return;
+        }
         let config_dir =
             std::env::temp_dir().join(format!("ancleto-runtime-test-{}", std::process::id()));
         let status = status(&config_dir, &resource_dir, false);

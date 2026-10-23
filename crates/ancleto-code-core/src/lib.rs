@@ -18,7 +18,7 @@ pub use drivers::{
     AgentDriver, AgentDriverDescriptor, Capabilities, DriverRegistry, DriverStatus, ToolStatus,
 };
 pub use git::{
-    GitActionOutcome, GitBranch, GitError, GitFile, GitPullRequest, GitRemote, GitStatus,
+    GitActionOutcome, GitBranch, GitError, GitFile, GitIssue, GitPullRequest, GitRemote, GitStatus,
     GitWorktree,
 };
 pub use host::{HostClient, HostPaths};
