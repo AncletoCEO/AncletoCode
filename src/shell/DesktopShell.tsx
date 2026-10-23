@@ -1,4 +1,6 @@
 import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { titleForDate } from "../lib/window-title";
 import { ArrowLeft, BookOpen, GitBranch, ListTodo, Sparkles, TerminalSquare } from "lucide-react";
 import AboutDialog from "../components/AboutDialog";
 import AgentTabs from "../components/AgentTabs";
@@ -70,6 +72,19 @@ export default function DesktopShell() {
     void loadDrivers();
     void checkUpdates();
   }, [checkUpdates]);
+
+  useEffect(() => {
+    function applyTitle() {
+      const title = titleForDate(new Date());
+      document.title = title;
+      void getCurrentWindow()
+        .setTitle(title)
+        .catch(() => undefined);
+    }
+    applyTitle();
+    const timer = window.setInterval(applyTitle, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     void loadAppearance(project?.id ?? null);
