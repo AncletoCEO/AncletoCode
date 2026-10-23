@@ -263,6 +263,88 @@ pub fn merge(root: &Path, branch: &str) -> Result<GitActionOutcome> {
     action(root, &["merge", branch])
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitRemote {
+    pub name: String,
+    pub url: String,
+    pub provider: String,
+    pub owner: Option<String>,
+    pub repo: Option<String>,
+    pub web_url: Option<String>,
+}
+
+fn parse_remote(name: &str, raw: &str) -> GitRemote {
+    let url = raw
+        .trim()
+        .trim_end_matches('/')
+        .trim_end_matches(".git")
+        .to_owned();
+    let normalized = url
+        .strip_prefix("ssh://")
+        .unwrap_or(&url)
+        .strip_prefix("git@")
+        .map(|value| value.replacen(':', "/", 1))
+        .unwrap_or_else(|| url.clone());
+    let without_scheme = normalized
+        .strip_prefix("https://")
+        .or_else(|| normalized.strip_prefix("http://"))
+        .or_else(|| normalized.strip_prefix("git://"))
+        .unwrap_or(&normalized);
+    let mut parts = without_scheme.split('/');
+    let host = parts.next().unwrap_or_default().to_lowercase();
+    let segments = parts
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    let owner = segments
+        .len()
+        .checked_sub(2)
+        .and_then(|index| segments.get(index))
+        .map(|value| (*value).to_owned());
+    let repo = segments.last().map(|value| (*value).to_owned());
+    let provider = if host.contains("github") {
+        "github"
+    } else if host.contains("gitlab") {
+        "gitlab"
+    } else if host.contains("bitbucket") {
+        "bitbucket"
+    } else if host.contains("dev.azure.com") || host.contains("visualstudio.com") {
+        "azure"
+    } else {
+        "git"
+    };
+    let web_url = (provider != "git" && !host.is_empty())
+        .then(|| format!("https://{host}/{}", segments.join("/")));
+    GitRemote {
+        name: name.to_owned(),
+        url: raw.trim().to_owned(),
+        provider: provider.to_owned(),
+        owner,
+        repo,
+        web_url,
+    }
+}
+
+pub fn remote(root: &Path) -> Result<Option<GitRemote>> {
+    if !is_repo(root)? {
+        return Ok(None);
+    }
+    let names = ensure_success(git(root, &["remote"])?)?;
+    let Some(name) = names
+        .lines()
+        .map(str::trim)
+        .find(|name| *name == "origin")
+        .or_else(|| names.lines().map(str::trim).find(|name| !name.is_empty()))
+    else {
+        return Ok(None);
+    };
+    let url = ensure_success(git(root, &["remote", "get-url", name])?)?;
+    if url.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(parse_remote(name, &url)))
+}
+
 pub fn worktrees(root: &Path) -> Result<Vec<GitWorktree>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -535,6 +617,22 @@ mod tests {
         assert!(fetch.success);
         let merge = merge(dir.path(), "main").expect("merge");
         assert!(merge.success || !merge.stderr.is_empty());
+    }
+
+    #[test]
+    fn parses_common_remote_urls() {
+        let https = parse_remote("origin", "https://github.com/acme/demo.git");
+        assert_eq!(https.provider, "github");
+        assert_eq!(https.owner.as_deref(), Some("acme"));
+        assert_eq!(https.repo.as_deref(), Some("demo"));
+        assert_eq!(
+            https.web_url.as_deref(),
+            Some("https://github.com/acme/demo")
+        );
+
+        let ssh = parse_remote("origin", "git@gitlab.com:acme/demo.git");
+        assert_eq!(ssh.provider, "gitlab");
+        assert_eq!(ssh.web_url.as_deref(), Some("https://gitlab.com/acme/demo"));
     }
 
     #[test]

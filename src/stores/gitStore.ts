@@ -30,6 +30,15 @@ export type GitWorktree = {
   isMain: boolean;
 };
 
+export type GitRemote = {
+  name: string;
+  url: string;
+  provider: string;
+  owner: string | null;
+  repo: string | null;
+  webUrl: string | null;
+};
+
 export type GitActionOutcome = {
   success: boolean;
   stdout: string;
@@ -41,6 +50,7 @@ type GitState = {
   status: GitStatus | null;
   branches: GitBranch[];
   worktrees: GitWorktree[];
+  remote: GitRemote | null;
   loading: boolean;
   actionBusy: boolean;
   message: string | null;
@@ -69,6 +79,7 @@ export const useGitStore = create<GitState>()((set, get) => ({
   status: null,
   branches: [],
   worktrees: [],
+  remote: null,
   loading: false,
   actionBusy: false,
   message: null,
@@ -77,12 +88,13 @@ export const useGitStore = create<GitState>()((set, get) => ({
   load: async (projectId) => {
     set({ projectId, loading: true, error: null });
     try {
-      const [status, branches, worktrees] = await Promise.all([
+      const [status, branches, worktrees, remote] = await Promise.all([
         invoke<GitStatus>("git_status", { id: projectId }),
         invoke<GitBranch[]>("git_branches", { id: projectId }),
         invoke<GitWorktree[]>("git_worktrees", { id: projectId }),
+        invoke<GitRemote | null>("git_remote", { id: projectId }),
       ]);
-      set({ status, branches, worktrees, loading: false });
+      set({ status, branches, worktrees, remote, loading: false });
     } catch (error) {
       set({ status: null, branches: [], loading: false, error: messageOf(error) });
     }

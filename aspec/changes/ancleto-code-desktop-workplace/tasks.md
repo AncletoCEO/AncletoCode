@@ -309,7 +309,7 @@ se registra en `docs/provenance.md`.
 - [ ] 16.9 (en progreso: status, ramas, diff, staging, commit, fetch/pull/push y merge; falta rebase) Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
 - [ ] 16.10 (en progreso: branch chip y panel con ramas/estado) Branch chip y panel de ramas: rama actual, ahead/behind, dirty state, cambiar/crear rama, worktree asociado y acciones seguras; sin comandos destructivos sin confirmación explícita.
 - [ ] 16.11 (en progreso: diff unificado con staging; faltan split y comentarios por línea) Revisión de cambios: diff unificado/split, archivos por turno, staging por hunk, comentarios por línea y envío del comentario al agente.
-- [ ] 16.12 Abstracción `GitHostProvider` para GitHub/GitLab/Bitbucket/Azure y remotos genéricos: detección por URL, autenticación delegada a CLIs, capacidades declaradas y errores accionables.
+- [ ] 16.12 (en progreso: detección de remoto y proveedor GitHub/GitLab/Bitbucket/Azure; falta auth y capacidades) Abstracción `GitHostProvider` para GitHub/GitLab/Bitbucket/Azure y remotos genéricos: detección por URL, autenticación delegada a CLIs, capacidades declaradas y errores accionables.
 - [ ] 16.13 GitHub nativo con `gh`: detectar login, listar repos/PRs/issues/checks, abrir PR, revisar y mergear; enlazar PR con tarea y rama.
 - [ ] 16.14 GitLab con `glab`: login, MRs/issues/pipelines, abrir MR, revisar y mergear; misma interfaz de provider que GitHub.
 - [ ] 16.15 Otros gestores: Bitbucket/Azure o remoto genérico con fallback a URL web; no almacenar tokens en la app, delegar en la CLI o el credential helper.

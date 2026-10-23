@@ -208,6 +208,7 @@ pub fn run() {
             commands::git_pull,
             commands::git_push,
             commands::git_merge,
+            commands::git_remote,
             commands::git_worktrees,
             commands::git_worktree_add,
             commands::git_worktree_remove,

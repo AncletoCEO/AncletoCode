@@ -238,6 +238,31 @@ export default function Inspector({
                   {git.message ? <p className="shell-git-message">{git.message}</p> : null}
                 </section>
 
+                {git.remote ? (
+                  <section className="shell-card">
+                    <div className="shell-card-title">Remoto</div>
+                    <div className="shell-remote-row">
+                      <span className="shell-provider">{git.remote.provider}</span>
+                      <strong>
+                        {git.remote.owner ? `${git.remote.owner}/` : ""}
+                        {git.remote.repo ?? git.remote.name}
+                      </strong>
+                    </div>
+                    {git.remote.webUrl ? (
+                      <a
+                        className="shell-remote-link"
+                        href={git.remote.webUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {git.remote.webUrl}
+                      </a>
+                    ) : (
+                      <code className="shell-path">{git.remote.url}</code>
+                    )}
+                  </section>
+                ) : null}
+
                 <section className="shell-card">
                   <div className="shell-card-title">Cambios</div>
                   {git.status.files.length === 0 ? (

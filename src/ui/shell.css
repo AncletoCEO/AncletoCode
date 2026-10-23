@@ -2263,3 +2263,42 @@
 .shell-task-start {
   color: var(--shell-accent) !important;
 }
+
+.shell-remote-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.shell-remote-row strong {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-provider {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--shell-accent);
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.shell-remote-link {
+  display: block;
+  margin-top: 6px;
+  color: var(--fg-muted);
+  font-size: 9px;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-remote-link:hover {
+  color: var(--shell-accent);
+}
