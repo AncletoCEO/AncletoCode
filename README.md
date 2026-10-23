@@ -385,6 +385,7 @@ Get-FileHash .\acode-0.0.1-windows-x64.zip -Algorithm SHA256
 - Tareas: [`aspec/changes/ancleto-code-desktop-workplace/tasks.md`](aspec/changes/ancleto-code-desktop-workplace/tasks.md)
 - Especificaciones: [`aspec/changes/ancleto-code-desktop-workplace/specs/`](aspec/changes/ancleto-code-desktop-workplace/specs/)
 - Revisión de compatibilidad de licencias: [`docs/compliance/license-review-0.0.1.md`](docs/compliance/license-review-0.0.1.md)
+- Sistema de diseño del nuevo desktop: [`docs/design/desktop-ui.md`](docs/design/desktop-ui.md)
 
 ## Licencia
 

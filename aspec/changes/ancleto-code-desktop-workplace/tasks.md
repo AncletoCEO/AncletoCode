@@ -297,11 +297,11 @@ sesiones persistentes). Todo código reutilizado se vendoriza, se marca con SPDX
 se registra en `docs/provenance.md`.
 
 - [ ] 16.1 Actualizar el pin de PandaCode a `v0.3.26` (`800b879680bc89fda1189f726864ca1a4ed61e2a`), revisar el diff contra los archivos vendorizados y actualizar `UPSTREAM.md`, ledger, avisos y tests.
-- [ ] 16.2 Documentar el lenguaje visual híbrido en `docs/design/desktop-ui.md`: referencias PandaCode/Orca, tipografía, densidad, superficies, movimiento, estados y reglas de interacción; sin copiar activos ni marcas.
+- [x] 16.2 Documentar el lenguaje visual híbrido en `docs/design/desktop-ui.md`: referencias PandaCode/Orca, tipografía, densidad, superficies, movimiento, estados y reglas de interacción; sin copiar activos ni marcas.
 - [ ] 16.3 Auditar qué módulos de Orca se usan solo como referencia visual/UX. Si se reutiliza código o assets MIT, agregar aviso de Lovecast Inc., procedencia y tests; si no, registrar "referencia sin copia".
 - [ ] 16.4 Vendorizar/adaptar de PandaCode los módulos de UI seleccionados: `sidebar-tree`, `task-board`, `worktrees`, `github*`, `diff-viewer`, `change-review`, `turn-changes`, `command-center`, `agent-input` y sus CSS, con cabecera SPDX, tests y entrada en el ledger.
 - [ ] 16.5 Vendorizar/adaptar los servicios Rust necesarios: `workspace.rs`, `github*.rs`, `task_controls.rs`, `turn_changes/`, `checks.rs` y patrones de persistencia; mantener el core independiente de Tauri.
-- [ ] 16.6 Implementar el shell visual: navegación lateral por proyecto/tarea, workspace central con threads/tabs, inspector derecho (contexto, cambios, Git) y composer inferior; paneles redimensionables y layout persistente.
+- [ ] 16.6 (en progreso: primer shell con sidebar/topbar/thread/inspector/composer/palette) Implementar el shell visual: navegación lateral por proyecto/tarea, workspace central con threads/tabs, inspector derecho (contexto, cambios, Git) y composer inferior; paneles redimensionables y layout persistente.
 - [ ] 16.7 Modelo `Task`/`Thread`/`Worktree`: una tarea puede tener rama y worktree propios; estado, proyecto, agente, PR/MR y resultado; migraciones SQLite y recuperación.
 - [ ] 16.8 `WorktreeManager`: crear/listar/eliminar worktrees, abrir el proyecto en el worktree correcto, detectar colisiones y limpiar sin perder cambios; tests con repos temporales.
 - [ ] 16.9 Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
