@@ -111,6 +111,8 @@ vista de apariencia avanzada.
 
 ![Shell inicial de AncletoCode](desktop-shell-0.1.png)
 
+![Ajustes, temas y Ancleto embebido](desktop-settings-0.1.png)
+
 ## Implementación
 
 Tauri 2 + React 19 + TypeScript + Tailwind 4 + Radix/shadcn + Zustand. El core Rust y el host de sesiones no se reescriben en esta fase.
