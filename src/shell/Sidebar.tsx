@@ -7,6 +7,7 @@ import {
   FolderGit2,
   GitBranch,
   ListTodo,
+  MessagesSquare,
   Plus,
   Search,
   Settings2,
@@ -35,6 +36,7 @@ type SidebarProps = {
 const nav = [
   { id: "workspace", label: "Workspace", icon: Sparkles },
   { id: "tasks", label: "Tareas", icon: ListTodo },
+  { id: "conversation", label: "Conversación", icon: MessagesSquare },
   { id: "git", label: "Git", icon: GitBranch },
   { id: "usage", label: "Uso", icon: Activity },
   { id: "knowledge", label: "Conocimiento", icon: BookOpen },

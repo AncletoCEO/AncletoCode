@@ -1,7 +1,15 @@
 import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { titleForDate } from "../lib/window-title";
-import { ArrowLeft, BookOpen, GitBranch, ListTodo, Sparkles, TerminalSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  GitBranch,
+  ListTodo,
+  MessagesSquare,
+  Sparkles,
+  TerminalSquare,
+} from "lucide-react";
 import AboutDialog from "../components/AboutDialog";
 import AgentTabs from "../components/AgentTabs";
 import AppearancePanel from "../components/AppearancePanel";
@@ -59,7 +67,7 @@ export default function DesktopShell() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [conversationOpen, setConversationOpen] = useState(false);
+
   const [auxPanel, setAuxPanel] = useState<"spec" | "writer">("writer");
 
   const project = projects.projects.find((entry) => entry.id === projects.selectedId) ?? null;
@@ -197,14 +205,6 @@ export default function DesktopShell() {
                     <div className="shell-thread-tools">
                       <button
                         type="button"
-                        className={cn("shell-tool-button", conversationOpen && "is-active")}
-                        onClick={() => setConversationOpen((open) => !open)}
-                      >
-                        <Sparkles size={13} />
-                        Conversación
-                      </button>
-                      <button
-                        type="button"
                         className="shell-tool-button"
                         onClick={() => openAux("spec")}
                       >
@@ -223,9 +223,7 @@ export default function DesktopShell() {
                   </div>
 
                   <div className="shell-thread-scroll">
-                    {conversationOpen ? (
-                      <ConversationPanel project={project} />
-                    ) : session ? (
+                    {session ? (
                       <div className="shell-terminal-host">
                         <TerminalView key={session.id} sessionId={session.id} />
                       </div>
@@ -246,6 +244,20 @@ export default function DesktopShell() {
                   onAdd={() => void addProjectFromPrompt()}
                   onPalette={() => setPaletteOpen(true)}
                 />
+              )
+            ) : view === "conversation" ? (
+              project ? (
+                <ConversationPanel project={project} />
+              ) : (
+                <div className="shell-feature-view">
+                  <div className="shell-empty shell-empty-thread">
+                    <div className="shell-welcome-icon">
+                      <MessagesSquare size={22} />
+                    </div>
+                    <strong>Elegí un proyecto</strong>
+                    <p>La conversación necesita dos sesiones del mismo proyecto.</p>
+                  </div>
+                </div>
               )
             ) : view === "usage" ? (
               <UsageView />
