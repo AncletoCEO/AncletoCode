@@ -1706,3 +1706,169 @@
   color: var(--fg);
   border-color: var(--shell-accent);
 }
+
+.shell-git-file > .shell-git-file-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.shell-git-file > .shell-git-file-name:hover {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+}
+
+.shell-git-action {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+
+.shell-git-action:hover {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}
+
+.shell-commit-form {
+  display: flex;
+  gap: 3px;
+  margin-top: 9px;
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+}
+
+.shell-commit-form input {
+  min-width: 0;
+  flex: 1;
+  height: 27px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgb(var(--bg-base-rgb) / 45%);
+  color: var(--fg);
+  padding: 0 7px;
+  outline: 0;
+  font-size: 10px;
+}
+
+.shell-commit-form input:focus {
+  border-color: var(--shell-accent);
+}
+
+.shell-commit-form button {
+  height: 27px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 0 8px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.shell-commit-form button:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}
+
+.shell-commit-form button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.shell-diff-dialog {
+  position: fixed;
+  z-index: 72;
+  top: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100vw - 32px));
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgb(var(--bg-panel-rgb) / 98%);
+  color: var(--fg);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 48%);
+}
+
+.shell-diff-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-diff-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.shell-diff-description {
+  margin: 4px 0 0;
+  color: var(--fg-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.shell-diff-body {
+  overflow: auto;
+  padding: 10px 0;
+  background: rgb(var(--bg-base-rgb) / 75%);
+}
+
+.shell-diff-body pre {
+  margin: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.shell-diff-body pre > div {
+  padding: 0 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.shell-diff-body pre > div.is-add {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+}
+
+.shell-diff-body pre > div.is-del {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.shell-diff-body pre > div.is-hunk {
+  color: var(--shell-accent);
+  background: color-mix(in srgb, var(--shell-accent) 7%, transparent);
+}

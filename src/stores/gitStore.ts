@@ -29,9 +29,15 @@ type GitState = {
   branches: GitBranch[];
   loading: boolean;
   error: string | null;
+  diff: { path: string; staged: boolean; text: string } | null;
   load: (projectId: string) => Promise<void>;
   createBranch: (name: string, checkout: boolean) => Promise<boolean>;
   checkout: (name: string) => Promise<boolean>;
+  openDiff: (path: string, staged: boolean) => Promise<void>;
+  closeDiff: () => void;
+  stage: (path: string) => Promise<void>;
+  unstage: (path: string) => Promise<void>;
+  commit: (message: string) => Promise<boolean>;
   reset: () => void;
 };
 
@@ -45,6 +51,7 @@ export const useGitStore = create<GitState>()((set, get) => ({
   branches: [],
   loading: false,
   error: null,
+  diff: null,
   load: async (projectId) => {
     set({ projectId, loading: true, error: null });
     try {
@@ -93,5 +100,62 @@ export const useGitStore = create<GitState>()((set, get) => ({
       return false;
     }
   },
-  reset: () => set({ projectId: null, status: null, branches: [], loading: false, error: null }),
+  openDiff: async (path, staged) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return;
+    }
+    set({ error: null });
+    try {
+      const text = await invoke<string>("git_diff", { id: projectId, path, staged });
+      set({ diff: { path, staged, text } });
+    } catch (error) {
+      set({ error: messageOf(error) });
+    }
+  },
+  closeDiff: () => set({ diff: null }),
+  stage: async (path) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return;
+    }
+    set({ error: null });
+    try {
+      await invoke("git_stage", { id: projectId, paths: [path] });
+      await get().load(projectId);
+    } catch (error) {
+      set({ error: messageOf(error) });
+    }
+  },
+  unstage: async (path) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return;
+    }
+    set({ error: null });
+    try {
+      await invoke("git_unstage", { id: projectId, paths: [path] });
+      await get().load(projectId);
+    } catch (error) {
+      set({ error: messageOf(error) });
+    }
+  },
+  commit: async (message) => {
+    const { projectId } = get();
+    if (!projectId) {
+      return false;
+    }
+    set({ error: null });
+    try {
+      const status = await invoke<GitStatus>("git_commit", { id: projectId, message });
+      const branches = await invoke<GitBranch[]>("git_branches", { id: projectId });
+      set({ status, branches, diff: null });
+      return true;
+    } catch (error) {
+      set({ error: messageOf(error) });
+      return false;
+    }
+  },
+  reset: () =>
+    set({ projectId: null, status: null, branches: [], loading: false, error: null, diff: null }),
 }));

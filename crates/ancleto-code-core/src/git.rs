@@ -162,6 +162,64 @@ pub fn status(root: &Path) -> Result<GitStatus> {
     })
 }
 
+fn relative_path(path: &str) -> Result<&str> {
+    let trimmed = path.trim();
+    if trimmed.is_empty()
+        || Path::new(trimmed).is_absolute()
+        || trimmed.split(['/', '\\']).any(|part| part == "..")
+    {
+        return Err(GitError::Command("ruta inválida".to_owned()));
+    }
+    Ok(trimmed)
+}
+
+pub fn diff(root: &Path, path: Option<&str>, staged: bool) -> Result<String> {
+    let mut args = vec!["diff", "--no-color", "--unified=3"];
+    if staged {
+        args.push("--cached");
+    }
+    if let Some(path) = path {
+        args.push("--");
+        args.push(relative_path(path)?);
+    }
+    ensure_success(git(root, &args)?)
+}
+
+pub fn stage(root: &Path, paths: &[String]) -> Result<()> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+    let mut args = vec!["add", "--"];
+    for path in paths {
+        args.push(relative_path(path)?);
+    }
+    ensure_success(git(root, &args)?)?;
+    Ok(())
+}
+
+pub fn unstage(root: &Path, paths: &[String]) -> Result<()> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+    let mut args = vec!["restore", "--staged", "--"];
+    for path in paths {
+        args.push(relative_path(path)?);
+    }
+    ensure_success(git(root, &args)?)?;
+    Ok(())
+}
+
+pub fn commit(root: &Path, message: &str) -> Result<()> {
+    let message = message.trim();
+    if message.is_empty() {
+        return Err(GitError::Command(
+            "el mensaje de commit está vacío".to_owned(),
+        ));
+    }
+    ensure_success(git(root, &["commit", "-m", message])?)?;
+    Ok(())
+}
+
 pub fn branches(root: &Path) -> Result<Vec<GitBranch>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -302,6 +360,30 @@ mod tests {
         assert!(matches!(
             create_branch(dir.path(), "a..b", true),
             Err(GitError::InvalidBranch)
+        ));
+    }
+
+    #[test]
+    fn stages_and_commits_changes() {
+        let dir = init_repo();
+        std::fs::write(dir.path().join("b.txt"), "world").expect("write");
+        stage(dir.path(), &["b.txt".to_owned()]).expect("stage");
+        let before = status(dir.path()).expect("status");
+        assert!(before.files[0].staged);
+        assert!(diff(dir.path(), Some("b.txt"), true)
+            .expect("diff")
+            .contains("b.txt"));
+        commit(dir.path(), "add b").expect("commit");
+        let after = status(dir.path()).expect("status");
+        assert!(!after.dirty);
+    }
+
+    #[test]
+    fn rejects_paths_outside_the_repository() {
+        let dir = init_repo();
+        assert!(matches!(
+            stage(dir.path(), &["../escape".to_owned()]),
+            Err(GitError::Command(_))
         ));
     }
 

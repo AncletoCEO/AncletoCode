@@ -18,6 +18,7 @@ import {
   subscribe as subscribeDrivers,
 } from "../stores/driversStore";
 import { useGitStore } from "../stores/gitStore";
+import GitDiffDialog from "./GitDiffDialog";
 import { cn } from "../ui/cn";
 import type { InspectorTab, ShellView } from "./types";
 
@@ -50,6 +51,7 @@ export default function Inspector({
   const drivers = useSyncExternalStore(subscribeDrivers, getDrivers);
   const git = useGitStore();
   const [branchName, setBranchName] = useState("");
+  const [commitMessage, setCommitMessage] = useState("");
 
   useEffect(() => {
     void loadDrivers();
@@ -72,6 +74,17 @@ export default function Inspector({
     const created = await git.createBranch(branchName.trim(), true);
     if (created) {
       setBranchName("");
+    }
+  }
+
+  async function commit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!commitMessage.trim()) {
+      return;
+    }
+    const committed = await git.commit(commitMessage.trim());
+    if (committed) {
+      setCommitMessage("");
     }
   }
 
@@ -242,6 +255,18 @@ export default function Inspector({
                   </form>
                 </section>
 
+                <form className="shell-commit-form" onSubmit={(event) => void commit(event)}>
+                  <input
+                    value={commitMessage}
+                    onChange={(event) => setCommitMessage(event.target.value)}
+                    placeholder="Mensaje de commit"
+                    aria-label="Mensaje de commit"
+                  />
+                  <button type="submit" disabled={!commitMessage.trim()}>
+                    Commit
+                  </button>
+                </form>
+
                 <button type="button" className="shell-ghost-button" disabled>
                   <GitPullRequest size={14} />
                   Conectar PR / MR
@@ -291,6 +316,7 @@ export default function Inspector({
           </div>
         ) : null}
       </div>
+      <GitDiffDialog />
     </aside>
   );
 }

@@ -592,3 +592,43 @@ pub fn git_checkout(
     ancleto_code_core::git::checkout(Path::new(&root), &name).map_err(|error| error.to_string())?;
     ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
 }
+
+#[tauri::command]
+pub fn git_diff(
+    state: State<'_, AppState>,
+    id: String,
+    path: Option<String>,
+    staged: bool,
+) -> Result<String, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::diff(Path::new(&root), path.as_deref(), staged)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_stage(state: State<'_, AppState>, id: String, paths: Vec<String>) -> Result<(), String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::stage(Path::new(&root), &paths).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_unstage(
+    state: State<'_, AppState>,
+    id: String,
+    paths: Vec<String>,
+) -> Result<(), String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::unstage(Path::new(&root), &paths).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_commit(
+    state: State<'_, AppState>,
+    id: String,
+    message: String,
+) -> Result<GitStatus, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::commit(Path::new(&root), &message)
+        .map_err(|error| error.to_string())?;
+    ancleto_code_core::git::status(Path::new(&root)).map_err(|error| error.to_string())
+}
