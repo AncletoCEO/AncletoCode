@@ -145,6 +145,9 @@ Es un Cargo workspace: un núcleo compartido, un host de sesiones y tres consumi
 - En Linux, además: `libwebkit2gtk-4.1-dev`, `libappindicator3-dev`,
   `librsvg2-dev`, `patchelf` y un toolchain de C/C++.
 - En Arch, los grupos `base-devel` y las dependencias que declara el `PKGBUILD`.
+- Para compilar con Ancleto embebido: `npm run prepare:ancleto` descarga el runtime
+  Node y el paquete `@ancleto/spec` incluido. El release lo ejecuta antes de
+  `tauri build`.
 
 ## Instalación y uso por plataforma
 

@@ -1,6 +1,15 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Download, Palette, RefreshCw, RotateCcw, SlidersHorizontal, X } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import {
+  Check,
+  Download,
+  Palette,
+  RefreshCw,
+  RotateCcw,
+  SlidersHorizontal,
+  Terminal,
+  X,
+} from "lucide-react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   catalog,
   getSnapshot as getAppearance,
@@ -11,6 +20,7 @@ import {
 import { cn } from "../ui/cn";
 import { useShellPreferences } from "./preferences";
 import { useUpdatesStore } from "../stores/updatesStore";
+import { useAncletoRuntimeStore } from "../stores/ancletoRuntimeStore";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -28,7 +38,15 @@ export default function SettingsDialog({
   const appearance = useSyncExternalStore(subscribeAppearance, getAppearance);
   const preferences = useShellPreferences();
   const updates = useUpdatesStore();
+  const ancleto = useAncletoRuntimeStore();
+  const loadAncleto = ancleto.load;
   const themes = catalog();
+
+  useEffect(() => {
+    if (open && !ancleto.status) {
+      void loadAncleto(false);
+    }
+  }, [open, ancleto.status, loadAncleto]);
   const theme = appearance.resolved.theme;
   const opacity = appearance.resolved.opacity;
 
@@ -208,6 +226,45 @@ export default function SettingsDialog({
                 >
                   Ver AncletoCode {updates.latest.version}
                 </a>
+              ) : null}
+            </section>
+
+            <section className="shell-settings-section">
+              <h3>
+                <Terminal size={14} /> Ancleto SDD
+              </h3>
+              <div className="shell-update-row">
+                <div>
+                  <strong>
+                    {ancleto.status?.activeVersion
+                      ? `Ancleto ${ancleto.status.activeVersion}`
+                      : "Ancleto no detectado"}
+                  </strong>
+                  <span>
+                    {ancleto.status?.nodePath
+                      ? "Runtime y paquete incluidos en la app."
+                      : "Se está usando un runtime del sistema."}
+                    {ancleto.status?.bundledVersion
+                      ? ` Incluido: ${ancleto.status.bundledVersion}.`
+                      : ""}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="shell-ghost-button"
+                  onClick={() => void ancleto.update()}
+                  disabled={ancleto.updating || !ancleto.status?.nodePath}
+                >
+                  <RefreshCw size={13} className={ancleto.updating ? "animate-spin" : ""} />
+                  Actualizar
+                </button>
+              </div>
+              {ancleto.error ? <p className="shell-error">{ancleto.error}</p> : null}
+              {ancleto.status?.latestVersion ? (
+                <p className="shell-muted">
+                  Última en npm: {ancleto.status.latestVersion}
+                  {ancleto.status.updateAvailable ? " · actualización disponible" : ""}
+                </p>
               ) : null}
             </section>
 
