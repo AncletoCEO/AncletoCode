@@ -345,6 +345,92 @@ pub fn remote(root: &Path) -> Result<Option<GitRemote>> {
     Ok(Some(parse_remote(name, &url)))
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitPullRequest {
+    pub number: u64,
+    pub title: String,
+    pub state: String,
+    pub url: String,
+    pub head_ref: String,
+    pub base_ref: String,
+    pub author: String,
+    pub draft: bool,
+}
+
+#[derive(Deserialize)]
+struct GhAuthor {
+    login: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GhPullRequest {
+    number: u64,
+    title: String,
+    state: String,
+    url: String,
+    head_ref_name: String,
+    base_ref_name: String,
+    author: GhAuthor,
+    is_draft: bool,
+}
+
+fn parse_pull_requests(text: &str) -> Result<Vec<GitPullRequest>> {
+    let entries: Vec<GhPullRequest> =
+        serde_json::from_str(text).map_err(|error| GitError::Command(error.to_string()))?;
+    Ok(entries
+        .into_iter()
+        .map(|entry| GitPullRequest {
+            number: entry.number,
+            title: entry.title,
+            state: entry.state,
+            url: entry.url,
+            head_ref: entry.head_ref_name,
+            base_ref: entry.base_ref_name,
+            author: entry.author.login,
+            draft: entry.is_draft,
+        })
+        .collect())
+}
+
+pub fn pull_requests(root: &Path) -> Result<Vec<GitPullRequest>> {
+    let Some(remote) = remote(root)? else {
+        return Err(GitError::Command(
+            "el proyecto no tiene remoto Git".to_owned(),
+        ));
+    };
+    if remote.provider != "github" {
+        return Err(GitError::Command(format!(
+            "los PRs de {} todavía no están soportados",
+            remote.provider
+        )));
+    }
+    let output = Command::new("gh")
+        .args([
+            "pr",
+            "list",
+            "--json",
+            "number,title,state,url,headRefName,baseRefName,author,isDraft",
+            "--limit",
+            "30",
+        ])
+        .current_dir(root)
+        .output()
+        .map_err(|error| match error.kind() {
+            std::io::ErrorKind::NotFound => {
+                GitError::Command("GitHub CLI (gh) no está instalado".to_owned())
+            }
+            _ => GitError::Io(error),
+        })?;
+    if !output.status.success() {
+        return Err(GitError::Command(
+            String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        ));
+    }
+    parse_pull_requests(&String::from_utf8_lossy(&output.stdout))
+}
+
 pub fn worktrees(root: &Path) -> Result<Vec<GitWorktree>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -633,6 +719,17 @@ mod tests {
         let ssh = parse_remote("origin", "git@gitlab.com:acme/demo.git");
         assert_eq!(ssh.provider, "gitlab");
         assert_eq!(ssh.web_url.as_deref(), Some("https://gitlab.com/acme/demo"));
+    }
+
+    #[test]
+    fn parses_gh_pull_request_json() {
+        let entries = parse_pull_requests(
+            r#"[{"number":7,"title":"Add UI","state":"OPEN","url":"https://github.com/a/b/pull/7","headRefName":"feature/ui","baseRefName":"main","author":{"login":"dev"},"isDraft":false}]"#,
+        )
+        .expect("parse");
+        assert_eq!(entries[0].number, 7);
+        assert_eq!(entries[0].head_ref, "feature/ui");
+        assert_eq!(entries[0].author, "dev");
     }
 
     #[test]

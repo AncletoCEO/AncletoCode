@@ -3,7 +3,9 @@ use std::sync::Mutex;
 use std::path::Path;
 use std::sync::Arc;
 
-use ancleto_code_core::git::{GitActionOutcome, GitBranch, GitRemote, GitStatus, GitWorktree};
+use ancleto_code_core::git::{
+    GitActionOutcome, GitBranch, GitPullRequest, GitRemote, GitStatus, GitWorktree,
+};
 use ancleto_code_core::ide::SyncResult;
 use ancleto_code_core::providers::{
     CommandOutcome, DiscoveryState, InitOptions, MemoryNode, SpecProjectState, SpecProvider,
@@ -748,4 +750,13 @@ pub fn task_start(state: State<'_, AppState>, id: String) -> Result<Task, String
 pub fn git_remote(state: State<'_, AppState>, id: String) -> Result<Option<GitRemote>, String> {
     let root = project_root(&state, &id)?;
     ancleto_code_core::git::remote(Path::new(&root)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn git_pull_requests(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Vec<GitPullRequest>, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::pull_requests(Path::new(&root)).map_err(|error| error.to_string())
 }
