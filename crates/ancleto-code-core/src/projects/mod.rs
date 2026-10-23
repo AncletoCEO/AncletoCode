@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use crate::domain::{CoreError, FileNode, Project, Result};
 use crate::persistence::Store;
+use crate::tasks::{Task, TaskStatus};
 
 #[allow(clippy::unwrap_used)]
 #[path = "../../../../third_party/pandacode/src-tauri/src/workspace/file_search.rs"]
@@ -104,6 +105,40 @@ impl ProjectService {
         self.store
             .touch_project(id, unix_timestamp())?
             .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))
+    }
+
+    pub fn tasks(&self, project_id: &str) -> Result<Vec<Task>> {
+        self.store.list_tasks(project_id)
+    }
+
+    pub fn create_task(&self, project_id: &str, title: &str) -> Result<Task> {
+        self.get(project_id)?;
+        let now = unix_timestamp();
+        let task = Task {
+            id: Uuid::new_v4().to_string(),
+            project_id: project_id.to_owned(),
+            title: title.trim().to_owned(),
+            status: TaskStatus::Backlog,
+            branch: None,
+            worktree_path: None,
+            session_id: None,
+            pr_url: None,
+            created_at: now,
+            updated_at: now,
+        };
+        self.store.insert_task(&task)?;
+        Ok(task)
+    }
+
+    pub fn update_task(&self, task: &Task) -> Result<Task> {
+        let mut next = task.clone();
+        next.updated_at = unix_timestamp();
+        self.store.update_task(&next)?;
+        Ok(next)
+    }
+
+    pub fn remove_task(&self, id: &str) -> Result<bool> {
+        self.store.delete_task(id)
     }
 
     pub fn get_setting(&self, key: &str) -> Result<Option<String>> {
@@ -251,6 +286,28 @@ mod tests {
         assert!(service.remove(&project.id).unwrap());
         assert!(!service.remove(&project.id).unwrap());
         assert!(service.list().unwrap().is_empty());
+    }
+
+    #[test]
+    fn creates_updates_lists_and_removes_tasks() {
+        let (directory, service) = service();
+        let path = project_directory(directory.path(), "demo");
+        let project = service.add(&path.to_string_lossy()).unwrap();
+
+        let task = service.create_task(&project.id, "Revisar UI").unwrap();
+        assert_eq!(task.status, crate::tasks::TaskStatus::Backlog);
+        assert_eq!(service.tasks(&project.id).unwrap().len(), 1);
+
+        let mut updated = task.clone();
+        updated.status = crate::tasks::TaskStatus::InProgress;
+        updated.branch = Some("feature/ui".to_owned());
+        service.update_task(&updated).unwrap();
+        let listed = service.tasks(&project.id).unwrap();
+        assert_eq!(listed[0].status, crate::tasks::TaskStatus::InProgress);
+        assert_eq!(listed[0].branch.as_deref(), Some("feature/ui"));
+
+        assert!(service.remove_task(&task.id).unwrap());
+        assert!(service.tasks(&project.id).unwrap().is_empty());
     }
 
     #[test]

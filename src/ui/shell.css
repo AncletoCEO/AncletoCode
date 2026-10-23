@@ -2032,3 +2032,230 @@
   color: var(--fg);
   background: rgb(var(--bg-elevated-rgb) / 55%);
 }
+
+/* tasks */
+.shell-tasks-view {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px;
+}
+
+.shell-tasks-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.shell-tasks-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 5px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.shell-tasks-head p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.shell-task-create {
+  display: flex;
+  gap: 4px;
+  min-width: min(360px, 40vw);
+}
+
+.shell-task-create input {
+  min-width: 0;
+  flex: 1;
+  height: 31px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgb(var(--bg-elevated-rgb) / 30%);
+  color: var(--fg);
+  padding: 0 9px;
+  outline: 0;
+}
+
+.shell-task-create input:focus {
+  border-color: var(--shell-accent);
+}
+
+.shell-task-create button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 31px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgb(var(--bg-elevated-rgb) / 35%);
+  color: var(--fg-muted);
+  padding: 0 9px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.shell-task-create button:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}
+
+.shell-task-create button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.shell-task-board {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  gap: 9px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.shell-task-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--shell-radius);
+  background: rgb(var(--bg-panel-rgb) / 48%);
+}
+
+.shell-task-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shell-task-column-head > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.shell-task-count {
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0 5px;
+  font-size: 9px;
+}
+
+.shell-task-column-body {
+  min-height: 120px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding: 7px;
+}
+
+.shell-task-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgb(var(--bg-elevated-rgb) / 38%);
+  padding: 8px;
+}
+
+.shell-task-card:hover {
+  border-color: color-mix(in srgb, var(--shell-accent) 40%, var(--border));
+}
+
+.shell-task-card-title {
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.shell-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.shell-task-meta span,
+.shell-task-meta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.shell-task-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+
+.shell-task-actions select {
+  min-width: 0;
+  flex: 1;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 9px;
+  outline: 0;
+}
+
+.shell-task-actions button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.shell-task-actions button:hover {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}
+
+.shell-task-remove {
+  opacity: 0;
+}
+
+.shell-task-card:hover .shell-task-remove,
+.shell-task-remove.is-visible {
+  opacity: 1;
+}
+
+.shell-task-empty {
+  margin: 8px 0;
+  color: var(--fg-muted);
+  font-size: 10px;
+  text-align: center;
+}

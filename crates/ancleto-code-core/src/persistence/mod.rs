@@ -5,6 +5,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::domain::{Conversation, ConversationState, Project, Result, Turn, TurnMode};
 use crate::session::{SessionSpec, SessionStatus};
+use crate::tasks::{Task, TaskStatus};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -81,7 +82,24 @@ impl Store {
              INSERT OR IGNORE INTO schema_migrations (version, applied_at)
                  VALUES (2, unixepoch());
              INSERT OR IGNORE INTO schema_migrations (version, applied_at)
-                 VALUES (3, unixepoch());",
+                 VALUES (3, unixepoch());
+             CREATE TABLE IF NOT EXISTS tasks (
+                 id TEXT PRIMARY KEY,
+                 project_id TEXT NOT NULL,
+                 title TEXT NOT NULL,
+                 status TEXT NOT NULL,
+                 branch TEXT,
+                 worktree_path TEXT,
+                 session_id TEXT,
+                 pr_url TEXT,
+                 created_at INTEGER NOT NULL,
+                 updated_at INTEGER NOT NULL,
+                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+             );
+             CREATE INDEX IF NOT EXISTS tasks_project_updated
+                 ON tasks (project_id, updated_at DESC);
+             INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+                 VALUES (4, unixepoch());",
         )?;
 
         Ok(Self { connection })
@@ -152,6 +170,69 @@ impl Store {
         let affected = self
             .connection
             .execute("DELETE FROM projects WHERE id = ?1", params![id])?;
+        Ok(affected > 0)
+    }
+
+    pub fn list_tasks(&self, project_id: &str) -> Result<Vec<Task>> {
+        let mut statement = self.connection.prepare(
+            "SELECT id, project_id, title, status, branch, worktree_path, session_id,
+                    pr_url, created_at, updated_at
+             FROM tasks WHERE project_id = ?1
+             ORDER BY updated_at DESC, created_at DESC",
+        )?;
+        let rows = statement.query_map(params![project_id], map_task)?;
+        let mut tasks = Vec::new();
+        for row in rows {
+            tasks.push(row?);
+        }
+        Ok(tasks)
+    }
+
+    pub fn insert_task(&self, task: &Task) -> Result<()> {
+        self.connection.execute(
+            "INSERT INTO tasks
+             (id, project_id, title, status, branch, worktree_path, session_id, pr_url,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                task.id,
+                task.project_id,
+                task.title,
+                task.status.as_str(),
+                task.branch,
+                task.worktree_path,
+                task.session_id,
+                task.pr_url,
+                task.created_at,
+                task.updated_at
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_task(&self, task: &Task) -> Result<()> {
+        self.connection.execute(
+            "UPDATE tasks SET title = ?2, status = ?3, branch = ?4, worktree_path = ?5,
+                    session_id = ?6, pr_url = ?7, updated_at = ?8
+             WHERE id = ?1",
+            params![
+                task.id,
+                task.title,
+                task.status.as_str(),
+                task.branch,
+                task.worktree_path,
+                task.session_id,
+                task.pr_url,
+                task.updated_at
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_task(&self, id: &str) -> Result<bool> {
+        let affected = self
+            .connection
+            .execute("DELETE FROM tasks WHERE id = ?1", params![id])?;
         Ok(affected > 0)
     }
 
@@ -405,6 +486,22 @@ fn map_turn(row: &rusqlite::Row<'_>) -> rusqlite::Result<Turn> {
         mode: mode_from_str(&mode),
         duration_ms: row.get::<_, i64>(6)? as u64,
         created_at: row.get(7)?,
+    })
+}
+
+fn map_task(row: &rusqlite::Row<'_>) -> rusqlite::Result<Task> {
+    let status: String = row.get(3)?;
+    Ok(Task {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        title: row.get(2)?,
+        status: TaskStatus::parse(&status).unwrap_or(TaskStatus::Backlog),
+        branch: row.get(4)?,
+        worktree_path: row.get(5)?,
+        session_id: row.get(6)?,
+        pr_url: row.get(7)?,
+        created_at: row.get(8)?,
+        updated_at: row.get(9)?,
     })
 }
 

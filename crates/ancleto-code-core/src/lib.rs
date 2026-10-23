@@ -8,6 +8,7 @@ pub mod persistence;
 pub mod projects;
 pub mod providers;
 pub mod session;
+pub mod tasks;
 pub mod vendored;
 
 pub use domain::{
@@ -25,6 +26,7 @@ pub use providers::Providers;
 pub use session::{
     SessionBackend, SessionEvent, SessionInfo, SessionManager, SessionSpec, SessionStatus,
 };
+pub use tasks::{Task, TaskStatus};
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

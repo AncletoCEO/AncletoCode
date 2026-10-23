@@ -12,7 +12,7 @@ use ancleto_code_core::providers::{
 use ancleto_code_core::{
     Conversation, ConversationState, DriverRegistry, DriverStatus, FileEntry, FileNode, HostClient,
     Orchestrator, Project, ProjectService, SavedSession, SessionBackend, SessionInfo, SessionSpec,
-    StartConversation, Turn,
+    StartConversation, Task, Turn,
 };
 use tauri::State;
 
@@ -708,4 +708,32 @@ pub fn git_merge(
 ) -> Result<GitActionOutcome, String> {
     let root = project_root(&state, &id)?;
     ancleto_code_core::git::merge(Path::new(&root), &branch).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn task_list(state: State<'_, AppState>, id: String) -> Result<Vec<Task>, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service.tasks(&id).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn task_create(state: State<'_, AppState>, id: String, title: String) -> Result<Task, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service
+        .create_task(&id, &title)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn task_update(state: State<'_, AppState>, task: Task) -> Result<Task, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service
+        .update_task(&task)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn task_delete(state: State<'_, AppState>, id: String) -> Result<bool, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service.remove_task(&id).map_err(|error| error.to_string())
 }

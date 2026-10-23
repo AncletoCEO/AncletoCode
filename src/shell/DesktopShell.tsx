@@ -36,6 +36,7 @@ import Composer from "./Composer";
 import Inspector from "./Inspector";
 import Sidebar from "./Sidebar";
 import SettingsDialog from "./SettingsDialog";
+import TasksView from "./TasksView";
 import UpdatesBanner from "./UpdatesBanner";
 import TopBar from "./TopBar";
 import { useShellPreferences } from "./preferences";
@@ -285,12 +286,7 @@ export default function DesktopShell() {
                 )}
               </AuxView>
             ) : view === "tasks" ? (
-              <FeatureView
-                icon={<ListTodo size={22} />}
-                title="Tareas en preparación"
-                description="El board de tareas, worktrees y agentes en paralelo llega con la fase Git."
-                onBack={() => setView("workspace")}
-              />
+              <TasksView project={project} />
             ) : (
               <FeatureView
                 icon={<GitBranch size={22} />}
