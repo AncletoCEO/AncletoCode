@@ -67,9 +67,17 @@ try {
     await sleep(40);
   }
   await sleep(500);
-  execFileSync("xdotool", ["key", "ctrl+shift+q"]);
-  await new Promise((resolve) => child.once("exit", resolve));
+  execFileSync("xdotool", ["key", "--clearmodifiers", "ctrl+shift+q"]);
+  await Promise.race([
+    new Promise((resolve) => child.once("exit", resolve)),
+    sleep(5000).then(() => {
+      if (!child.killed) child.kill();
+    }),
+  ]);
   await sleep(300);
+  if (!existsSync(perfOut)) {
+    throw new Error("AncletoCMD no escribió métricas de performance");
+  }
 
   const metrics = JSON.parse(readFileSync(perfOut, "utf8"));
   const startup = metrics.startupMs ?? Number.POSITIVE_INFINITY;
