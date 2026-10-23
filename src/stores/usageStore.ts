@@ -6,6 +6,12 @@ export type UsageMetric = {
   value: string;
 };
 
+export type UsageWindow = {
+  label: string;
+  usedPercent: number;
+  resetsAt: string | null;
+};
+
 export type ProviderUsage = {
   provider: string;
   label: string;
@@ -16,6 +22,7 @@ export type ProviderUsage = {
   tokens: number | null;
   sessions: number | null;
   details: UsageMetric[];
+  windows: UsageWindow[];
   checkedAt: number;
 };
 

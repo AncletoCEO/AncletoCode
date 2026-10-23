@@ -12,6 +12,14 @@ pub struct UsageMetric {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UsageWindow {
+    pub label: String,
+    pub used_percent: f64,
+    pub resets_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProviderUsage {
     pub provider: String,
     pub label: String,
@@ -22,6 +30,7 @@ pub struct ProviderUsage {
     pub tokens: Option<u64>,
     pub sessions: Option<u64>,
     pub details: Vec<UsageMetric>,
+    pub windows: Vec<UsageWindow>,
     pub checked_at: u64,
 }
 
@@ -70,6 +79,7 @@ fn opencode_usage() -> ProviderUsage {
         tokens: None,
         sessions: None,
         details: Vec::new(),
+        windows: Vec::new(),
         checked_at: now(),
     };
     if !available("opencode") {
@@ -167,15 +177,130 @@ fn static_provider(provider: &str, label: &str, binary: &str) -> ProviderUsage {
         tokens: None,
         sessions: None,
         details: Vec::new(),
+        windows: Vec::new(),
         checked_at: now(),
     }
+}
+
+#[derive(serde::Deserialize)]
+struct AgyBucket {
+    name: Option<String>,
+    remaining_fraction: Option<f64>,
+    reset_time: Option<String>,
+    #[serde(default)]
+    disabled: bool,
+}
+
+#[derive(serde::Deserialize)]
+struct AgyGroup {
+    name: Option<String>,
+    buckets: Vec<AgyBucket>,
+}
+
+#[derive(serde::Deserialize)]
+struct AgyData {
+    groups: Vec<AgyGroup>,
+    description: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct AgyCommand {
+    data: Option<AgyData>,
+}
+
+#[derive(serde::Deserialize)]
+struct AgyEnvelope {
+    status: String,
+    command: Option<AgyCommand>,
+}
+
+fn antigravity_usage() -> ProviderUsage {
+    let mut usage = static_provider("antigravity", "Antigravity", "agy");
+    if usage.status != "unsupported" {
+        return usage;
+    }
+    let output = Command::new("agy")
+        .args([
+            "-p",
+            "/usage",
+            "--output-format",
+            "json",
+            "--print-timeout",
+            "20s",
+        ])
+        .env("AGY_CLI_DISABLE_AUTO_UPDATE", "true")
+        .output();
+    let Ok(output) = output else {
+        usage.status = "error".to_owned();
+        usage.message = Some("No se pudo ejecutar agy /usage.".to_owned());
+        return usage;
+    };
+    if !output.status.success() {
+        usage.status = "error".to_owned();
+        usage.message = Some(String::from_utf8_lossy(&output.stderr).trim().to_owned());
+        return usage;
+    }
+    let envelope: AgyEnvelope = match serde_json::from_slice(&output.stdout) {
+        Ok(value) => value,
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(format!("Respuesta de agy inválida: {error}"));
+            return usage;
+        }
+    };
+    if envelope.status != "SUCCESS" {
+        usage.status = "error".to_owned();
+        usage.message = Some("agy no devolvió usage.".to_owned());
+        return usage;
+    }
+    let Some(data) = envelope.command.and_then(|command| command.data) else {
+        usage.status = "error".to_owned();
+        usage.message = Some("agy no incluyó datos de usage.".to_owned());
+        return usage;
+    };
+    for group in data.groups {
+        let group_name = group.name.unwrap_or_else(|| "Antigravity".to_owned());
+        for bucket in group.buckets {
+            if bucket.disabled {
+                continue;
+            }
+            let Some(fraction) = bucket.remaining_fraction.filter(|value| value.is_finite()) else {
+                continue;
+            };
+            let used = ((1.0 - fraction).clamp(0.0, 1.0) * 100.0).round();
+            let label = match bucket.name {
+                Some(name) => format!("{group_name} · {name}"),
+                None => group_name.clone(),
+            };
+            usage.windows.push(UsageWindow {
+                label,
+                used_percent: used,
+                resets_at: bucket.reset_time,
+            });
+        }
+    }
+    if let Some(window) = usage
+        .windows
+        .iter()
+        .find(|window| window.used_percent >= 60.0)
+    {
+        usage.details.push(UsageMetric {
+            label: "Ventana más usada".to_owned(),
+            value: format!("{:.0}%", window.used_percent),
+        });
+    }
+    if !usage.windows.is_empty() {
+        usage.status = "ready".to_owned();
+        usage.message = data.description;
+    }
+    usage
 }
 
 pub fn report() -> Vec<ProviderUsage> {
     vec![
         opencode_usage(),
         static_provider("claude", "Claude Code", "claude"),
-        static_provider("antigravity", "Antigravity", "agy"),
+        antigravity_usage(),
         static_provider("commandcode", "Command Code", "cmd"),
     ]
 }

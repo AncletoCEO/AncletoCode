@@ -444,19 +444,58 @@ pub(crate) fn resolve_binary(binary: &str) -> Option<PathBuf> {
 
     let path = env::var_os("PATH")?;
     for directory in env::split_paths(&path) {
-        let full = directory.join(binary);
-        if full.is_file() {
-            return Some(full);
+        if let Some(found) = binary_in_directory(&directory, binary) {
+            return Some(found);
         }
-        #[cfg(windows)]
-        for extension in ["exe", "cmd", "bat"] {
-            let with_extension = directory.join(format!("{binary}.{extension}"));
-            if with_extension.is_file() {
-                return Some(with_extension);
-            }
+    }
+
+    for directory in known_bin_directories() {
+        if let Some(found) = binary_in_directory(&directory, binary) {
+            return Some(found);
         }
     }
     None
+}
+
+fn binary_in_directory(directory: &Path, binary: &str) -> Option<PathBuf> {
+    let full = directory.join(binary);
+    if full.is_file() {
+        return Some(full);
+    }
+    #[cfg(windows)]
+    for extension in ["exe", "cmd", "bat"] {
+        let with_extension = directory.join(format!("{binary}.{extension}"));
+        if with_extension.is_file() {
+            return Some(with_extension);
+        }
+    }
+    None
+}
+
+fn known_bin_directories() -> Vec<PathBuf> {
+    let home = env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
+        .or_else(|| env::var_os("HOME"))
+        .map(PathBuf::from);
+    let mut directories = Vec::new();
+    if let Some(home) = home {
+        directories.extend([
+            home.join(".opencode/bin"),
+            home.join(".local/bin"),
+            home.join(".npm-global/bin"),
+            home.join(".bun/bin"),
+            home.join(".cargo/bin"),
+            home.join("bin"),
+        ]);
+    }
+    if cfg!(windows) {
+        if let Some(app_data) = env::var_os("APPDATA").map(PathBuf::from) {
+            directories.push(app_data.join("npm"));
+        }
+        if let Some(local) = env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            directories.push(local.join("Programs/opencode/bin"));
+        }
+    }
+    directories
 }
 
 fn parse_chunk(chunk: &[u8], state: &mut ParseState) -> Vec<AgentSignal> {

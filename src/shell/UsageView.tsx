@@ -76,6 +76,35 @@ export default function UsageView() {
               </div>
             ) : null}
 
+            {provider.windows.length > 0 ? (
+              <div className="shell-usage-windows">
+                {provider.windows.map((window) => (
+                  <div key={window.label} className="shell-usage-window">
+                    <div>
+                      <span>{window.label}</span>
+                      <strong>{Math.round(window.usedPercent)}%</strong>
+                    </div>
+                    <span className="shell-usage-track">
+                      <span
+                        className={cn(
+                          "shell-usage-fill",
+                          window.usedPercent >= 80
+                            ? "is-danger"
+                            : window.usedPercent >= 60
+                              ? "is-warning"
+                              : "is-ok",
+                        )}
+                        style={{ width: `${Math.min(100, Math.max(0, window.usedPercent))}%` }}
+                      />
+                    </span>
+                    {window.resetsAt ? (
+                      <small>reset {new Date(window.resetsAt).toLocaleString()}</small>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
             {provider.details.length > 0 ? (
               <div className="shell-usage-details">
                 {provider.details.map((metric) => (
@@ -92,9 +121,8 @@ export default function UsageView() {
       </div>
 
       <p className="shell-usage-note">
-        Orca inspira este panel: porcentajes de cuota requieren un adapter por proveedor. OpenCode
-        hoy reporta tokens y costo local; para cuotas de suscripción se usará el endpoint o estado
-        local de cada CLI.
+        Orca inspira este panel: Antigravity reporta cuotas reales vía `agy -p /usage`; OpenCode
+        reporta tokens y costo local. Claude y Command Code todavía muestran estados explícitos.
       </p>
     </div>
   );

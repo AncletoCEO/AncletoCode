@@ -318,7 +318,7 @@ se registra en `docs/provenance.md`.
 - [ ] 16.18 Integrar los paneles Ancleto (spec, writer, conversación, sesiones) en el nuevo shell sin regresiones; el estado sigue viniendo de las CLIs.
 - [ ] 16.19 Accesibilidad y rendimiento: foco, teclado, contraste, reduced motion, virtualización de listas/diffs y presupuesto de render.
 - [ ] 16.20 Tests: fixtures de repos bare, worktrees, conflictos, providers mockeados (`gh`/`glab`), stores y componentes; snapshots visuales de las vistas principales.
-- [ ] 16.24 (en progreso: panel Uso estilo Orca; OpenCode tokens/costo, otros con estados explícitos; faltan adapters de cuota) Indicadores de usage por proveedor.
+- [ ] 16.24 (en progreso: OpenCode tokens/costo local y Antigravity cuotas reales vía `agy -p /usage`; Claude/Command Code pendientes) Indicadores de usage por proveedor.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
 - [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) (en progreso: sidecar Node, paquete incluido, update administrado y UI; falta E2E/rollback) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.

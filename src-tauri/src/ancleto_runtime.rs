@@ -142,8 +142,30 @@ fn activate(config_dir: &Path, script: &Path) -> Result<(), String> {
 
 pub fn configure(config_dir: &Path, resource_dir: &Path) {
     if let Some(script) = active_script(config_dir, resource_dir) {
-        let _ = activate(config_dir, &script);
+        if activate(config_dir, &script).is_ok() {
+            if let Some(node) = node_binary() {
+                let _ = expose_node_on_path(config_dir, &node);
+            }
+        }
     }
+}
+
+fn expose_node_on_path(config_dir: &Path, node: &Path) -> Result<(), String> {
+    let bin = config_dir.join("ancleto/bin");
+    fs::create_dir_all(&bin).map_err(|error| error.to_string())?;
+    let target = bin.join(if cfg!(windows) { "node.exe" } else { "node" });
+    if !target.is_file() {
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(node, &target).map_err(|error| error.to_string())?;
+        #[cfg(windows)]
+        fs::copy(node, &target).map_err(|error| error.to_string())?;
+    }
+    let current = std::env::var_os("PATH").unwrap_or_default();
+    let mut paths = vec![bin];
+    paths.extend(std::env::split_paths(&current));
+    let joined = std::env::join_paths(paths).map_err(|error| error.to_string())?;
+    std::env::set_var("PATH", joined);
+    Ok(())
 }
 
 pub fn status(config_dir: &Path, resource_dir: &Path, check_remote: bool) -> AncletoRuntimeStatus {

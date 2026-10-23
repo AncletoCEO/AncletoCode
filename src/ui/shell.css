@@ -2522,3 +2522,57 @@
   font-size: 10px;
   line-height: 1.55;
 }
+
+.shell-usage-windows {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.shell-usage-window {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shell-usage-window > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.shell-usage-window strong {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-usage-track {
+  display: block;
+  height: 5px;
+  border-radius: 99px;
+  background: rgb(var(--bg-elevated-rgb) / 65%);
+  overflow: hidden;
+}
+
+.shell-usage-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+
+.shell-usage-fill.is-warning {
+  background: var(--warning);
+}
+
+.shell-usage-fill.is-danger {
+  background: var(--danger);
+}
+
+.shell-usage-window small {
+  color: var(--fg-muted);
+  font-size: 8px;
+}

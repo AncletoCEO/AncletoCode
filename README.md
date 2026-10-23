@@ -30,7 +30,8 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
   administrada desde Ajustes con verificación de integridad y rollback.
 - **Updates de la app:** chequeo al iniciar y aviso de nueva versión.
 - **Uso de proveedores:** panel inspirado en Orca; OpenCode reporta tokens/costo
-  local y el resto muestra estados explícitos, sin cuotas inventadas.
+  local y Antigravity cuotas reales vía `agy -p /usage`. Claude y Command Code
+  muestran estados explícitos, sin cuotas inventadas.
 
 ## Capturas
 
