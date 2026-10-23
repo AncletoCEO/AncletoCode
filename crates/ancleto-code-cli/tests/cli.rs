@@ -54,6 +54,8 @@ impl Sandbox {
             .args(args)
             .env("ANCLETO_CODE_HOME", self.home())
             .env("ANCLETO_CODE_STATE", self.state())
+            .env("HOME", self.home())
+            .env("USERPROFILE", self.home())
             .env("ANCLETO_HOST_BIN", &self.host_binary)
             .env_remove("ANCLETO_SPEC_BIN");
         for (key, value) in env {
