@@ -57,12 +57,20 @@ fn package_version(package_dir: &Path) -> Option<String> {
 }
 
 fn bundled_script(resource_dir: &Path) -> Option<PathBuf> {
+    bundled_script_at(resource_dir, "package/src/cli/index.js")
+}
+
+fn bundled_writer_script(resource_dir: &Path) -> Option<PathBuf> {
+    bundled_script_at(resource_dir, "writer/package/src/cli/index.js")
+}
+
+fn bundled_script_at(resource_dir: &Path, relative: &str) -> Option<PathBuf> {
     let mut candidates = vec![
-        resource_dir.join("resources/ancleto/package/src/cli/index.js"),
-        resource_dir.join("ancleto/package/src/cli/index.js"),
+        resource_dir.join("resources/ancleto").join(relative),
+        resource_dir.join("ancleto").join(relative),
     ];
     if let Ok(workspace) = std::env::current_dir() {
-        candidates.push(workspace.join("src-tauri/resources/ancleto/package/src/cli/index.js"));
+        candidates.push(workspace.join("src-tauri/resources/ancleto").join(relative));
     }
     candidates.into_iter().find(|path| path.is_file())
 }
@@ -145,6 +153,10 @@ pub fn configure(config_dir: &Path, resource_dir: &Path) {
         if activate(config_dir, &script).is_ok() {
             if let Some(node) = node_binary() {
                 let _ = expose_node_on_path(config_dir, &node);
+                if let Some(writer) = bundled_writer_script(resource_dir) {
+                    std::env::set_var("ANCLETO_WRITER_NODE", &node);
+                    std::env::set_var("ANCLETO_WRITER_JS", writer);
+                }
             }
         }
     }

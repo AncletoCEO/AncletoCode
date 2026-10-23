@@ -88,6 +88,8 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
   const [context, setContext] = useState<string | null>(null);
   const [output, setOutput] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [runningLabel, setRunningLabel] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
   const [agent, setAgent] = useState("");
   const [tier, setTier] = useState("");
@@ -98,6 +100,18 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
   const effectiveTier = tier || status?.tier || "";
   const effectiveLanguage = language || status?.language || "";
   const effectiveExclude = exclude || (status?.discoveryExclude ?? []).join(", ");
+
+  useEffect(() => {
+    if (!runningLabel) {
+      return;
+    }
+    const started = Date.now();
+    const timer = window.setInterval(
+      () => setElapsed(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [runningLabel]);
 
   function options(): InitOptions {
     const result: InitOptions = {
@@ -139,9 +153,15 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
     void refresh();
   }, [refresh]);
 
-  async function command(label: string, run: () => Promise<CommandOutcome>) {
+  async function command(
+    label: string,
+    run: () => Promise<CommandOutcome>,
+    progress = `${label}: ejecutando…`,
+  ) {
     setBusy(true);
     setOutput(null);
+    setElapsed(0);
+    setRunningLabel(progress);
     try {
       const outcome = await run();
       const text = (outcome.stdout || outcome.stderr).trim();
@@ -152,6 +172,7 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
     } catch (error) {
       setOutput(`${label}: ${messageOf(error)}`);
     } finally {
+      setRunningLabel(null);
       setBusy(false);
     }
   }
@@ -191,8 +212,10 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
     if (!window.confirm("¿Regenerar el technical seed con @ancleto/spec?")) {
       return;
     }
-    await command("discovery", () =>
-      invoke<CommandOutcome>("spec_discovery_generate", { id: projectId }),
+    await command(
+      "discovery",
+      () => invoke<CommandOutcome>("spec_discovery_generate", { id: projectId }),
+      "Generando technical seed con repomix…",
     );
     try {
       setDiscovery(await invoke<DiscoveryState>("spec_discovery_check", { id: projectId }));
@@ -380,6 +403,13 @@ export default function SpecPanel({ projectId }: SpecPanelProps) {
         </div>
       ) : null}
 
+      {runningLabel ? (
+        <div className="spec-progress" role="status" aria-live="polite">
+          <span className="spec-progress-spinner" />
+          <span>{runningLabel}</span>
+          <span className="muted">{elapsed}s</span>
+        </div>
+      ) : null}
       {output ? <pre className="spec-output">{output}</pre> : null}
     </section>
   );

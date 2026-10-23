@@ -26,8 +26,9 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
 - **Git local:** status, ramas, diff, staging, commit, fetch, pull, push, merge y
   worktrees.
 - **GitHub:** remoto, PRs e issues vía `gh`. GitLab queda diferido.
-- **Ancleto SDD embebido:** Node y `@ancleto/spec` incluidos; actualización
-  administrada desde Ajustes con verificación de integridad y rollback.
+- **Ancleto SDD embebido:** Node, `@ancleto/spec` y `@ancleto/writer` incluidos;
+  actualización de spec administrada desde Ajustes con verificación de integridad
+  y rollback. `@ancleto/writer-languages` sigue siendo un pack nativo opcional.
 - **Updates de la app:** chequeo al iniciar y aviso de nueva versión.
 - **Uso de proveedores:** panel inspirado en Orca; OpenCode reporta tokens/costo
   local y Antigravity cuotas reales vía `agy -p /usage`. Claude y Command Code

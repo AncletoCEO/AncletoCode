@@ -118,17 +118,24 @@ pub struct WriterState {
 pub struct WriterProvider {
     node: NodeRuntime,
     binary: Option<PathBuf>,
+    script: Option<PathBuf>,
     version: Option<String>,
 }
 
 impl WriterProvider {
     pub fn detect(root: &Path) -> Self {
         let node = NodeRuntime::detect();
-        let binary = resolve_writer_binary(root);
-        let version = binary.as_ref().and_then(|path| version_of(path));
+        let (binary, script) = match resolve_writer_runtime(root) {
+            Some((binary, script)) => (Some(binary), script),
+            None => (None, None),
+        };
+        let version = binary
+            .as_ref()
+            .and_then(|path| version_of(path, script.as_deref()));
         Self {
             node,
             binary,
+            script,
             version,
         }
     }
@@ -148,8 +155,9 @@ impl WriterProvider {
             status,
             version: self.version.clone(),
             binary_path: self
-                .binary
+                .script
                 .as_ref()
+                .or(self.binary.as_ref())
                 .map(|path| path.to_string_lossy().into_owned()),
             install_hint: Some(INSTALL_HINT.to_owned()),
         }
@@ -263,7 +271,11 @@ impl WriterProvider {
             .as_ref()
             .ok_or_else(|| CoreError::Process("ancleto-writer no está instalado".to_owned()))?;
 
-        let output = Command::new(binary)
+        let mut command = Command::new(binary);
+        if let Some(script) = &self.script {
+            command.arg(script);
+        }
+        let output = command
             .args(args)
             .current_dir(root)
             .output()
@@ -369,6 +381,17 @@ pub fn language_pack_status(root: &Path, config: &WriterConfig) -> LanguagePack 
     }
 }
 
+fn resolve_writer_runtime(root: &Path) -> Option<(PathBuf, Option<PathBuf>)> {
+    let node = env::var_os("ANCLETO_WRITER_NODE").map(PathBuf::from);
+    let script = env::var_os("ANCLETO_WRITER_JS").map(PathBuf::from);
+    if let (Some(node), Some(script)) = (node, script) {
+        if node.is_file() && script.is_file() {
+            return Some((node, Some(script)));
+        }
+    }
+    resolve_writer_binary(root).map(|binary| (binary, None))
+}
+
 fn resolve_writer_binary(root: &Path) -> Option<PathBuf> {
     let local = root
         .join("node_modules")
@@ -398,8 +421,12 @@ fn resolve_writer_binary(root: &Path) -> Option<PathBuf> {
     sidecar.is_file().then_some(sidecar)
 }
 
-fn version_of(path: &Path) -> Option<String> {
-    let output = Command::new(path).arg("--version").output().ok()?;
+fn version_of(path: &Path, script: Option<&Path>) -> Option<String> {
+    let mut command = Command::new(path);
+    if let Some(script) = script {
+        command.arg(script);
+    }
+    let output = command.arg("--version").output().ok()?;
     let text = String::from_utf8_lossy(&output.stdout);
     text.lines()
         .find(|line| line.trim_start().starts_with("ancleto-writer"))
@@ -534,6 +561,7 @@ mod tests {
         let provider = WriterProvider {
             node: NodeRuntime::detect(),
             binary: None,
+            script: None,
             version: None,
         };
 

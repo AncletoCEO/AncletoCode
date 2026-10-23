@@ -2928,3 +2928,31 @@
     min-height: 180px;
   }
 }
+
+.spec-progress {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgb(var(--bg-elevated-rgb) / 30%);
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.spec-progress-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--shell-accent);
+  border-radius: 50%;
+  animation: spec-spin 800ms linear infinite;
+}
+
+@keyframes spec-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

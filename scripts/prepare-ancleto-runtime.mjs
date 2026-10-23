@@ -128,6 +128,41 @@ async function prepareSpec() {
   console.log(`@ancleto/spec ${latest.version} incluido en ${packageDir}`);
 }
 
+
+async function prepareWriter() {
+  const latest = await (await fetch("https://registry.npmjs.org/@ancleto/writer/latest")).json();
+  if (!latest.version || !latest.dist?.tarball || !latest.dist?.integrity) {
+    throw new Error("respuesta inválida del registry para @ancleto/writer");
+  }
+  const writerDir = join(resourcesDir, "writer");
+  const versionFile = join(writerDir, "version.txt");
+  const packageDir = join(writerDir, "package");
+  if (!force && existsSync(versionFile) && existsSync(join(packageDir, "src/cli/index.js"))) {
+    const installed = (await readFile(versionFile, "utf8")).trim();
+    if (installed === latest.version) {
+      console.log(`@ancleto/writer ${latest.version} ya está incluido`);
+      return;
+    }
+  }
+
+  const archive = join(cacheDir, `ancleto-writer-${latest.version}.tgz`);
+  await download(latest.dist.tarball, archive);
+  const bytes = await readFile(archive);
+  const [algorithm, expected] = latest.dist.integrity.split("-", 2);
+  if (algorithm !== "sha512" || sha512Base64(bytes) !== expected) {
+    throw new Error("la integridad del tarball de @ancleto/writer no coincide");
+  }
+  const staging = join(cacheDir, `ancleto-writer-${latest.version}`);
+  await rm(staging, { recursive: true, force: true });
+  await mkdir(staging, { recursive: true });
+  await tar.x({ file: archive, cwd: staging });
+  await rm(packageDir, { recursive: true, force: true });
+  await mkdir(writerDir, { recursive: true });
+  await copyTree(join(staging, "package"), packageDir);
+  await writeFile(versionFile, `${latest.version}\n`);
+  console.log(`@ancleto/writer ${latest.version} incluido en ${packageDir}`);
+}
+
 async function copyTree(source, destination) {
   const { cp } = await import("node:fs/promises");
   await cp(source, destination, { recursive: true });
@@ -138,6 +173,7 @@ try {
   console.log(`target: ${triple}`);
   await prepareNode(triple);
   await prepareSpec();
+  await prepareWriter();
 } catch (error) {
   console.error(`prepare-ancleto-runtime: ${error instanceof Error ? error.message : error}`);
   process.exit(1);
