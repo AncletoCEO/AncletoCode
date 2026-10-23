@@ -65,6 +65,8 @@ jobs:
           node-version: 24
       - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
+      - name: Prepare embedded Ancleto runtime
+        run: npm run prepare:ancleto
       - name: Resolve version
         shell: bash
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
@@ -91,6 +93,8 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - name: Prepare embedded Ancleto runtime
+        run: npm run prepare:ancleto
       - name: Resolve version
         shell: bash
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"

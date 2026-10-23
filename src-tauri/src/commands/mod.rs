@@ -18,6 +18,7 @@ use tauri::State;
 
 pub struct AppState {
     pub config_dir: std::path::PathBuf,
+    pub resource_dir: std::path::PathBuf,
     pub projects: Mutex<ProjectService>,
     pub sessions: Arc<dyn SessionBackend>,
     pub host: Option<Arc<HostClient>>,
@@ -27,6 +28,25 @@ pub struct AppState {
 
 fn lock_error() -> String {
     "el estado de proyectos no está disponible".to_owned()
+}
+
+#[tauri::command]
+pub fn ancleto_runtime_status(
+    state: State<'_, AppState>,
+    check_remote: Option<bool>,
+) -> crate::ancleto_runtime::AncletoRuntimeStatus {
+    crate::ancleto_runtime::status(
+        &state.config_dir,
+        &state.resource_dir,
+        check_remote.unwrap_or(false),
+    )
+}
+
+#[tauri::command]
+pub fn ancleto_runtime_update(
+    state: State<'_, AppState>,
+) -> Result<crate::ancleto_runtime::AncletoRuntimeStatus, String> {
+    crate::ancleto_runtime::update(&state.config_dir, &state.resource_dir)
 }
 
 #[tauri::command]

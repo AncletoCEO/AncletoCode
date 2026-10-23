@@ -57,3 +57,6 @@ tmp/
 # Paquetes npm generados por plataforma
 packages/code-*/
 packages/cmd-*/
+src-tauri/binaries/
+src-tauri/resources/ancleto/
+.cache/

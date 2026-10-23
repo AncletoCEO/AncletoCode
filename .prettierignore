@@ -10,3 +10,6 @@ third_party/pandacode/LICENSE
 third_party/pandacode/src*
 packages/code-*
 packages/cmd-*
+src-tauri/resources/ancleto
+src-tauri/binaries
+.cache

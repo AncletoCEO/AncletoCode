@@ -115,17 +115,24 @@ pub struct MemoryNode {
 pub struct SpecProvider {
     node: NodeRuntime,
     binary: Option<PathBuf>,
+    script: Option<PathBuf>,
     version: Option<String>,
 }
 
 impl SpecProvider {
     pub fn detect(root: &Path) -> Self {
         let node = NodeRuntime::detect();
-        let binary = resolve_spec_binary(root);
-        let version = binary.as_ref().and_then(|path| version_of(path));
+        let (binary, script) = match resolve_spec_runtime(root) {
+            Some((binary, script)) => (Some(binary), script),
+            None => (None, None),
+        };
+        let version = binary
+            .as_ref()
+            .and_then(|path| version_of(path, script.as_deref()));
         Self {
             node,
             binary,
+            script,
             version,
         }
     }
@@ -149,8 +156,9 @@ impl SpecProvider {
             status,
             version: self.version.clone(),
             binary_path: self
-                .binary
+                .script
                 .as_ref()
+                .or(self.binary.as_ref())
                 .map(|path| path.to_string_lossy().into_owned()),
             install_hint: Some(INSTALL_HINT.to_owned()),
         }
@@ -232,7 +240,11 @@ impl SpecProvider {
             .as_ref()
             .ok_or_else(|| CoreError::Process("ancleto no está instalado".to_owned()))?;
 
-        let output = Command::new(binary)
+        let mut command = Command::new(binary);
+        if let Some(script) = &self.script {
+            command.arg(script);
+        }
+        let output = command
             .args(args)
             .current_dir(root)
             .output()
@@ -391,6 +403,17 @@ fn read_tier_file(root: &Path) -> Option<String> {
         .filter(|tier| !tier.is_empty())
 }
 
+fn resolve_spec_runtime(root: &Path) -> Option<(PathBuf, Option<PathBuf>)> {
+    let node = env::var_os("ANCLETO_SPEC_NODE").map(PathBuf::from);
+    let script = env::var_os("ANCLETO_SPEC_JS").map(PathBuf::from);
+    if let (Some(node), Some(script)) = (node, script) {
+        if node.is_file() && script.is_file() {
+            return Some((node, Some(script)));
+        }
+    }
+    resolve_spec_binary(root).map(|binary| (binary, None))
+}
+
 fn resolve_spec_binary(root: &Path) -> Option<PathBuf> {
     let local = root
         .join("node_modules")
@@ -420,8 +443,12 @@ fn resolve_spec_binary(root: &Path) -> Option<PathBuf> {
     sidecar.is_file().then_some(sidecar)
 }
 
-fn version_of(path: &Path) -> Option<String> {
-    let output = Command::new(path).arg("--version").output().ok()?;
+fn version_of(path: &Path, script: Option<&Path>) -> Option<String> {
+    let mut command = Command::new(path);
+    if let Some(script) = script {
+        command.arg(script);
+    }
+    let output = command.arg("--version").output().ok()?;
     let text = String::from_utf8_lossy(&output.stdout);
     text.lines()
         .map(str::trim)
@@ -595,6 +622,7 @@ mod tests {
                 compatible: true,
             },
             binary: None,
+            script: None,
             version: None,
         };
         assert_eq!(missing.tool().status, ToolStatus::Missing);
@@ -607,6 +635,7 @@ mod tests {
                 compatible: false,
             },
             binary: Some(directory.path().join("ancleto")),
+            script: None,
             version: Some("ancleto 0.14.0".to_owned()),
         };
         assert_eq!(incompatible.tool().status, ToolStatus::Incompatible);

@@ -15,7 +15,11 @@ pub struct NodeRuntime {
 
 impl NodeRuntime {
     pub fn detect() -> Self {
-        let Some(path) = resolve_binary("node") else {
+        let path = std::env::var_os("ANCLETO_SPEC_NODE")
+            .map(std::path::PathBuf::from)
+            .filter(|path| path.is_file())
+            .or_else(|| resolve_binary("node"));
+        let Some(path) = path else {
             return Self {
                 available: false,
                 version: None,

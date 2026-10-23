@@ -8,6 +8,7 @@ use ancleto_code_core::{
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
+pub mod ancleto_runtime;
 pub mod commands;
 
 use commands::AppState;
@@ -113,6 +114,8 @@ pub fn run() {
         .setup(|app| {
             let config_directory = app.path().app_config_dir()?;
             fs::create_dir_all(&config_directory)?;
+            let resource_directory = app.path().resource_dir()?;
+            ancleto_runtime::configure(&config_directory, &resource_directory);
             let database = ancleto_code_core::host::transport::default_database_path();
             let service = ProjectService::open(&database)?;
             let settings_store = Store::open(&database)?;
@@ -166,10 +169,13 @@ pub fn run() {
                 drivers,
                 orchestrator,
                 config_dir: config_directory,
+                resource_dir: resource_directory,
             });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::ancleto_runtime_status,
+            commands::ancleto_runtime_update,
             commands::core_version,
             commands::project_add,
             commands::project_list,

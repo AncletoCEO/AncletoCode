@@ -39,15 +39,16 @@
       "icons/icon.ico"
     ],
     "publisher": "Ancleto",
-    "copyright": "Copyright \u00a9 2026 Ancleto",
+    "copyright": "Copyright © 2026 Ancleto",
     "category": "DeveloperTool",
-    "shortDescription": "Workspace de agentes de c\u00f3digo para escritorio y terminal",
+    "shortDescription": "Workspace de agentes de código para escritorio y terminal",
     "longDescription": "AncletoCode organiza proyectos, sesiones de agente y conocimiento en un solo workspace, compartido con AncletoCMD y la CLI acode.",
-    "resources": ["resources/LICENSE", "resources/THIRD_PARTY_NOTICES.md"],
+    "resources": ["resources/LICENSE", "resources/THIRD_PARTY_NOTICES.md", "resources/ancleto"],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
       }
-    }
+    },
+    "externalBin": ["binaries/ancleto-node"]
   }
 }
