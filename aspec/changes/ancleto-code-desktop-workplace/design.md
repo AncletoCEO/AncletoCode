@@ -409,6 +409,34 @@ La identidad visual es **CLI-first**: la app se ve como una terminal de escritor
 - La configuración es compartida por las versiones; no hay archivos de configuración por superficie.
 - Nada de la app se escribe dentro de `.ancleto/writer/` ni de `aspec/`.
 
+
+### UI híbrida PandaCode + Orca y Git (2026-10-22)
+
+La app de escritorio es el único producto de esta etapa. La referencia visual es
+un híbrido: la calma, densidad y navegación por teclado de PandaCode, más la
+organización de flotas, tareas y worktrees de Orca. No se adopta Electron ni se
+copia la app de Orca; se implementa sobre Tauri + React + Rust.
+
+**Shell.** Navegación lateral por proyectos y tareas, workspace central con
+threads/tabs, inspector derecho para contexto/cambios/Git y composer inferior.
+Paneles redimensionables, command palette y quick switcher. Los paneles Ancleto
+(spec/writer/conversación) se integran como vistas del mismo shell.
+
+**Git.** Un `GitService` en Rust usa el binario `git` del sistema con argv, sin
+shell intermedio, para status/diff/stage/commit/branch/fetch/pull/push/merge y
+worktrees. Cada tarea puede tener su propio worktree y rama. Los tokens no se
+guardan en la app: la autenticación se delega a `gh`, `glab`, el credential helper
+o el remoto web. Los proveedores se exponen detrás de `GitHostProvider`
+(GitHub/GitLab primero; Bitbucket/Azure o remoto genérico después).
+
+**Worktrees.** Crear un worktree por tarea permite ejecutar varios agentes en
+paralelo sin pisar el árbol principal; el merge del ganador es explícito y nunca
+automático. La limpieza verifica cambios sin commit antes de eliminar.
+
+**Release.** Linux: AppImage + `.deb`; Windows: NSIS/MSI/ZIP portable. Sin npm,
+AncletoCMD ni CLI en el camino de publicación. La AppImage se prueba en
+Arch/EndeavourOS con FUSE y con `--appimage-extract-and-run`.
+
 ## Validation
 
 - **Rust (`cargo test` + `clippy`)**:

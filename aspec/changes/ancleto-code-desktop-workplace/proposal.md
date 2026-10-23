@@ -1,5 +1,30 @@
 ﻿# Proposal: AncletoCode — workspace de agentes para escritorio y terminal
 
+## Actualización de alcance — 2026-10-22
+
+El alcance de release cambia: **sólo se implementa y publica AncletoCode de
+escritorio**. Quedan fuera de esta etapa AncletoCMD, la CLI `acode`, el host como
+artefacto separado y la distribución por npm. El código existente se conserva y
+el host sigue siendo una dependencia interna de la app para sesiones
+persistentes, pero no se empaqueta ni se valida como producto independiente.
+
+El norte de producto pasa a ser un **híbrido visual y funcional entre PandaCode y
+Orca IDE**:
+
+- De **PandaCode** se reutiliza código y se adopta su enfoque calmo, denso y
+  teclado-primero; se actualiza la referencia a `v0.3.26`
+  (`800b879680bc89fda1189f726864ca1a4ed61e2a`).
+- De **Orca** (`v1.4.237`, commit
+  `071747853f5995ee233b36751613f09a60007c2b`, MIT) se toma la organización visual
+  y de flujo: flotas de agentes, tareas con worktree propio, revisión de cambios,
+  Git/GitHub/GitLab y command palette. No se copian logos, activos ni código sin
+  vendorizarlo y atribuirlo a Lovecast Inc.
+- Se conservan los diferenciadores Ancleto: `@ancleto/spec`, `@ancleto/writer`,
+  conversación agente-a-agente y sesiones persistentes.
+
+El release Linux usa **AppImage** (además de `.deb`) para Arch/EndeavourOS y otras
+distribuciones; Windows mantiene NSIS/MSI/ZIP portable. macOS se difiere.
+
 ## Problem
 
 Hoy los agentes de código se usan desde terminales sueltas, una por ventana y sin contexto compartido. Esto obliga a saltar entre consolas para alternar proyectos, se pierde de vista qué agente corre en cada carpeta, y no existe forma nativa de que dos agentes colaboren sobre el mismo trabajo. Además, el ecosistema Ancleto sólo se consume por CLI (`ancleto`, `ancleto-writer`), sin una experiencia de escritorio que exponga su memoria, su grafo de conocimiento y su estado de frescura.
@@ -29,7 +54,7 @@ Se analizó [aicodeking/pandacode](https://github.com/aicodeking/pandacode) en e
 
 **Implicación para AncletoCode:** el proyecto es **AGPL-3.0**. Incorporar código MIT es compatible en la dirección entrante, pero la condición de atribución viaja con el código y debe preservarse en la distribución combinada. Al incorporar código, el proyecto pasa a ser una obra basada en PandaCode: se conservan `LICENSE` (AGPL-3.0), los avisos MIT y la declaración de fork. La convivencia se documenta como término adicional permitido por AGPL §7 y se somete a revisión legal antes del primer release público.
 
-**Decisión de alcance:** se reutiliza el código de PandaCode que mapea a las features del MVP, no todo el repositorio. La incorporación es selectiva, vendorizada, con procedencia registrada y cabeceras SPDX; los subsistemas fuera de alcance (bots, cloud, VMs, GitHub, board, simuladores, equipos arquitecto/workers) quedan como referencia, sin copia. Los activos (wallpapers, logos, screenshots, iconos, fuentes y temas) no se reutilizan.
+**Decisión de alcance:** se reutiliza el código de PandaCode que mapea a las features del MVP, no todo el repositorio. La incorporación es selectiva, vendorizada, con procedencia registrada y cabeceras SPDX; los subsistemas fuera de alcance (bots, cloud, VMs, board, simuladores, equipos arquitecto/workers) quedan como referencia, sin copia; Git/worktrees/GitHub/GitLab pasan a estar en alcance 0.2. Los activos (wallpapers, logos, screenshots, iconos, fuentes y temas) no se reutilizan.
 
 ### Estrategia de reutilización
 
@@ -46,7 +71,7 @@ Se analizó [aicodeking/pandacode](https://github.com/aicodeking/pandacode) en e
 | Proveedores | Interfaz normalizada de eventos con adapters por protocolo (Claude stream-json, Codex app-server, ACP para Kimi/OpenCode/Antigravity/Grok), proceso por turno y resume por ID | Reusar `text_stream.rs` y `windows_job.rs`; mantener el contrato PTY-first con one-shot estructurado y dejar ACP como referencia futura |
 | Antigravity | Distingue el CLI `agy` del servidor ACP `agy_acp_server` y no confunde el TUI con ACP | Reusar la distinción: `agy` es driver PTY; el IDE es integración separada |
 | Ciclo de vida | Proceso sólo durante el turno, grupos de procesos, límites de salida y stderr, cierre limpio | Reusar `terminal.rs` (adaptado), `windows_job.rs` y `text_stream.rs` para buffers acotados y cierre ordenado |
-| Workspace | Proyectos, archivos, Git, worktrees, branch chip y browser embebido | Reusar/adaptar `workspace.rs` y `file_search.rs` para rutas canónicas y árbol; Git/worktrees/browser quedan fuera del MVP |
+| Workspace | Proyectos, archivos, Git, worktrees, branch chip y browser embebido | Reusar/adaptar `workspace.rs` y `file_search.rs`; Git/worktrees/branch chip pasan a estar en alcance 0.2; browser queda fuera |
 | Tabs y navegación | Sidebar global agrupada por recencia; cada tarea es un thread | Reusar `transcript-scroll.ts` y `ui-size.ts`; mantener tabs proyecto → agente con indicadores propios |
 | SDD y conocimiento | Sin equivalente: no consume `aspec` ni `ancleto-writer` | Diferenciador propio; se conserva el diseño de providers Ancleto y no se reutiliza código |
 | Aprobaciones | Barra de aprobaciones con approve/deny y agrupación | Fuera del MVP: cada CLI conserva su modelo de permisos dentro del PTY; sólo referencia |
@@ -114,6 +139,11 @@ Construir **AncletoCode**: una aplicación de escritorio en **Tauri 2** que func
 
 ## Scope
 
+> **Vigencia 2026-10-22:** el alcance de release es sólo la app de escritorio.
+> Los bullets de CLI, AncletoCMD y npm se conservan como diseño futuro y no son
+> criterio de aceptación de esta etapa. Git/worktrees/GitHub/GitLab y AppImage
+> pasan a estar en alcance.
+
 **In scope**
 
 - Shell Tauri 2 con backend Rust y frontend React + TypeScript + Vite.
@@ -148,6 +178,8 @@ Construir **AncletoCode**: una aplicación de escritorio en **Tauri 2** que func
 
 **Out of scope**
 
+- AncletoCMD, CLI `acode`, host como artefacto separado y paquetes npm durante esta etapa (código conservado, release diferido).
+
 - Ejecución remota, multiusuario o sincronización en la nube.
 - Edición colaborativa en tiempo real entre humanos.
 - Marketplace de agentes o plugins de terceros.
@@ -156,7 +188,7 @@ Construir **AncletoCode**: una aplicación de escritorio en **Tauri 2** que func
 - Instalar dependencias automáticamente (sólo se sugiere el comando npm).
 - Autenticación de las CLIs (se delega en cada CLI ya autenticada en la máquina).
 - Copiar código o activos de PandaCode fuera del flujo vendorizado y sin la puerta de cumplimiento.
-- Incorporar subsistemas completos fuera del MVP (bots, cloud, VMs, GitHub, board, simuladores, teams) aunque su código esté disponible.
+- Incorporar subsistemas completos fuera del MVP (bots, cloud, VMs, board, simuladores, teams) aunque su código esté disponible. GitHub/GitLab **sí** forman parte del nuevo alcance de escritorio.
 - Reclasificar la licencia del proyecto o relicenciar porciones de terceros sin conservar sus avisos.
 - **Bloques avanzados estilo Warp**: acciones por bloque, workflows, autocomplete con IA, compartir bloques y Agent Mode propio. El MVP incluye marcas OSC 133 y navegación/copia por comando, no la capa de producto completa de Warp.
 - **Emulador de terminal dentro de la app de escritorio**: AncletoCMD es la versión terminal; la app usa xterm.js para las sesiones, no un emulador nativo embebido.

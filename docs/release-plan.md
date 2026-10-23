@@ -1,14 +1,31 @@
 # Plan de release
 
+
+## Próximo release 0.2 — desktop-only (vigente)
+
+El producto de release es **sólo AncletoCode de escritorio**. Quedan fuera npm,
+AncletoCMD, la CLI `acode`, el host como artefacto separado y AUR.
+
+| Plataforma | Artefactos 0.2 |
+|---|---|
+| Linux x86_64 | **AppImage**, `.deb` |
+| Arch/EndeavourOS | AppImage (probar FUSE y `--appimage-extract-and-run`) |
+| Windows x64 | NSIS, MSI, ZIP portable |
+| macOS | Diferido |
+
+La UI objetivo es un híbrido PandaCode + Orca con Git/worktrees, branch
+management y GitHub/GitLab. Las tareas están en la Fase 16 de `tasks.md`.
+
 ## Versión 0.0.1 — primer release de prueba
 
 `0.0.1` es un release **internal/beta para testers**, no el release público
 estable. Incluye Linux y Windows para que el desarrollo de Windows pueda instalar,
 probar y reportar.
 
-> **Gate legal 14.12 abierto.** Antes de un release público estable hay que
-> completar la revisión de AGPL-3.0 + la condición de atribución de PandaCode.
-> Este release se publica bajo aprobación manual del entorno `release` de GitHub.
+> **Gate legal 14.12:** revisión técnica de compatibilidad completada en
+> `docs/compliance/license-review-0.0.1.md`; para un release estable se recomienda
+> revisión legal externa. Este release se publica bajo aprobación manual del
+> entorno `release` de GitHub.
 
 ## Matriz de artefactos
 

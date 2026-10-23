@@ -2,7 +2,14 @@
 
 Workspace de agentes de código con **dos versiones**: la app de escritorio **AncletoCode** (Tauri 2) y **AncletoCMD**, un emulador de terminal nativo, rápido y GPU-acelerado que además funciona como gestor de proyectos y sesiones. Ambas comparten el mismo núcleo, la misma configuración y las mismas sesiones, junto con una CLI headless para automatización.
 
-> **Estado:** `0.0.1`, primer release de prueba para Linux y Windows. La revisión legal de licencias sigue pendiente antes de un release público estable. Ver [`docs/release-plan.md`](docs/release-plan.md) y [`docs/release-notes/0.0.1.md`](docs/release-notes/0.0.1.md).
+> **Estado:** `0.0.1`, primer release de prueba para Linux y Windows. La revisión técnica de licencias está completada; para un release estable se recomienda revisión externa. Ver [`docs/release-plan.md`](docs/release-plan.md) y [`docs/release-notes/0.0.1.md`](docs/release-notes/0.0.1.md).
+
+> **Alcance de los próximos releases (0.2+):** sólo la app de escritorio
+> AncletoCode. AncletoCMD, la CLI `acode`, el host como artefacto separado y npm
+> quedan congelados por ahora. La app evoluciona hacia un híbrido visual
+> PandaCode + Orca, con Git/worktrees, GitHub/GitLab y release Linux vía AppImage.
+> Los artefactos 0.0.1 documentados abajo siguen disponibles como históricos.
+
 
 ## Qué va a hacer
 
