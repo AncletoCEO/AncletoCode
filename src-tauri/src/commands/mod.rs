@@ -760,3 +760,9 @@ pub fn git_pull_requests(
     let root = project_root(&state, &id)?;
     ancleto_code_core::git::pull_requests(Path::new(&root)).map_err(|error| error.to_string())
 }
+
+#[tauri::command]
+pub fn git_issues(state: State<'_, AppState>, id: String) -> Result<Vec<GitIssue>, String> {
+    let root = project_root(&state, &id)?;
+    ancleto_code_core::git::issues(Path::new(&root)).map_err(|error| error.to_string())
+}

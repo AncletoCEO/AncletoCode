@@ -431,6 +431,86 @@ pub fn pull_requests(root: &Path) -> Result<Vec<GitPullRequest>> {
     parse_pull_requests(&String::from_utf8_lossy(&output.stdout))
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitIssue {
+    pub number: u64,
+    pub title: String,
+    pub state: String,
+    pub url: String,
+    pub author: String,
+    pub labels: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GhIssue {
+    number: u64,
+    title: String,
+    state: String,
+    url: String,
+    author: GhAuthor,
+    labels: Vec<GhLabel>,
+}
+
+#[derive(Deserialize)]
+struct GhLabel {
+    name: String,
+}
+
+fn parse_issues(text: &str) -> Result<Vec<GitIssue>> {
+    let entries: Vec<GhIssue> =
+        serde_json::from_str(text).map_err(|error| GitError::Command(error.to_string()))?;
+    Ok(entries
+        .into_iter()
+        .map(|entry| GitIssue {
+            number: entry.number,
+            title: entry.title,
+            state: entry.state,
+            url: entry.url,
+            author: entry.author.login,
+            labels: entry.labels.into_iter().map(|label| label.name).collect(),
+        })
+        .collect())
+}
+
+pub fn issues(root: &Path) -> Result<Vec<GitIssue>> {
+    let Some(remote) = remote(root)? else {
+        return Err(GitError::Command(
+            "el proyecto no tiene remoto Git".to_owned(),
+        ));
+    };
+    if remote.provider != "github" {
+        return Err(GitError::Command(format!(
+            "los issues de {} todavía no están soportados",
+            remote.provider
+        )));
+    }
+    let output = Command::new("gh")
+        .args([
+            "issue",
+            "list",
+            "--json",
+            "number,title,state,url,author,labels",
+            "--limit",
+            "30",
+        ])
+        .current_dir(root)
+        .output()
+        .map_err(|error| match error.kind() {
+            std::io::ErrorKind::NotFound => {
+                GitError::Command("GitHub CLI (gh) no está instalado".to_owned())
+            }
+            _ => GitError::Io(error),
+        })?;
+    if !output.status.success() {
+        return Err(GitError::Command(
+            String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        ));
+    }
+    parse_issues(&String::from_utf8_lossy(&output.stdout))
+}
+
 pub fn worktrees(root: &Path) -> Result<Vec<GitWorktree>> {
     if !is_repo(root)? {
         return Ok(Vec::new());
@@ -730,6 +810,16 @@ mod tests {
         assert_eq!(entries[0].number, 7);
         assert_eq!(entries[0].head_ref, "feature/ui");
         assert_eq!(entries[0].author, "dev");
+    }
+
+    #[test]
+    fn parses_gh_issue_json() {
+        let entries = parse_issues(
+            r#"[{"number":3,"title":"Bug","state":"OPEN","url":"https://github.com/a/b/issues/3","author":{"login":"dev"},"labels":[{"name":"bug"}]}]"#,
+        )
+        .expect("parse");
+        assert_eq!(entries[0].number, 3);
+        assert_eq!(entries[0].labels, vec!["bug"]);
     }
 
     #[test]

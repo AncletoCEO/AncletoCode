@@ -39,6 +39,15 @@ export type GitRemote = {
   webUrl: string | null;
 };
 
+export type GitIssue = {
+  number: number;
+  title: string;
+  state: string;
+  url: string;
+  author: string;
+  labels: string[];
+};
+
 export type GitPullRequest = {
   number: number;
   title: string;
@@ -65,6 +74,9 @@ type GitState = {
   pullRequests: GitPullRequest[];
   prLoading: boolean;
   prError: string | null;
+  issues: GitIssue[];
+  issuesLoading: boolean;
+  issuesError: string | null;
   loading: boolean;
   actionBusy: boolean;
   message: string | null;
@@ -81,6 +93,7 @@ type GitState = {
   unstage: (path: string) => Promise<void>;
   runAction: (action: "fetch" | "pull" | "push" | "merge", branch?: string) => Promise<void>;
   loadPullRequests: () => Promise<void>;
+  loadIssues: () => Promise<void>;
   commit: (message: string) => Promise<boolean>;
   reset: () => void;
 };
@@ -98,6 +111,9 @@ export const useGitStore = create<GitState>()((set, get) => ({
   pullRequests: [],
   prLoading: false,
   prError: null,
+  issues: [],
+  issuesLoading: false,
+  issuesError: null,
   loading: false,
   actionBusy: false,
   message: null,
@@ -263,6 +279,22 @@ export const useGitStore = create<GitState>()((set, get) => ({
       set({
         prLoading: false,
         prError: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+  loadIssues: async () => {
+    const { projectId } = get();
+    if (!projectId) {
+      return;
+    }
+    set({ issuesLoading: true, issuesError: null });
+    try {
+      const issues = await invoke<GitIssue[]>("git_issues", { id: projectId });
+      set({ issues, issuesLoading: false });
+    } catch (error) {
+      set({
+        issuesLoading: false,
+        issuesError: error instanceof Error ? error.message : String(error),
       });
     }
   },

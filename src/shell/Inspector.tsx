@@ -309,6 +309,52 @@ export default function Inspector({
                 </section>
 
                 <section className="shell-card">
+                  <div className="shell-card-title">
+                    <span>Issues</span>
+                    <button
+                      type="button"
+                      className="shell-git-refresh"
+                      onClick={() => void git.loadIssues()}
+                      disabled={git.issuesLoading || git.remote?.provider !== "github"}
+                      title={
+                        git.remote?.provider === "github"
+                          ? "Cargar issues con gh"
+                          : "Sólo GitHub por ahora"
+                      }
+                    >
+                      {git.issuesLoading ? "…" : "Cargar"}
+                    </button>
+                  </div>
+                  {git.issuesError ? <p className="shell-error">{git.issuesError}</p> : null}
+                  {git.issues.length === 0 ? (
+                    <p className="shell-muted">Sin issues cargados.</p>
+                  ) : (
+                    <div className="shell-pr-list">
+                      {git.issues.map((issue) => (
+                        <a
+                          key={issue.number}
+                          className="shell-pr-row"
+                          href={issue.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className={cn("shell-pr-state", issue.state.toLowerCase())}>
+                            #{issue.number}
+                          </span>
+                          <span>
+                            {issue.title}
+                            <small>
+                              {issue.author}
+                              {issue.labels.length > 0 ? ` · ${issue.labels.join(", ")}` : ""}
+                            </small>
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="shell-card">
                   <div className="shell-card-title">Cambios</div>
                   {git.status.files.length === 0 ? (
                     <p className="shell-muted">Árbol limpio.</p>
