@@ -51,6 +51,10 @@ pub struct SessionInfo {
     pub pid: Option<u32>,
     pub cwd: String,
     pub buffer_bytes: usize,
+    #[serde(default)]
+    pub program: String,
+    #[serde(default)]
+    pub args: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -169,6 +173,8 @@ impl SessionManager {
             pid: child.process_id(),
             cwd: spec.cwd.clone(),
             buffer_bytes: 0,
+            program: spec.program.clone(),
+            args: spec.args.clone(),
         };
 
         let entry = SessionEntry {

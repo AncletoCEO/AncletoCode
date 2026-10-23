@@ -274,6 +274,8 @@ impl Orchestrator {
         let driver = self.inner.drivers.resolve(&current.driver_id);
         let capabilities = driver.descriptor().capabilities;
         let context = SpawnContext {
+            program: current.program.clone(),
+            args: current.args.clone(),
             continue_session: index > 0,
             ..SpawnContext::default()
         };

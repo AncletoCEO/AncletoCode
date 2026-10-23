@@ -152,6 +152,7 @@ impl AgentDriver for CliDriver {
             ],
             OneShotKind::RunPositional => vec!["run".to_owned(), prompt.to_owned()],
         };
+        args.extend(context.args.iter().cloned());
 
         if self.supports_continue && context.continue_session {
             args.push("--continue".to_owned());
@@ -599,6 +600,20 @@ mod tests {
             registry.resolve("cmd").spawn(&context).program,
             "commandcode"
         );
+    }
+
+    #[test]
+    fn keeps_session_model_args_in_one_shot_turns() {
+        let registry = DriverRegistry::new();
+        let context = SpawnContext {
+            args: vec!["--model".to_owned(), "gemini-3.8-flash-high".to_owned()],
+            ..SpawnContext::default()
+        };
+        let spec = registry.resolve("agy").one_shot(&context, "hola").unwrap();
+        assert!(spec
+            .args
+            .windows(2)
+            .any(|pair| pair == ["--model", "gemini-3.8-flash-high"]));
     }
 
     #[test]
