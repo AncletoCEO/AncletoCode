@@ -21,6 +21,7 @@ import {
   subscribe as subscribeSessions,
   type SavedSession,
 } from "../stores/sessionsStore";
+import { RefreshCw } from "lucide-react";
 
 type AgentTabsProps = {
   project: Project;
@@ -161,6 +162,17 @@ export default function AgentTabs({ project }: AgentTabsProps) {
             aria-label="Nombre de la sesión"
           />
           {driverId !== "shell" ? (
+            <button
+              type="button"
+              className="agent-model-refresh"
+              onClick={() => void loadModels(driverId, true)}
+              title={models.errors[driverId] ?? "Recargar modelos"}
+              aria-label="Recargar modelos"
+            >
+              <RefreshCw size={12} />
+            </button>
+          ) : null}
+          {driverId !== "shell" ? (
             <select
               value={modelId}
               onChange={(event) => setModelId(event.target.value)}
@@ -170,8 +182,8 @@ export default function AgentTabs({ project }: AgentTabsProps) {
               <option value="">
                 {models.loading === driverId
                   ? "cargando modelos…"
-                  : models.error
-                    ? "no se pudieron cargar los modelos"
+                  : models.errors[driverId]
+                    ? "error al cargar modelos"
                     : `modelo por defecto (${(models.byDriver[driverId] ?? []).length})`}
               </option>
               {(models.byDriver[driverId] ?? []).map((model) => (

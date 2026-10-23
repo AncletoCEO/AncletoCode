@@ -2972,3 +2972,20 @@
 .agent-create .session-name-input:focus {
   border-color: var(--shell-accent);
 }
+
+.agent-create .agent-model-refresh {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.agent-create .agent-model-refresh:hover {
+  color: var(--fg);
+  border-color: var(--shell-accent);
+}
