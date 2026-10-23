@@ -151,7 +151,7 @@ El trabajo siguiente está en issues y en el change
 GitLab y otros hosts Git, AncletoCMD, CLI, npm, AUR y macOS quedan fuera de
 alcance por ahora.
 
-## Licencia y procedencia
+## Licencias y atribuciones
 
 AncletoCode se distribuye bajo **AGPL-3.0-only**. Ver [`LICENSE`](LICENSE).
 
