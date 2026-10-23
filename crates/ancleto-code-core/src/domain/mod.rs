@@ -31,6 +31,10 @@ pub struct Conversation {
     pub state: ConversationState,
     pub reason: Option<String>,
     pub created_at: i64,
+    #[serde(default)]
+    pub model_a: Option<String>,
+    #[serde(default)]
+    pub model_b: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

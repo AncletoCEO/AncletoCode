@@ -46,6 +46,8 @@ pub struct StartConversation {
     pub objective: String,
     pub max_turns: Option<u32>,
     pub turn_budget_ms: Option<u64>,
+    pub model_a: Option<String>,
+    pub model_b: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -128,6 +130,8 @@ impl Orchestrator {
             state: ConversationState::Running,
             reason: None,
             created_at: unix_timestamp(),
+            model_a: request.model_a.filter(|value| !value.trim().is_empty()),
+            model_b: request.model_b.filter(|value| !value.trim().is_empty()),
         };
 
         self.store()?.create_conversation(&conversation)?;
@@ -212,8 +216,13 @@ impl Orchestrator {
                 .clone()
                 .unwrap_or_else(|| conversation.objective.clone());
             let started = Instant::now();
+            let model = if current.id == conversation.session_a {
+                conversation.model_a.as_deref()
+            } else {
+                conversation.model_b.as_deref()
+            };
 
-            match self.run_turn(&conversation, &current, &prompt, index) {
+            match self.run_turn(&conversation, &current, model, &prompt, index) {
                 Ok((text, mode)) => {
                     let turn = Turn {
                         conversation_id: id.clone(),
@@ -268,6 +277,7 @@ impl Orchestrator {
         &self,
         conversation: &Conversation,
         current: &SessionInfo,
+        model: Option<&str>,
         prompt: &str,
         index: u32,
     ) -> std::result::Result<(String, TurnMode), TurnError> {
@@ -275,7 +285,7 @@ impl Orchestrator {
         let capabilities = driver.descriptor().capabilities;
         let context = SpawnContext {
             program: current.program.clone(),
-            args: current.args.clone(),
+            args: args_with_model(&current.args, model, &current.driver_id),
             continue_session: index > 0,
             ..SpawnContext::default()
         };
@@ -522,6 +532,29 @@ fn extract_text(driver: &dyn AgentDriver, output: &[u8]) -> String {
     text.trim().to_owned()
 }
 
+fn args_with_model(args: &[String], model: Option<&str>, driver_id: &str) -> Vec<String> {
+    let Some(model) = model.filter(|value| !value.trim().is_empty()) else {
+        return args.to_vec();
+    };
+    let flag = if driver_id == "cmd" { "-m" } else { "--model" };
+    let mut filtered = Vec::new();
+    let mut skip = false;
+    for arg in args {
+        if skip {
+            skip = false;
+            continue;
+        }
+        if arg == "--model" || arg == "-m" {
+            skip = true;
+            continue;
+        }
+        filtered.push(arg.clone());
+    }
+    filtered.push(flag.to_owned());
+    filtered.push(model.to_owned());
+    filtered
+}
+
 fn normalize(text: &str) -> String {
     text.split_whitespace()
         .collect::<Vec<_>>()
@@ -666,6 +699,8 @@ mod tests {
             objective: "objetivo".to_owned(),
             max_turns: Some(max_turns),
             turn_budget_ms: Some(5_000),
+            model_a: None,
+            model_b: None,
         }
     }
 
@@ -778,6 +813,8 @@ mod tests {
                 objective: "   ".to_owned(),
                 max_turns: None,
                 turn_budget_ms: None,
+                model_a: None,
+                model_b: None,
             })
             .unwrap_err();
         assert!(matches!(empty, CoreError::InvalidInput(_)));
@@ -789,6 +826,8 @@ mod tests {
                 objective: "objetivo".to_owned(),
                 max_turns: None,
                 turn_budget_ms: None,
+                model_a: None,
+                model_b: None,
             })
             .unwrap_err();
         assert!(matches!(same, CoreError::InvalidInput(_)));

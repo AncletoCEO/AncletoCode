@@ -180,6 +180,7 @@ pub fn ide_sync_antigravity(state: State<'_, AppState>, id: String) -> Result<Sy
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn conversation_start(
     state: State<'_, AppState>,
     session_a: String,
@@ -187,6 +188,8 @@ pub fn conversation_start(
     objective: String,
     max_turns: Option<u32>,
     turn_budget_ms: Option<u64>,
+    model_a: Option<String>,
+    model_b: Option<String>,
 ) -> Result<Conversation, String> {
     state
         .orchestrator
@@ -196,6 +199,8 @@ pub fn conversation_start(
             objective,
             max_turns,
             turn_budget_ms,
+            model_a,
+            model_b,
         })
         .map_err(|error| error.to_string())
 }

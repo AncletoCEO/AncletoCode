@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { defaultShell } from "../lib/shell";
 import { modelArguments } from "../lib/model-args";
+import { sessionLabel } from "../lib/session-model";
 import { useModelsStore } from "../stores/modelsStore";
 import {
   getSnapshot as getDrivers,
@@ -38,6 +39,7 @@ export default function AgentTabs({ project }: AgentTabsProps) {
   const loadModels = models.load;
   const [driverId, setDriverId] = useState("shell");
   const [modelId, setModelId] = useState("");
+  const [sessionName, setSessionName] = useState("");
   const [saved, setSaved] = useState<SavedSession[]>([]);
   const [recovered, setRecovered] = useState<string[]>([]);
 
@@ -101,8 +103,9 @@ export default function AgentTabs({ project }: AgentTabsProps) {
         cols: 80,
         rows: 24,
       },
-      option.label,
+      sessionName.trim() || (modelId ? `${option.label} (${modelId})` : option.label),
     );
+    setSessionName("");
   }
 
   function askRename(id: string, current: string) {
@@ -132,7 +135,7 @@ export default function AgentTabs({ project }: AgentTabsProps) {
             title={`${session.spec.program} · ${session.status}`}
           >
             <span className={`status-dot ${session.status}`} />
-            {session.title}
+            {sessionLabel(session.title, session.spec.args, session.spec.driverId)}
           </button>
         ))}
         <span className="agent-create">
@@ -150,6 +153,13 @@ export default function AgentTabs({ project }: AgentTabsProps) {
               </option>
             ))}
           </select>
+          <input
+            className="session-name-input"
+            value={sessionName}
+            onChange={(event) => setSessionName(event.target.value)}
+            placeholder="nombre de sesión"
+            aria-label="Nombre de la sesión"
+          />
           {driverId !== "shell" ? (
             <select
               value={modelId}
@@ -158,7 +168,11 @@ export default function AgentTabs({ project }: AgentTabsProps) {
               title="Modelo de la nueva sesión"
             >
               <option value="">
-                {models.loading === driverId ? "cargando modelos…" : "modelo por defecto"}
+                {models.loading === driverId
+                  ? "cargando modelos…"
+                  : models.error
+                    ? "no se pudieron cargar los modelos"
+                    : `modelo por defecto (${(models.byDriver[driverId] ?? []).length})`}
               </option>
               {(models.byDriver[driverId] ?? []).map((model) => (
                 <option key={model.id} value={model.id}>

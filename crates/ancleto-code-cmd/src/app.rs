@@ -961,6 +961,8 @@ impl AppState {
                                 objective: view.objective.clone(),
                                 max_turns: Some(6),
                                 turn_budget_ms: Some(60_000),
+                                model_a: None,
+                                model_b: None,
                             }) {
                                 Ok(conversation) => {
                                     view.conversation_id = Some(conversation.id);

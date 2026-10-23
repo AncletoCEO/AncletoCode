@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeftRight, MessageSquare, Pause, Play, Square } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { modelFromArguments, sessionLabel } from "../lib/session-model";
+import { useModelsStore } from "../stores/modelsStore";
 import { captureTranscriptAnchor } from "../../third_party/pandacode/src/transcript-scroll.ts";
 import Markdown from "./Markdown";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -22,6 +24,8 @@ type Conversation = {
   state: ConversationState;
   reason: string | null;
   createdAt: number;
+  modelA?: string | null;
+  modelB?: string | null;
 };
 
 type Turn = {
@@ -53,6 +57,10 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   const [sessionA, setSessionA] = useState("");
   const [sessionB, setSessionB] = useState("");
   const [objective, setObjective] = useState("");
+  const [modelA, setModelA] = useState("");
+  const [modelB, setModelB] = useState("");
+  const models = useModelsStore();
+  const loadModels = models.load;
   const [maxTurns, setMaxTurns] = useState(6);
   const [turnBudgetSeconds, setTurnBudgetSeconds] = useState(60);
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -64,6 +72,8 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
 
   const effectiveA = sessionA || (projectSessions[0]?.id ?? "");
   const effectiveB = sessionB || (projectSessions[1]?.id ?? "");
+  const sessionAInfo = projectSessions.find((session) => session.id === effectiveA);
+  const sessionBInfo = projectSessions.find((session) => session.id === effectiveB);
 
   useEffect(() => {
     void (async () => {
@@ -84,7 +94,56 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     })();
   }, []);
 
+  useEffect(() => {
+    const driverA = sessionAInfo?.spec.driverId;
+    const driverB = sessionBInfo?.spec.driverId;
+    if (driverA && driverA !== "shell") {
+      void loadModels(driverA);
+    }
+    if (driverB && driverB !== "shell") {
+      void loadModels(driverB);
+    }
+  }, [sessionAInfo, sessionBInfo, loadModels]);
+
   const conversationId = conversation?.id;
+
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+    let disposed = false;
+    const loadExisting = async () => {
+      try {
+        const [loaded, current] = await Promise.all([
+          invoke<Turn[]>("conversation_turns", { id: conversationId }),
+          invoke<Conversation>("conversation_get", { id: conversationId }),
+        ]);
+        if (disposed) {
+          return;
+        }
+        setConversation(current);
+        setTurns((existing) => {
+          const indexes = new Set(existing.map((turn) => turn.index));
+          return [...existing, ...loaded.filter((turn) => !indexes.has(turn.index))].sort(
+            (left, right) => left.index - right.index,
+          );
+        });
+      } catch {
+        // El listener sigue siendo la fuente principal.
+      }
+    };
+    void loadExisting();
+    if (conversation?.state !== "running") {
+      return () => {
+        disposed = true;
+      };
+    }
+    const timer = window.setInterval(() => void loadExisting(), 1500);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [conversationId, conversation?.state]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -143,6 +202,8 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
         objective,
         maxTurns,
         turnBudgetMs: turnBudgetSeconds * 1000,
+        modelA: modelA || null,
+        modelB: modelB || null,
       });
       await Promise.all([
         invoke("settings_put", { key: "conversation.maxTurns", value: String(maxTurns) }),
@@ -219,32 +280,66 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
               <span>Agente A</span>
               <select
                 value={effectiveA}
-                onChange={(event) => setSessionA(event.target.value)}
+                onChange={(event) => {
+                  const next = projectSessions.find((session) => session.id === event.target.value);
+                  setSessionA(event.target.value);
+                  setModelA(next ? (modelFromArguments(next.spec.args) ?? "") : "");
+                }}
                 aria-label="Sesión A"
               >
                 <option value="">Elegir sesión</option>
                 {projectSessions.map((session) => (
                   <option key={session.id} value={session.id}>
-                    {session.title}
+                    {sessionLabel(session.title, session.spec.args, session.spec.driverId)}
                   </option>
                 ))}
               </select>
             </label>
+            {sessionAInfo && sessionAInfo.spec.driverId !== "shell" ? (
+              <label className="conversation-field">
+                <span>Modelo A</span>
+                <select value={modelA} onChange={(event) => setModelA(event.target.value)}>
+                  <option value="">heredar de la sesión</option>
+                  {(models.byDriver[sessionAInfo.spec.driverId] ?? []).map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label || model.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="conversation-field">
               <span>Agente B</span>
               <select
                 value={effectiveB}
-                onChange={(event) => setSessionB(event.target.value)}
+                onChange={(event) => {
+                  const next = projectSessions.find((session) => session.id === event.target.value);
+                  setSessionB(event.target.value);
+                  setModelB(next ? (modelFromArguments(next.spec.args) ?? "") : "");
+                }}
                 aria-label="Sesión B"
               >
                 <option value="">Elegir sesión</option>
                 {projectSessions.map((session) => (
                   <option key={session.id} value={session.id}>
-                    {session.title}
+                    {sessionLabel(session.title, session.spec.args, session.spec.driverId)}
                   </option>
                 ))}
               </select>
             </label>
+            {sessionBInfo && sessionBInfo.spec.driverId !== "shell" ? (
+              <label className="conversation-field">
+                <span>Modelo B</span>
+                <select value={modelB} onChange={(event) => setModelB(event.target.value)}>
+                  <option value="">heredar de la sesión</option>
+                  {(models.byDriver[sessionBInfo.spec.driverId] ?? []).map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label || model.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="conversation-field">
               <span>Objetivo</span>
               <textarea
@@ -303,9 +398,9 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
               duración; podés pausar o abortar en cualquier momento.
             </p>
             <div className="conversation-flow">
-              <span>{effectiveA ? labelOf(projectSessions, effectiveA) : "Agente A"}</span>
+              <span>{effectiveA ? sessionLabelOf(projectSessions, effectiveA) : "Agente A"}</span>
               <ArrowLeftRight size={14} />
-              <span>{effectiveB ? labelOf(projectSessions, effectiveB) : "Agente B"}</span>
+              <span>{effectiveB ? sessionLabelOf(projectSessions, effectiveB) : "Agente B"}</span>
             </div>
           </div>
         </div>
@@ -346,9 +441,9 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
               <li key={`${turn.conversationId}-${turn.index}`} className="conversation-turn">
                 <div className="conversation-turn-head">
                   <span className="conversation-turn-index">#{turn.index}</span>
-                  <strong>{labelOf(projectSessions, turn.fromSession)}</strong>
+                  <strong>{sessionLabelOf(projectSessions, turn.fromSession)}</strong>
                   <span>→</span>
-                  <span>{labelOf(projectSessions, turn.toSession)}</span>
+                  <span>{sessionLabelOf(projectSessions, turn.toSession)}</span>
                   <span className="conversation-turn-meta">
                     {turn.mode} · {turn.durationMs} ms
                   </span>
@@ -366,6 +461,16 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   );
 }
 
-function labelOf(sessions: { id: string; title: string }[], id: string): string {
-  return sessions.find((session) => session.id === id)?.title ?? id.slice(0, 8);
+function sessionLabelOf(
+  sessions: {
+    id: string;
+    title: string;
+    spec: { args: string[]; driverId: string };
+  }[],
+  id: string,
+): string {
+  const session = sessions.find((entry) => entry.id === id);
+  return session
+    ? sessionLabel(session.title, session.spec.args, session.spec.driverId)
+    : id.slice(0, 8);
 }

@@ -2956,3 +2956,19 @@
     transform: rotate(360deg);
   }
 }
+
+.agent-create .session-name-input {
+  width: 118px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgb(var(--bg-elevated-rgb) / 25%);
+  color: var(--fg);
+  padding: 0 7px;
+  outline: 0;
+  font-size: 10px;
+}
+
+.agent-create .session-name-input:focus {
+  border-color: var(--shell-accent);
+}
