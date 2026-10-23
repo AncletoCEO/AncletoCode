@@ -55,38 +55,39 @@ probar y reportar.
 
 ## Pipeline
 
-1. **desktop-linux:** Ubuntu 22.04; `npm run tauri -- build --bundles deb`;
-   tarballs de escritorio, AncletoCMD y CLI/host; artefactos a GitHub Actions.
-2. **desktop-windows:** `windows-latest`; NSIS + MSI y ZIP portable.
-3. **release:** descarga artefactos, genera `SHA256SUMS`, genera PKGBUILDs AUR
-   con checksums reales y los empaqueta en `ancleto-aur-<versión>.tar.gz` y publica el GitHub Release con las notas de
+1. **desktop-linux:** Ubuntu 22.04; `npm run tauri -- build --bundles deb,appimage`;
+   artefactos `.deb` y `.AppImage` a GitHub Actions.
+2. **desktop-windows:** `windows-latest`; NSIS + MSI y ZIP portable con la app y
+   el host.
+3. **release:** descarga artefactos, agrega la fuente correspondiente, genera
+   `SHA256SUMS` y publica el GitHub Release con las notas de
    `docs/release-notes/<versión>.md`.
-4. **npm (pendiente):** `.github/workflows/npm-publish.yml`, manual, cuando se
-   decida publicar en npm.
-5. **Aprobación:** los jobs de publicación usan el entorno `release`; configurar
-   revisores obligatorios en GitHub para el gate legal.
+4. **Aprobación:** el job de publicación usa el entorno `release`; configurar
+   revisores obligatorios en GitHub.
+5. **Fuera del pipeline:** AncletoCMD, CLI `acode`, npm y AUR. AUR queda como
+   posibilidad futura, no como requisito de release.
 
 ## Verificación en Arch
 
-- Construir desde fuente en `archlinux:latest` con `base-devel`, `rust`,
-  `nodejs`, `npm`, `webkit2gtk-4.1`, `gtk3`, `libsoup3`, `librsvg`.
-- Smoke de la app y AncletoCMD en **X11 y Wayland nativo** (no solo XWayland).
-- CLI/host estáticos musl: `acode doctor`, host, sesión, detach/attach.
-- AUR: `makepkg --printsrcinfo`, `namcap`, instalación y desinstalación limpias.
+- Ejecutar la AppImage en Arch/EndeavourOS con FUSE y con
+  `--appimage-extract-and-run`.
+- Smoke de la app en **X11 y Wayland nativo** (no solo XWayland).
+- Verificar `.deb` en Debian/Ubuntu y AppImage en Arch; no publicar binarios
+  compilados localmente con glibc más nueva que la base de CI.
+- AUR no se publica en esta etapa.
 
 ## Gates
 
 - `cargo fmt/clippy/test`, `npm run lint/typecheck/test`, licencias, `cargo deny`,
   perf y smoke npm en verde.
 - **14.12** revisión legal completada (bloqueante para release público).
-- **1.4 / 12.11 / 14.8** verificados en Windows.
-- **13.14** smoke Windows/macOS; Linux ya cubierto por tests de vim/less/htop/git.
-- Checksums y PKGBUILDs generados; probar instalación/desinstalación en cada
-  formato.
+- **1.4** verificado en Windows.
+- Instaladores NSIS/MSI y ZIP portable probados en Windows.
+- `.deb` y AppImage probados en Linux/Arch; checksums generados.
 - Documentar rollback: conservar tag y artefactos anteriores.
 
 ## Estado de tareas
 
-Pendientes al preparar 0.0.1: 1.4, 12.11, 13.14, 14.8, 14.10, 14.12, 15.3.
-Las tareas de Windows y la revisión legal son las que condicionan el paso de
-beta interna a release estable.
+Pendientes de la nueva etapa desktop-only: 1.4, 14.10, 14.13–14.15 y 15.3.
+La revisión técnica de licencias ya está completada; para un release estable se
+recomienda revisión legal externa.

@@ -63,31 +63,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf musl-tools
-      - run: rustup target add x86_64-unknown-linux-musl
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
       - name: Resolve version
         shell: bash
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
-      - name: Build Linux installer
-        run: npm run tauri -- build --bundles deb
-      - name: Build AncletoCMD
-        run: cargo build --release -p ancleto-code-cmd
-      - name: Build static CLI and host
-        run: cargo build --release --target x86_64-unknown-linux-musl -p ancleto-code-cli -p ancleto-code-host
-      - name: Use static host in standalone tarballs
-        run: install -m 755 target/x86_64-unknown-linux-musl/release/ancleto-code-host target/release/ancleto-code-host
-      - name: Package desktop tarball
-        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product desktop --platform linux-x86_64 --binary-dir target/release --out dist
-      - name: Package AncletoCMD tarball
-        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product cmd --platform linux-x86_64 --binary-dir target/release --out dist
-      - name: Package static CLI tarball
-        run: node scripts/package-desktop-tarball.mjs --version "$VERSION" --product cli --platform linux-x86_64 --binary-dir target/x86_64-unknown-linux-musl/release --out dist
+      - name: Build Linux app (.deb and AppImage)
+        run: npm run tauri -- build --bundles deb,appimage
       - name: Collect release assets
         run: |
           mkdir -p release
           cp target/release/bundle/deb/*.deb release/
-          cp dist/*.tar.gz release/
+          cp target/release/bundle/appimage/*.AppImage release/
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
@@ -107,8 +94,8 @@ jobs:
       - name: Resolve version
         shell: bash
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
-      - name: Build CLI, host and AncletoCMD
-        run: cargo build --release -p ancleto-code-cli -p ancleto-code-host -p ancleto-code-cmd
+      - name: Build host for portable sessions
+        run: cargo build --release -p ancleto-code-host
       - name: Build NSIS installer
         run: npm run tauri -- build --bundles nsis
       - name: Build MSI installer
@@ -123,8 +110,6 @@ jobs:
           Copy-Item LICENSE dist/
           Copy-Item THIRD_PARTY_NOTICES.md dist/
           Compress-Archive -Path dist/ancleto-code-desktop.exe, dist/ancleto-code-host.exe, dist/LICENSE, dist/THIRD_PARTY_NOTICES.md -DestinationPath "dist/AncletoCode-$env:VERSION-windows-x64-portable.zip" -Force
-          Compress-Archive -Path target/release/acode.exe, target/release/ancleto-code.exe, target/release/ancleto-code-host.exe, LICENSE, THIRD_PARTY_NOTICES.md -DestinationPath "dist/acode-$env:VERSION-windows-x64.zip" -Force
-          Compress-Archive -Path target/release/acmd.exe, target/release/ancleto-cmd.exe, target/release/ancleto-code-host.exe, LICENSE, THIRD_PARTY_NOTICES.md -DestinationPath "dist/AncletoCMD-$env:VERSION-windows-x64.zip" -Force
           New-Item -ItemType Directory -Force release | Out-Null
           Copy-Item target/release/bundle/nsis/*.exe release/
           if (Test-Path target/release/bundle/msi/*.msi) { Copy-Item target/release/bundle/msi/*.msi release/ }
@@ -151,12 +136,6 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: Generate AUR PKGBUILDs
-        run: node scripts/package-aur.mjs --dist dist --version "$VERSION"
-      - name: Bundle AUR PKGBUILDs
-        run: |
-          tar -czf "dist/ancleto-aur-${VERSION}.tar.gz" -C dist/aur .
-          rm -rf dist/aur
       - name: Package corresponding source
         run: git archive --format=tar.gz --prefix="AncletoCode-${VERSION}/" -o "dist/AncletoCode-${VERSION}-source.tar.gz" HEAD
       - name: Generate checksums
@@ -173,7 +152,7 @@ jobs:
           prerelease: true
           files: |
             dist/**/*.deb
-            dist/**/*.tar.gz
+            dist/**/*.AppImage
             dist/**/*.zip
             dist/**/*.msi
             dist/**/*.exe
