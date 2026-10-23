@@ -10,6 +10,7 @@ use tauri::{Emitter, Manager};
 
 pub mod ancleto_runtime;
 pub mod commands;
+pub mod usage;
 
 use commands::AppState;
 
@@ -174,6 +175,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::usage_report,
             commands::ancleto_runtime_status,
             commands::ancleto_runtime_update,
             commands::core_version,

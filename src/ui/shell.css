@@ -2370,3 +2370,155 @@
   color: var(--fg-muted);
   font-size: 8px;
 }
+
+/* usage */
+.shell-usage-view {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.shell-usage-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.shell-usage-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 5px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.shell-usage-head p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.shell-usage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 9px;
+}
+
+.shell-usage-card {
+  border: 1px solid var(--border);
+  border-radius: var(--shell-radius);
+  background: rgb(var(--bg-panel-rgb) / 55%);
+  padding: 13px;
+}
+
+.shell-usage-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shell-usage-card-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shell-usage-card-head strong {
+  font-size: 13px;
+}
+
+.shell-usage-card-head span {
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.shell-usage-status {
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 6px;
+  color: var(--fg-muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.shell-usage-status.ready {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+
+.shell-usage-status.error,
+.shell-usage-status.signedOut {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+
+.shell-usage-status.unsupported {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+}
+
+.shell-usage-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 16px 0 8px;
+}
+
+.shell-usage-cost strong {
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-usage-cost span,
+.shell-usage-meta {
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.shell-usage-meta {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.shell-usage-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+}
+
+.shell-usage-details span {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--fg-muted);
+  font-size: 8px;
+}
+
+.shell-usage-details strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.shell-usage-message {
+  margin: 9px 0 0;
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.shell-usage-note {
+  max-width: 760px;
+  margin: 18px 0 0;
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
+  Activity,
   BookOpen,
   ChevronRight,
   FileCode2,
@@ -35,6 +36,7 @@ const nav = [
   { id: "workspace", label: "Workspace", icon: Sparkles },
   { id: "tasks", label: "Tareas", icon: ListTodo },
   { id: "git", label: "Git", icon: GitBranch },
+  { id: "usage", label: "Uso", icon: Activity },
   { id: "knowledge", label: "Conocimiento", icon: BookOpen },
 ] as const;
 

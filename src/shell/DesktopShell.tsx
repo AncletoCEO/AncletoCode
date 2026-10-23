@@ -40,6 +40,7 @@ import Sidebar from "./Sidebar";
 import SettingsDialog from "./SettingsDialog";
 import TasksView from "./TasksView";
 import UpdatesBanner from "./UpdatesBanner";
+import UsageView from "./UsageView";
 import TopBar from "./TopBar";
 import { useShellPreferences } from "./preferences";
 import { useUpdatesStore } from "../stores/updatesStore";
@@ -246,6 +247,8 @@ export default function DesktopShell() {
                   onPalette={() => setPaletteOpen(true)}
                 />
               )
+            ) : view === "usage" ? (
+              <UsageView />
             ) : view === "knowledge" ? (
               <AuxView
                 title={auxPanel === "spec" ? "Spec" : "Conocimiento"}

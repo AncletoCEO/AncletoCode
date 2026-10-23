@@ -1,0 +1,202 @@
+use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageMetric {
+    pub label: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderUsage {
+    pub provider: String,
+    pub label: String,
+    pub status: String,
+    pub message: Option<String>,
+    pub source: Option<String>,
+    pub cost: Option<f64>,
+    pub tokens: Option<u64>,
+    pub sessions: Option<u64>,
+    pub details: Vec<UsageMetric>,
+    pub checked_at: u64,
+}
+
+fn now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or_default()
+}
+
+fn available(binary: &str) -> bool {
+    Command::new(binary).arg("--version").output().is_ok()
+}
+
+fn compact_number(value: &str) -> Option<f64> {
+    let value = value.trim().trim_end_matches('|').trim();
+    let (number, multiplier) = match value.chars().last()? {
+        'K' | 'k' => (&value[..value.len() - 1], 1_000.0),
+        'M' | 'm' => (&value[..value.len() - 1], 1_000_000.0),
+        'B' | 'b' => (&value[..value.len() - 1], 1_000_000_000.0),
+        _ => (value, 1.0),
+    };
+    number
+        .replace(',', "")
+        .parse::<f64>()
+        .ok()
+        .map(|parsed| parsed * multiplier)
+}
+
+fn field<'a>(text: &'a str, label: &str) -> Option<&'a str> {
+    text.lines().find_map(|line| {
+        let line = line.trim().trim_matches('│').trim();
+        let rest = line.strip_prefix(label)?;
+        (!rest.trim().is_empty()).then_some(rest.trim())
+    })
+}
+
+fn opencode_usage() -> ProviderUsage {
+    let mut usage = ProviderUsage {
+        provider: "opencode".to_owned(),
+        label: "OpenCode".to_owned(),
+        status: "unavailable".to_owned(),
+        message: None,
+        source: Some("opencode stats".to_owned()),
+        cost: None,
+        tokens: None,
+        sessions: None,
+        details: Vec::new(),
+        checked_at: now(),
+    };
+    if !available("opencode") {
+        usage.status = "unavailable".to_owned();
+        usage.message = Some("OpenCode no está instalado.".to_owned());
+        return usage;
+    }
+    let output = match Command::new("opencode")
+        .args(["stats", "--days", "30"])
+        .output()
+    {
+        Ok(output) if output.status.success() => output,
+        Ok(output) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(String::from_utf8_lossy(&output.stderr).trim().to_owned());
+            return usage;
+        }
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(error.to_string());
+            return usage;
+        }
+    };
+    let text = String::from_utf8_lossy(&output.stdout);
+    let cost = field(&text, "Total Cost").and_then(|value| {
+        value
+            .split('$')
+            .next_back()
+            .and_then(|value| value.trim().parse::<f64>().ok())
+    });
+    let tokens = field(&text, "Input")
+        .and_then(compact_number)
+        .zip(field(&text, "Output").and_then(compact_number))
+        .zip(field(&text, "Cache Read").and_then(compact_number))
+        .map(|((input, output), cache)| (input + output + cache) as u64);
+    usage.cost = cost;
+    usage.tokens = tokens;
+    usage.sessions = field(&text, "Sessions").and_then(|value| value.parse().ok());
+    usage.details = [
+        ("Sesiones", usage.sessions),
+        (
+            "Input",
+            field(&text, "Input")
+                .and_then(compact_number)
+                .map(|v| v as u64),
+        ),
+        (
+            "Output",
+            field(&text, "Output")
+                .and_then(compact_number)
+                .map(|v| v as u64),
+        ),
+        (
+            "Cache read",
+            field(&text, "Cache Read")
+                .and_then(compact_number)
+                .map(|v| v as u64),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(label, value)| {
+        value.map(|value| UsageMetric {
+            label: label.to_owned(),
+            value: value.to_string(),
+        })
+    })
+    .collect();
+    if usage.cost.is_some() || usage.tokens.is_some() {
+        usage.status = "ready".to_owned();
+    } else {
+        usage.status = "unavailable".to_owned();
+        usage.message = Some("OpenCode no devolvió métricas para los últimos 30 días.".to_owned());
+    }
+    usage
+}
+
+fn static_provider(provider: &str, label: &str, binary: &str) -> ProviderUsage {
+    let installed = available(binary);
+    ProviderUsage {
+        provider: provider.to_owned(),
+        label: label.to_owned(),
+        status: if installed {
+            "unsupported"
+        } else {
+            "unavailable"
+        }
+        .to_owned(),
+        message: Some(if installed {
+            "El CLI no expone cuotas de cuenta; se puede agregar un adapter específico.".to_owned()
+        } else {
+            format!("{label} no está instalado.")
+        }),
+        source: None,
+        cost: None,
+        tokens: None,
+        sessions: None,
+        details: Vec::new(),
+        checked_at: now(),
+    }
+}
+
+pub fn report() -> Vec<ProviderUsage> {
+    vec![
+        opencode_usage(),
+        static_provider("claude", "Claude Code", "claude"),
+        static_provider("antigravity", "Antigravity", "agy"),
+        static_provider("commandcode", "Command Code", "cmd"),
+    ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_compact_numbers() {
+        assert_eq!(compact_number("44.2M"), Some(44_200_000.0));
+        assert_eq!(compact_number("1,234"), Some(1_234.0));
+    }
+
+    #[test]
+    fn parses_opencode_fields() {
+        let text = "│ Total Cost $19.50 │\n│ Input 44.2M │\n│ Output 3.2M │\n│ Sessions 52 │";
+        assert_eq!(field(text, "Total Cost"), Some("$19.50"));
+        assert_eq!(
+            compact_number(field(text, "Input").expect("input field")),
+            Some(44_200_000.0)
+        );
+    }
+}
