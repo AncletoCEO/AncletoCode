@@ -188,6 +188,19 @@ impl Store {
         Ok(tasks)
     }
 
+    pub fn find_task(&self, id: &str) -> Result<Option<Task>> {
+        self.connection
+            .query_row(
+                "SELECT id, project_id, title, status, branch, worktree_path, session_id,
+                        pr_url, created_at, updated_at
+                 FROM tasks WHERE id = ?1",
+                params![id],
+                map_task,
+            )
+            .optional()
+            .map_err(Into::into)
+    }
+
     pub fn insert_task(&self, task: &Task) -> Result<()> {
         self.connection.execute(
             "INSERT INTO tasks

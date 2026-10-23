@@ -6,6 +6,7 @@ import {
   GitBranch,
   GitPullRequest,
   ListTodo,
+  Play,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -142,6 +143,16 @@ function TaskCard({ task }: { task: Task }) {
         ) : null}
       </div>
       <div className="shell-task-actions">
+        {!task.branch && task.status === "backlog" ? (
+          <button
+            type="button"
+            className="shell-task-start"
+            title="Crear rama y worktree"
+            onClick={() => void tasks.start(task)}
+          >
+            <Play size={11} />
+          </button>
+        ) : null}
         <select
           value={task.status}
           onChange={(event) => void tasks.setStatus(task, event.target.value as TaskStatus)}

@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 use crate::domain::{CoreError, FileNode, Project, Result};
+use crate::git;
 use crate::persistence::Store;
 use crate::tasks::{Task, TaskStatus};
 
@@ -127,6 +128,40 @@ impl ProjectService {
             updated_at: now,
         };
         self.store.insert_task(&task)?;
+        Ok(task)
+    }
+
+    pub fn start_task(&self, id: &str) -> Result<Task> {
+        let mut task = self
+            .store
+            .find_task(id)?
+            .ok_or_else(|| CoreError::Process("tarea no encontrada".to_owned()))?;
+        if task.worktree_path.is_some() {
+            return Err(CoreError::Process(
+                "la tarea ya tiene un worktree".to_owned(),
+            ));
+        }
+        let project = self.get(&task.project_id)?;
+        let slug = task
+            .title
+            .chars()
+            .filter(|character| character.is_ascii_alphanumeric())
+            .take(32)
+            .collect::<String>()
+            .to_lowercase();
+        let suffix = &task.id[..task.id.len().min(8)];
+        let branch = format!(
+            "task/{}-{}",
+            if slug.is_empty() { "task" } else { &slug },
+            suffix
+        );
+        let worktree = git::add_worktree(Path::new(&project.root_path), &branch)
+            .map_err(|error| CoreError::Process(error.to_string()))?;
+        task.branch = Some(branch);
+        task.worktree_path = Some(worktree.path);
+        task.status = TaskStatus::InProgress;
+        task.updated_at = unix_timestamp();
+        self.store.update_task(&task)?;
         Ok(task)
     }
 
@@ -308,6 +343,36 @@ mod tests {
 
         assert!(service.remove_task(&task.id).unwrap());
         assert!(service.tasks(&project.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn starts_a_task_with_a_branch_and_worktree() {
+        let (directory, service) = service();
+        let path = project_directory(directory.path(), "repo");
+        for args in [
+            vec!["init", "-q"],
+            vec!["config", "user.email", "test@example.com"],
+            vec!["config", "user.name", "Test"],
+            vec!["add", "."],
+            vec!["commit", "-q", "-m", "init"],
+        ] {
+            std::process::Command::new("git")
+                .args(args)
+                .current_dir(&path)
+                .status()
+                .unwrap();
+        }
+        let project = service.add(&path.to_string_lossy()).unwrap();
+        let task = service
+            .create_task(&project.id, "Implementar board")
+            .unwrap();
+        let started = service.start_task(&task.id).unwrap();
+        assert_eq!(started.status, crate::tasks::TaskStatus::InProgress);
+        assert!(started
+            .branch
+            .as_deref()
+            .is_some_and(|branch| branch.starts_with("task/")));
+        assert!(started.worktree_path.is_some());
     }
 
     #[test]

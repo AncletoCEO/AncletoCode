@@ -2259,3 +2259,7 @@
   font-size: 10px;
   text-align: center;
 }
+
+.shell-task-start {
+  color: var(--shell-accent) !important;
+}

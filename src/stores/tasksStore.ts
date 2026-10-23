@@ -25,6 +25,7 @@ type TasksState = {
   create: (title: string) => Promise<boolean>;
   update: (task: Task) => Promise<boolean>;
   setStatus: (task: Task, status: TaskStatus) => Promise<boolean>;
+  start: (task: Task) => Promise<boolean>;
   remove: (id: string) => Promise<void>;
   reset: () => void;
 };
@@ -79,6 +80,17 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
   },
   setStatus: async (task, status) => {
     return get().update({ ...task, status });
+  },
+  start: async (task) => {
+    set({ error: null });
+    try {
+      const next = await invoke<Task>("task_start", { id: task.id });
+      set({ tasks: replaceTask(get().tasks, next) });
+      return true;
+    } catch (error) {
+      set({ error: messageOf(error) });
+      return false;
+    }
   },
   remove: async (id) => {
     set({ error: null });

@@ -737,3 +737,9 @@ pub fn task_delete(state: State<'_, AppState>, id: String) -> Result<bool, Strin
     let service = state.projects.lock().map_err(|_| lock_error())?;
     service.remove_task(&id).map_err(|error| error.to_string())
 }
+
+#[tauri::command]
+pub fn task_start(state: State<'_, AppState>, id: String) -> Result<Task, String> {
+    let service = state.projects.lock().map_err(|_| lock_error())?;
+    service.start_task(&id).map_err(|error| error.to_string())
+}

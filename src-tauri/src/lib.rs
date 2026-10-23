@@ -186,6 +186,7 @@ pub fn run() {
             commands::task_create,
             commands::task_update,
             commands::task_delete,
+            commands::task_start,
             commands::project_search,
             commands::session_create,
             commands::session_write,
