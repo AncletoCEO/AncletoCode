@@ -40,6 +40,16 @@ jobs:
           test -f "docs/release-notes/${VERSION}.md"
       - name: Install JS dependencies
         run: npm ci
+      - name: Cache embedded Ancleto runtime
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/ancleto-runtime
+            src-tauri/binaries
+            src-tauri/resources/ancleto
+          key: ${{ runner.os }}-ancleto-runtime-${{ hashFiles('scripts/prepare-ancleto-runtime.mjs') }}
+      - name: Prepare embedded Ancleto runtime
+        run: npm run prepare:ancleto
       - name: License and dependency checks
         run: |
           npm run license:check
