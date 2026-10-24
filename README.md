@@ -31,9 +31,10 @@ tareas con worktrees, Git y Ancleto SDD en una sola app local-first.
   y rollback. `@ancleto/writer-languages` se instala bajo demanda desde
   **Ajustes → Writer · pack de lenguajes**; es un pack nativo y requiere npm.
 - **Updates de la app:** chequeo al iniciar y aviso de nueva versión.
-- **Uso de proveedores:** panel inspirado en Orca; OpenCode reporta tokens/costo
-  local y Antigravity cuotas reales vía `agy -p /usage`. Claude y Command Code
-  muestran estados explícitos, sin cuotas inventadas.
+- **Uso de proveedores:** panel inspirado en Orca; OpenCode reporta costo local y
+  cuotas de OpenCode Go, Antigravity consulta `agy -p /usage` y Command Code lee
+  sus límites desde su API con la sesión local. Claude muestra un estado explícito
+  sin cuotas inventadas.
 
 ## Capturas
 
@@ -143,18 +144,20 @@ npm run tauri -- build --bundles nsis,msi       # Windows
 
 ## Roadmap
 
-El trabajo siguiente está en issues y en el change
-[`aspec/changes/ancleto-code-desktop-0.0.3`](aspec/changes/ancleto-code-desktop-0.0.3/proposal.md):
+El trabajo siguiente vive en changes bajo [`aspec/changes/`](aspec/changes/):
 
-- adapters de cuota para Claude, Antigravity, Command Code y OpenCode;
-- review/checks/merge de PRs de GitHub;
-- abrir proyectos desde worktrees y completar Task/Thread;
-- actualización firmada con instalación desde la app;
-- validación manual de Windows;
-- hardening de actualización/rollback de Ancleto.
+- [`app-updater-firmado`](aspec/changes/app-updater-firmado/proposal.md) — actualización firmada con rollback.
+- [`github-provider-prs`](aspec/changes/github-provider-prs/proposal.md) — checks, review y merge de PRs.
+- [`workspace-shell-y-modelo`](aspec/changes/workspace-shell-y-modelo/proposal.md) — shell completo, Task/Thread y worktrees.
+- [`git-local-completo`](aspec/changes/git-local-completo/proposal.md) — rebase, ramas y revisión de cambios.
+- [`desktop-release-packaging`](aspec/changes/desktop-release-packaging/proposal.md) — release desktop-only y empaquetado.
+- [`vendorizacion-pandacode-orca`](aspec/changes/vendorizacion-pandacode-orca/proposal.md) — pin v0.3.26 y procedencia.
+- [`desktop-hardening`](aspec/changes/desktop-hardening/proposal.md) — accesibilidad, virtualización y rollout.
+- [`ancleto-runtime-e2e`](aspec/changes/ancleto-runtime-e2e/proposal.md) — E2E y rollback del runtime.
 
 GitLab y otros hosts Git, AncletoCMD, CLI, npm, AUR y macOS quedan fuera de
-alcance por ahora.
+alcance por ahora; ese trabajo está en
+[`backlog-diferido`](aspec/changes/backlog-diferido/proposal.md).
 
 ## Licencias y atribuciones
 
