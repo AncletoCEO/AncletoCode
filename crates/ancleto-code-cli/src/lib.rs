@@ -602,6 +602,7 @@ fn converse_command(
             turn_budget_ms: Some(turn_budget_ms),
             model_a: None,
             model_b: None,
+            allow_tools: false,
         })
         .map_err(|error| cli_error(EXIT_SESSION, error.to_string()))?;
 

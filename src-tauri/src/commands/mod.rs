@@ -190,6 +190,7 @@ pub fn conversation_start(
     turn_budget_ms: Option<u64>,
     model_a: Option<String>,
     model_b: Option<String>,
+    allow_tools: Option<bool>,
 ) -> Result<Conversation, String> {
     state
         .orchestrator
@@ -201,6 +202,7 @@ pub fn conversation_start(
             turn_budget_ms,
             model_a,
             model_b,
+            allow_tools: allow_tools.unwrap_or(false),
         })
         .map_err(|error| error.to_string())
 }

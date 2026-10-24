@@ -3068,3 +3068,29 @@
   margin-top: 5px;
   color: var(--fg-muted);
 }
+
+.conversation-permission {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 2px 0;
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.conversation-permission input {
+  margin-top: 2px;
+  accent-color: var(--danger);
+}
+
+.conversation-permission span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conversation-permission small {
+  color: var(--danger);
+  font-size: 8px;
+}

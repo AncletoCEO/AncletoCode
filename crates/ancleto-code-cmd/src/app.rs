@@ -963,6 +963,7 @@ impl AppState {
                                 turn_budget_ms: Some(60_000),
                                 model_a: None,
                                 model_b: None,
+                                allow_tools: false,
                             }) {
                                 Ok(conversation) => {
                                     view.conversation_id = Some(conversation.id);

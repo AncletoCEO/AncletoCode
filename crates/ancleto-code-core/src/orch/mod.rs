@@ -58,6 +58,7 @@ pub struct StartConversation {
     pub turn_budget_ms: Option<u64>,
     pub model_a: Option<String>,
     pub model_b: Option<String>,
+    pub allow_tools: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -142,6 +143,7 @@ impl Orchestrator {
             created_at: unix_timestamp(),
             model_a: request.model_a.filter(|value| !value.trim().is_empty()),
             model_b: request.model_b.filter(|value| !value.trim().is_empty()),
+            allow_tools: request.allow_tools,
         };
 
         self.store()?.create_conversation(&conversation)?;
@@ -306,7 +308,11 @@ impl Orchestrator {
         let capabilities = driver.descriptor().capabilities;
         let context = SpawnContext {
             program: resolve_program(&current.program, driver.descriptor().binary.as_str()),
-            args: args_with_model(&current.args, model, &current.driver_id),
+            args: args_with_permissions(
+                args_with_model(&current.args, model, &current.driver_id),
+                conversation.allow_tools,
+                &current.driver_id,
+            ),
             continue_session: index > 0,
             ..SpawnContext::default()
         };
@@ -613,6 +619,22 @@ fn resolve_program(program: &str, fallback: &str) -> String {
         .unwrap_or_else(|| candidate.to_owned())
 }
 
+fn args_with_permissions(mut args: Vec<String>, allow: bool, driver_id: &str) -> Vec<String> {
+    if !allow {
+        return args;
+    }
+    let flag = match driver_id {
+        "agy" | "claude" => "--dangerously-skip-permissions",
+        "opencode" => "--auto",
+        "cmd" => "--yolo",
+        _ => return args,
+    };
+    if !args.iter().any(|arg| arg == flag) {
+        args.push(flag.to_owned());
+    }
+    args
+}
+
 fn args_with_model(args: &[String], model: Option<&str>, driver_id: &str) -> Vec<String> {
     let Some(model) = model.filter(|value| !value.trim().is_empty()) else {
         return args.to_vec();
@@ -790,6 +812,7 @@ mod tests {
             turn_budget_ms: Some(5_000),
             model_a: None,
             model_b: None,
+            allow_tools: false,
         }
     }
 
@@ -804,6 +827,19 @@ mod tests {
             thread::sleep(Duration::from_millis(50));
         }
         false
+    }
+
+    #[test]
+    fn permission_flags_are_explicit_per_driver() {
+        assert_eq!(
+            args_with_permissions(Vec::new(), true, "agy"),
+            vec!["--dangerously-skip-permissions"]
+        );
+        assert_eq!(
+            args_with_permissions(Vec::new(), true, "cmd"),
+            vec!["--yolo"]
+        );
+        assert!(args_with_permissions(Vec::new(), false, "agy").is_empty());
     }
 
     #[test]
@@ -835,6 +871,7 @@ mod tests {
             created_at: 0,
             model_a: None,
             model_b: None,
+            allow_tools: false,
         };
         let prompt =
             conversation_prompt(&conversation, &first, &second, 2, Some("respuesta previa"));
@@ -958,6 +995,7 @@ mod tests {
                 turn_budget_ms: None,
                 model_a: None,
                 model_b: None,
+                allow_tools: false,
             })
             .unwrap_err();
         assert!(matches!(empty, CoreError::InvalidInput(_)));
@@ -971,6 +1009,7 @@ mod tests {
                 turn_budget_ms: None,
                 model_a: None,
                 model_b: None,
+                allow_tools: false,
             })
             .unwrap_err();
         assert!(matches!(same, CoreError::InvalidInput(_)));

@@ -59,7 +59,8 @@ impl Store {
                  reason TEXT,
                  created_at INTEGER NOT NULL,
                  model_a TEXT,
-                 model_b TEXT
+                 model_b TEXT,
+                 allow_tools INTEGER NOT NULL DEFAULT 0
              );
              CREATE TABLE IF NOT EXISTS turns (
                  conversation_id TEXT NOT NULL,
@@ -105,6 +106,10 @@ impl Store {
         )?;
         let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_a TEXT", []);
         let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_b TEXT", []);
+        let _ = connection.execute(
+            "ALTER TABLE conversations ADD COLUMN allow_tools INTEGER NOT NULL DEFAULT 0",
+            [],
+        );
         let _ = connection.execute(
             "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (5, unixepoch())",
             [],
@@ -260,8 +265,8 @@ impl Store {
     pub fn create_conversation(&self, conversation: &Conversation) -> Result<()> {
         self.connection.execute(
             "INSERT INTO conversations
-             (id, session_a, session_b, objective, max_turns, turn_budget_ms, state, reason, created_at, model_a, model_b)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+             (id, session_a, session_b, objective, max_turns, turn_budget_ms, state, reason, created_at, model_a, model_b, allow_tools)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 conversation.id,
                 conversation.session_a,
@@ -273,7 +278,8 @@ impl Store {
                 conversation.reason,
                 conversation.created_at,
                 conversation.model_a,
-                conversation.model_b
+                conversation.model_b,
+                i64::from(conversation.allow_tools)
             ],
         )?;
         Ok(())
@@ -296,7 +302,7 @@ impl Store {
         self.connection
             .query_row(
                 "SELECT id, session_a, session_b, objective, max_turns, turn_budget_ms,
-                        state, reason, created_at, model_a, model_b
+                        state, reason, created_at, model_a, model_b, allow_tools
                  FROM conversations WHERE id = ?1",
                 params![id],
                 map_conversation,
@@ -308,7 +314,7 @@ impl Store {
     pub fn list_conversations(&self) -> Result<Vec<Conversation>> {
         let mut statement = self.connection.prepare(
             "SELECT id, session_a, session_b, objective, max_turns, turn_budget_ms,
-                    state, reason, created_at, model_a, model_b
+                    state, reason, created_at, model_a, model_b, allow_tools
              FROM conversations ORDER BY created_at DESC",
         )?;
         let rows = statement.query_map([], map_conversation)?;
@@ -497,6 +503,7 @@ fn map_conversation(row: &rusqlite::Row<'_>) -> rusqlite::Result<Conversation> {
         created_at: row.get(8)?,
         model_a: row.get(9)?,
         model_b: row.get(10)?,
+        allow_tools: row.get::<_, i64>(11)? != 0,
     })
 }
 

@@ -27,6 +27,7 @@ type Conversation = {
   createdAt: number;
   modelA?: string | null;
   modelB?: string | null;
+  allowTools?: boolean;
 };
 
 type Turn = {
@@ -67,6 +68,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   const [objective, setObjective] = useState("");
   const [modelA, setModelA] = useState("");
   const [modelB, setModelB] = useState("");
+  const [allowTools, setAllowTools] = useState(false);
   const models = useModelsStore();
   const loadModels = models.load;
   const [maxTurns, setMaxTurns] = useState(6);
@@ -244,6 +246,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
         turnBudgetMs: turnBudgetSeconds * 1000,
         modelA: modelA || null,
         modelB: modelB || null,
+        allowTools,
       });
       await Promise.all([
         invoke("settings_put", { key: "conversation.maxTurns", value: String(maxTurns) }),
@@ -390,6 +393,20 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
                 aria-label="Objetivo"
                 rows={4}
               />
+            </label>
+            <label className="conversation-permission">
+              <input
+                type="checkbox"
+                checked={allowTools}
+                onChange={(event) => setAllowTools(event.target.checked)}
+              />
+              <span>
+                Permitir herramientas headless
+                <small>
+                  Autoaprueba comandos en esta conversación. Usalo sólo con agentes y proyectos de
+                  confianza.
+                </small>
+              </span>
             </label>
             <div className="conversation-limits">
               <label>

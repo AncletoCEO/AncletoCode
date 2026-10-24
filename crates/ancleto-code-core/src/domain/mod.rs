@@ -35,6 +35,8 @@ pub struct Conversation {
     pub model_a: Option<String>,
     #[serde(default)]
     pub model_b: Option<String>,
+    #[serde(default)]
+    pub allow_tools: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

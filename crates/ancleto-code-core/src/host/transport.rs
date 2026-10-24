@@ -10,6 +10,8 @@ use interprocess::local_socket::{
 use interprocess::local_socket::{GenericNamespaced, ToNsName};
 use uuid::Uuid;
 
+use super::protocol::PROTOCOL_VERSION;
+
 pub const TOKEN_FILE: &str = "host.token";
 const MAX_FRAME_BYTES: usize = 32 * 1024 * 1024;
 
@@ -27,14 +29,17 @@ impl HostPaths {
             .map(Path::to_path_buf)
             .unwrap_or_else(default_state_dir);
         let socket = if cfg!(windows) {
-            "ancleto-code-host".to_owned()
+            format!("ancleto-code-host-v{PROTOCOL_VERSION}")
         } else {
-            state_dir.join("host.sock").to_string_lossy().into_owned()
+            state_dir
+                .join(format!("host-v{PROTOCOL_VERSION}.sock"))
+                .to_string_lossy()
+                .into_owned()
         };
 
         Self {
             token: state_dir.join(TOKEN_FILE),
-            lock: state_dir.join("host.lock"),
+            lock: state_dir.join(format!("host-v{PROTOCOL_VERSION}.lock")),
             state_dir,
             socket,
         }
