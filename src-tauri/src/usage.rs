@@ -4,6 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use ancleto_code_core::drivers::resolve_binary;
 
+const OPENCODE_GO_USAGE_URL: &str = "https://opencode.ai/zen/go/v1/usage";
+
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
@@ -71,13 +73,114 @@ fn field<'a>(text: &'a str, label: &str) -> Option<&'a str> {
     })
 }
 
+fn opencode_auth_key() -> Option<String> {
+    let mut candidates = Vec::new();
+    if let Some(data) = std::env::var_os("XDG_DATA_HOME") {
+        candidates.push(PathBuf::from(data).join("opencode/auth.json"));
+    }
+    if let Some(home) = std::env::var_os("HOME") {
+        candidates.push(PathBuf::from(home).join(".local/share/opencode/auth.json"));
+    }
+    if cfg!(windows) {
+        if let Some(appdata) = std::env::var_os("APPDATA") {
+            candidates.push(PathBuf::from(appdata).join("opencode/auth.json"));
+        }
+        if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+            candidates.push(PathBuf::from(local).join("opencode/auth.json"));
+        }
+    }
+    for path in candidates {
+        let Ok(text) = std::fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
+        if let Some(key) = value
+            .get("opencode-go")
+            .and_then(|entry| entry.get("key"))
+            .and_then(|key| key.as_str())
+            .filter(|key| !key.trim().is_empty())
+        {
+            return Some(key.to_owned());
+        }
+    }
+    None
+}
+
+fn opencode_quota() -> (Vec<UsageWindow>, Option<String>) {
+    let Some(key) = opencode_auth_key() else {
+        return (Vec::new(), None);
+    };
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+    {
+        Ok(client) => client,
+        Err(error) => return (Vec::new(), Some(error.to_string())),
+    };
+    let response = match client
+        .get(OPENCODE_GO_USAGE_URL)
+        .header("Authorization", format!("Bearer {key}"))
+        .header("Accept", "application/json")
+        .send()
+    {
+        Ok(response) => response,
+        Err(_) => {
+            return (
+                Vec::new(),
+                Some("No se pudo consultar la cuota de OpenCode Go.".to_owned()),
+            )
+        }
+    };
+    if !response.status().is_success() {
+        return (
+            Vec::new(),
+            Some(format!(
+                "OpenCode Go usage respondió {}.",
+                response.status()
+            )),
+        );
+    }
+    let Ok(body) = response.json::<serde_json::Value>() else {
+        return (
+            Vec::new(),
+            Some("Respuesta de usage de OpenCode inválida.".to_owned()),
+        );
+    };
+    let mut windows = Vec::new();
+    if let Some(usage) = body.get("usage") {
+        for (key, label) in [
+            ("rolling", "Rolling"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly"),
+        ] {
+            let Some(entry) = usage.get(key) else {
+                continue;
+            };
+            let Some(percent) = entry.get("percent").and_then(|value| value.as_f64()) else {
+                continue;
+            };
+            windows.push(UsageWindow {
+                label: label.to_owned(),
+                used_percent: percent.clamp(0.0, 100.0),
+                resets_at: entry
+                    .get("resetsAt")
+                    .and_then(|value| value.as_str())
+                    .map(str::to_owned),
+            });
+        }
+    }
+    (windows, None)
+}
+
 fn opencode_usage() -> ProviderUsage {
     let mut usage = ProviderUsage {
         provider: "opencode".to_owned(),
         label: "OpenCode".to_owned(),
         status: "unavailable".to_owned(),
         message: None,
-        source: Some("opencode stats".to_owned()),
+        source: Some("opencode stats + OpenCode Go".to_owned()),
         cost: None,
         tokens: None,
         sessions: None,
@@ -90,71 +193,68 @@ fn opencode_usage() -> ProviderUsage {
         usage.message = Some("OpenCode no está instalado.".to_owned());
         return usage;
     };
-    let output = match Command::new(opencode)
+    let stats_error = match Command::new(opencode)
         .args(["stats", "--days", "30"])
         .output()
     {
-        Ok(output) if output.status.success() => output,
-        Ok(output) => {
-            usage.status = "error".to_owned();
-            usage.message = Some(String::from_utf8_lossy(&output.stderr).trim().to_owned());
-            return usage;
+        Ok(output) if output.status.success() => {
+            let text = String::from_utf8_lossy(&output.stdout);
+            usage.cost = field(&text, "Total Cost").and_then(|value| {
+                value
+                    .split('$')
+                    .next_back()
+                    .and_then(|value| value.trim().parse::<f64>().ok())
+            });
+            usage.tokens = field(&text, "Input")
+                .and_then(compact_number)
+                .zip(field(&text, "Output").and_then(compact_number))
+                .zip(field(&text, "Cache Read").and_then(compact_number))
+                .map(|((input, output), cache)| (input + output + cache) as u64);
+            usage.sessions = field(&text, "Sessions").and_then(|value| value.parse().ok());
+            usage.details = [
+                ("Sesiones", usage.sessions),
+                (
+                    "Input",
+                    field(&text, "Input")
+                        .and_then(compact_number)
+                        .map(|v| v as u64),
+                ),
+                (
+                    "Output",
+                    field(&text, "Output")
+                        .and_then(compact_number)
+                        .map(|v| v as u64),
+                ),
+                (
+                    "Cache read",
+                    field(&text, "Cache Read")
+                        .and_then(compact_number)
+                        .map(|v| v as u64),
+                ),
+            ]
+            .into_iter()
+            .filter_map(|(label, value)| {
+                value.map(|value| UsageMetric {
+                    label: label.to_owned(),
+                    value: value.to_string(),
+                })
+            })
+            .collect();
+            None
         }
-        Err(error) => {
-            usage.status = "error".to_owned();
-            usage.message = Some(error.to_string());
-            return usage;
-        }
+        Ok(output) => Some(String::from_utf8_lossy(&output.stderr).trim().to_owned()),
+        Err(error) => Some(error.to_string()),
     };
-    let text = String::from_utf8_lossy(&output.stdout);
-    let cost = field(&text, "Total Cost").and_then(|value| {
-        value
-            .split('$')
-            .next_back()
-            .and_then(|value| value.trim().parse::<f64>().ok())
-    });
-    let tokens = field(&text, "Input")
-        .and_then(compact_number)
-        .zip(field(&text, "Output").and_then(compact_number))
-        .zip(field(&text, "Cache Read").and_then(compact_number))
-        .map(|((input, output), cache)| (input + output + cache) as u64);
-    usage.cost = cost;
-    usage.tokens = tokens;
-    usage.sessions = field(&text, "Sessions").and_then(|value| value.parse().ok());
-    usage.details = [
-        ("Sesiones", usage.sessions),
-        (
-            "Input",
-            field(&text, "Input")
-                .and_then(compact_number)
-                .map(|v| v as u64),
-        ),
-        (
-            "Output",
-            field(&text, "Output")
-                .and_then(compact_number)
-                .map(|v| v as u64),
-        ),
-        (
-            "Cache read",
-            field(&text, "Cache Read")
-                .and_then(compact_number)
-                .map(|v| v as u64),
-        ),
-    ]
-    .into_iter()
-    .filter_map(|(label, value)| {
-        value.map(|value| UsageMetric {
-            label: label.to_owned(),
-            value: value.to_string(),
-        })
-    })
-    .collect();
-    if usage.cost.is_some() || usage.tokens.is_some() {
-        usage.status = "ready".to_owned();
-    } else {
+    let (windows, quota_error) = opencode_quota();
+    usage.windows = windows;
+    if usage.windows.is_empty() && usage.details.is_empty() {
         usage.status = "unavailable".to_owned();
-        usage.message = Some("OpenCode no devolvió métricas para los últimos 30 días.".to_owned());
+        usage.message = Some(stats_error.or(quota_error).unwrap_or_else(|| {
+            "OpenCode no devolvió métricas ni cuota para la cuenta actual.".to_owned()
+        }));
+    } else {
+        usage.status = "ready".to_owned();
+        usage.message = quota_error.or(stats_error);
     }
     usage
 }
