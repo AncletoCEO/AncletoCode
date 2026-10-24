@@ -14,6 +14,22 @@
 > **Referencias fijadas:** PandaCode `v0.3.26` (`800b879680bc89fda1189f726864ca1a4ed61e2a`);
 > Orca `v1.4.237` (`071747853f5995ee233b36751613f09a60007c2b`).
 
+> **Split de trabajo pendiente — 2026-10-24.** Las tareas sin hacer se separaron en
+> changes independientes para que este change quede completo y pueda archivarse.
+>
+> | Change | Tareas movidas |
+> |---|---|
+> | `desktop-release-packaging` | 1.4, 14.10, 14.13, 14.14, 14.15, 15.3 |
+> | `vendorizacion-pandacode-orca` | 16.1, 16.3, 16.4, 16.5 |
+> | `workspace-shell-y-modelo` | 16.6, 16.7, 16.8, 16.17 |
+> | `git-local-completo` | 16.9, 16.10, 16.11 |
+> | `github-provider-prs` | 16.12, 16.13, 16.16 |
+> | `desktop-hardening` | 16.18, 16.19, 16.20, 16.21 |
+> | `ancleto-runtime-e2e` | 16.23 |
+> | `backlog-diferido` | 12.11, 13.14, 14.3, 14.4, 14.8, 16.14, 16.15 |
+>
+> `16.24` se cerró como cubierta por `app-performance`.
+
 ## Issues de GitHub
 
 Cada issue corresponde a un bloque de features y está asociado a las tareas de este archivo.
@@ -60,7 +76,6 @@ Issue: [#2](https://github.com/AncletoCEO/AncletoCode/issues/2)
 - [x] 1.1 Inicializar Tauri 2 con frontend React 19 + TypeScript + Vite y fijar versiones.
 - [x] 1.2 Configurar `tsconfig` estricto, ESLint/Prettier y scripts `dev`, `build`, `test`, `typecheck`, `lint`.
 - [x] 1.3 Configurar `cargo fmt`/`clippy` y estructura de módulos Rust (`commands`, `session`, `drivers`, `orch`, `providers`, `ide`, `persistence`).
-- [ ] 1.4 Verificar arranque de la app de escritorio en Windows (`npm run tauri dev`).
 - [x] 1.5 Implementar la declaración "This is a fork of PandaCode" + enlace en la pantalla About de la app.
 - [x] 1.6 Añadir `npm run license:check` (`scripts/license-check.mjs`): valida `LICENSE`, `THIRD_PARTY_NOTICES.md`, la sección del README, la declaración de fork, las cabeceras SPDX y el ledger.
 - [x] 1.7 Añadir `deny.toml` + `cargo deny check licenses advisories` y un revisor de licencias npm para dependencias directas y transitivas.
@@ -230,7 +245,6 @@ Issue: [#13](https://github.com/AncletoCEO/AncletoCode/issues/13)
 - [x] 12.8 `acode converse` con objetivo, `maxTurns`, timeout, streaming y motivo de finalización.
 - [x] 12.9 `acode spec` y `acode writer` como passthrough normalizado de los providers.
 - [x] 12.10 `acode host start|stop|status` y `acode ui` para abrir la app instalada.
-- [ ] 12.11 Windows: argv sin shell intermedia, VT/UTF-8 cuando esté disponible y pruebas en `cmd.exe` y PowerShell.
 - [x] 12.12 Completions de shell y documentación de comandos en `README.md`.
 - [x] 12.13 Tests de contrato de salida JSON, códigos de salida y cancelación.
 
@@ -254,7 +268,6 @@ Issue: [#14](https://github.com/AncletoCEO/AncletoCode/issues/14)
 - [x] 13.11 Notificaciones de fin de comando, bell, indicador de tab y foco.
 - [x] 13.12 Persistencia de `TerminalLayout` y temas compartidos en SQLite; restauración al reabrir y respeto de la configuración global.
 - [x] 13.13 Benchmark de rendimiento (tecla a frame p99, idle CPU, arranque, throughput) y umbrales en CI.
-- [ ] 13.14 Tests de conformidad VT con fixtures y programas reales (vim, tmux, htop, git, less), y smoke tests en Windows (`cmd`, PowerShell, WSL), Linux y macOS.
 - [x] 13.15 Manejo de cierre de ventana con detach, restauración de sesiones y "cerrar y matar sesiones" con confirmación.
 
 ## Fase 14 — Empaquetado de escritorio y release
@@ -263,17 +276,10 @@ Issue: [#19](https://github.com/AncletoCEO/AncletoCode/issues/19)
 
 - [x] 14.1 Crear `packages/acode` (`acode`/`ancleto-code`) y `packages/acmd` (`acmd`/`ancleto-cmd`) con launchers Node mínimos.
 - [x] 14.2 Launcher: detección de plataforma/arquitectura/libc, resolución del paquete opcional, verificación de checksum y `spawn` con stdio y señales heredados.
-- [ ] 14.3 (deferido) Publicar paquetes npm por plataforma con `checksums.json`: CLI `acode` y AncletoCMD `acmd`. Fuera de alcance hasta nuevo aviso.
-- [ ] 14.4 (deferido) Matriz npm en runners nativos y `npm publish --provenance`. No forma parte del release de escritorio.
 - [x] 14.5 Propagar una versión única a todos los paquetes y testear `acode --version` y `acmd --version` contra los `package.json`.
 - [x] 14.6 Mensajes accionables para `optionalDependencies` ausentes, checksum inválido y plataforma no soportada.
 - [x] 14.7 Incluir `LICENSE`, `THIRD_PARTY_NOTICES.md` y la declaración de fork de PandaCode en los paquetes publicados.
-- [ ] 14.8 (deferido) Smoke test de `npm i -g @ancleto/code` y `npm i -g @ancleto/cmd`.
 - [x] 14.9 Documentar instalación, actualización manual y desinstalación en `README.md`.
-- [ ] 14.10 Empaquetar **solo la app de escritorio**: Linux AppImage + `.deb`, Windows NSIS/MSI/ZIP portable. Verificar instalación, About y arranque; sin artefactos de AncletoCMD/CLI.
-- [ ] 14.13 Generar AppImage x86_64 para Arch/EndeavourOS, probar ejecución con FUSE y fallback `--appimage-extract-and-run`, y documentar la instalación en README.
-- [ ] 14.14 Recortar el workflow de release a la app de escritorio: quitar CMD, CLI, paquetes npm y AUR del camino de publicación; conservar `SHA256SUMS` y fuente correspondiente.
-- [ ] 14.15 Actualizar README y notas de release con matriz desktop-only (Linux AppImage/DEB, Windows NSIS/MSI/portable; macOS diferido).
 - [x] 14.11 Auditar las licencias de las dependencias gráficas y de terminal (`alacritty_terminal`/`vte`, `winit`, `wgpu`, `glyphon`, `cosmic-text`) y registrarlas en los avisos.
 - [x] 14.12 Revisión de compatibilidad AGPL-3.0 + condición de atribución, documentada en `docs/compliance/license-review-0.0.1.md` (revisión técnica, no asesoría legal formal).
 
@@ -283,7 +289,6 @@ Issue: [#16](https://github.com/AncletoCEO/AncletoCode/issues/16) (cerrado; reem
 
 - [x] 15.1 Persistencia de configuración: idioma, host, tier, límites de conversación, overrides de binarios, preferencias de writer, apariencia y layout de AncletoCMD.
 - [x] 15.2 Atajos: nueva sesión, cambiar proyecto, matar sesión, iniciar conversación, rebuild de writer, cambiar tema y equivalentes en AncletoCMD.
-- [ ] 15.3 Smoke manual end-to-end **solo de la app de escritorio**: dos proyectos, sesiones `claude`/`opencode`/`agy`/`cmd`, detach/attach, conversación agente-a-agente, aborto, build + vista humana de writer y Git/worktrees.
 - [x] 15.4 Verificar escenarios de degradación (CLI ausente, Node ausente, host caído, GPU no disponible, sin language pack, salida no parseable, efectos de transparencia no soportados).
 - [x] 15.5 `cargo test`, `cargo clippy`, `npm run test`, `npm run typecheck` y `npm run lint` en verde.
 - [x] 15.6 Empaquetado (`npm run tauri build`) y verificación de cierre limpio de procesos. La matriz npm queda deferida.
@@ -298,27 +303,8 @@ Orca, sin perder los diferenciadores Ancleto; GitHub es el único host Git activ
 sesiones persistentes). Todo código reutilizado se vendoriza, se marca con SPDX y
 se registra en `docs/provenance.md`.
 
-- [ ] 16.1 Actualizar el pin de PandaCode a `v0.3.26` (`800b879680bc89fda1189f726864ca1a4ed61e2a`), revisar el diff contra los archivos vendorizados y actualizar `UPSTREAM.md`, ledger, avisos y tests.
 - [x] 16.2 Documentar el lenguaje visual híbrido en `docs/design/desktop-ui.md`: referencias PandaCode/Orca, tipografía, densidad, superficies, movimiento, estados y reglas de interacción; sin copiar activos ni marcas.
-- [ ] 16.3 Auditar qué módulos de Orca se usan solo como referencia visual/UX. Si se reutiliza código o assets MIT, agregar aviso de Lovecast Inc., procedencia y tests; si no, registrar "referencia sin copia".
-- [ ] 16.4 Vendorizar/adaptar de PandaCode los módulos de UI seleccionados: `sidebar-tree`, `task-board`, `worktrees`, `github*`, `diff-viewer`, `change-review`, `turn-changes`, `command-center`, `agent-input` y sus CSS, con cabecera SPDX, tests y entrada en el ledger.
-- [ ] 16.5 Vendorizar/adaptar los servicios Rust necesarios: `workspace.rs`, `github*.rs`, `task_controls.rs`, `turn_changes/`, `checks.rs` y patrones de persistencia; mantener el core independiente de Tauri.
-- [ ] 16.6 (en progreso: primer shell con sidebar/topbar/thread/inspector/composer/palette) Implementar el shell visual: navegación lateral por proyecto/tarea, workspace central con threads/tabs, inspector derecho (contexto, cambios, Git) y composer inferior; paneles redimensionables y layout persistente.
-- [ ] 16.7 (en progreso: Task persistente + board con estados; faltan Thread/Worktree asociado y resultado) Modelo `Task`/`Thread`/`Worktree`: una tarea puede tener rama y worktree propios; estado, proyecto, agente, PR/MR y resultado; migraciones SQLite y recuperación.
-- [ ] 16.8 (en progreso: crear/listar/eliminar worktrees con tests; falta abrir el proyecto en el worktree y limpieza asistida) `WorktreeManager`: crear/listar/eliminar worktrees, abrir el proyecto en el worktree correcto, detectar colisiones y limpiar sin perder cambios; tests con repos temporales.
-- [ ] 16.9 (en progreso: status, ramas, diff, staging, commit, fetch/pull/push y merge; falta rebase) Servicio Git local: status, diff, stage/unstage, commit, fetch/pull/push, ramas (listar/crear/cambiar/eliminar), merge y rebase con confirmación y manejo de conflictos.
-- [ ] 16.10 (en progreso: branch chip y panel con ramas/estado) Branch chip y panel de ramas: rama actual, ahead/behind, dirty state, cambiar/crear rama, worktree asociado y acciones seguras; sin comandos destructivos sin confirmación explícita.
-- [ ] 16.11 (en progreso: diff unificado con staging; faltan split y comentarios por línea) Revisión de cambios: diff unificado/split, archivos por turno, staging por hunk, comentarios por línea y envío del comentario al agente.
-- [ ] 16.12 (en progreso: detección de remoto GitHub y proveedor; falta auth/capacidades) Abstracción `GitHostProvider` con **GitHub** como único proveedor activo; GitLab/Bitbucket/Azure quedan diferidos.
-- [ ] 16.13 (en progreso: listar PRs; faltan issues/checks/review/merge) GitHub nativo con `gh`: detectar login, listar repos/PRs/issues/checks, abrir PR, revisar y mergear; enlazar PR con tarea y rama.
-- [ ] 16.14 (deferido) GitLab con `glab`. Fuera de alcance por ahora.
-- [ ] 16.15 (deferido) Bitbucket/Azure/remoto genérico. Fuera de alcance por ahora.
-- [ ] 16.16 Crear PR/MR desde una tarea: rama, base, título/cuerpo, reviewers, issue link y checks; estado visible en el thread.
-- [ ] 16.17 Command palette y quick switcher: proyectos, tareas, ramas, worktrees, PRs/MRs, comandos Git y acciones Ancleto; atajos configurables.
-- [ ] 16.18 Integrar los paneles Ancleto (spec, writer, conversación, sesiones) en el nuevo shell sin regresiones; el estado sigue viniendo de las CLIs.
-- [ ] 16.19 Accesibilidad y rendimiento: foco, teclado, contraste, reduced motion, virtualización de listas/diffs y presupuesto de render.
-- [ ] 16.20 Tests: fixtures de repos bare, worktrees, conflictos, providers mockeados (`gh`/`glab`), stores y componentes; snapshots visuales de las vistas principales.
-- [ ] 16.24 (en progreso: OpenCode tokens/costo local y Antigravity cuotas reales vía `agy -p /usage`; Claude/Command Code pendientes) Indicadores de usage por proveedor.
+- [x] 16.24 Indicadores de usage por proveedor (cerrado: cubierto por `app-performance`; OpenCode, Antigravity y Command Code resueltos, Claude sin cuota expuesta).
 - [x] 16.25 Selector de modelo al crear sesión: lista `agy models`, `opencode models` y `cmd --list-models`, y pasa `--model`/`-m` al driver.
 - [x] 16.26 Vista dedicada de conversación agente-a-agente: configuración, transcript, pausa/reanudar/abortar y estado.
 - [x] 16.27 Incluir `@ancleto/writer` en el runtime embebido y resolverlo con `ANCLETO_WRITER_NODE`/`ANCLETO_WRITER_JS`; el pack nativo de lenguajes queda opcional.
@@ -332,6 +318,4 @@ se registra en `docs/provenance.md`.
 - [x] 16.35 Reparación de symlink Node roto al iniciar y uso del Node embebido para CLIs Node.
 - [x] 16.36 Usage usa binarios resueltos para OpenCode/Antigravity/Command Code; Command Code muestra autenticación y aclara que `/usage` no es legible en headless.
 - [x] 16.37 Pegar y parsear `/usage` de Command Code en el panel Uso, con persistencia local y barras de plan/ventanas.
-- [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
-- [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) (en progreso: sidecar Node, paquete incluido, update administrado y UI; falta E2E/rollback) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.

@@ -1,3 +1,8 @@
+> **Diseño histórico — 2026-10-24.** Las secciones de GitHub, Task/Thread/Worktree,
+> Updates y Ancleto embebido se movieron a `github-provider-prs`,
+> `workspace-shell-y-modelo`, `app-updater-firmado` y `ancleto-runtime-e2e`
+> respectivamente. La sección de Usage describe lo entregado en este change.
+
 # Design: Desktop 0.0.3
 
 ## Usage
