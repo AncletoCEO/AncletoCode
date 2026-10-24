@@ -120,6 +120,22 @@ fn field<'a>(text: &'a str, label: &str) -> Option<&'a str> {
     })
 }
 
+fn terminate(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        let pid = child.id() as i32;
+        // SAFETY: pid belongs to the process group created with process_group(0).
+        unsafe {
+            libc::kill(-pid, libc::SIGKILL);
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = child.kill();
+    }
+    let _ = child.wait();
+}
+
 fn read_all(mut stream: Option<impl Read>) -> Vec<u8> {
     let mut buffer = Vec::new();
     if let Some(stream) = stream.as_mut() {
@@ -130,6 +146,11 @@ fn read_all(mut stream: Option<impl Read>) -> Vec<u8> {
 
 pub(crate) fn run_with_timeout(mut command: Command, timeout: Duration) -> Result<Output, String> {
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
     let mut child = command
         .spawn()
         .map_err(|error| format!("no se pudo ejecutar el comando: {error}"))?;
@@ -142,10 +163,7 @@ pub(crate) fn run_with_timeout(mut command: Command, timeout: Duration) -> Resul
         match child.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) if Instant::now() >= deadline => {
-                let _ = child.kill();
-                let _ = child.wait();
-                let _ = stdout_reader.join();
-                let _ = stderr_reader.join();
+                terminate(&mut child);
                 return Err(format!(
                     "excedió el tiempo límite de {} s",
                     timeout.as_secs()
@@ -153,8 +171,7 @@ pub(crate) fn run_with_timeout(mut command: Command, timeout: Duration) -> Resul
             }
             Ok(None) => std::thread::sleep(Duration::from_millis(20)),
             Err(error) => {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate(&mut child);
                 return Err(error.to_string());
             }
         }
@@ -701,11 +718,38 @@ mod tests {
     #[test]
     fn watchdog_kills_processes_that_exceed_the_budget() {
         let mut command = Command::new("sh");
-        command.args(["-c", "sleep 5"]);
+        command.args(["-c", "sleep 30"]);
         let started = Instant::now();
         let result = run_with_timeout(command, Duration::from_millis(150));
         assert!(result.is_err());
         assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn watchdog_kills_the_whole_process_group() {
+        let pidfile = std::env::temp_dir().join(format!(
+            "ancleto-watchdog-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let script = format!("sleep 30 & echo $! > '{}'; wait", pidfile.display());
+        let mut command = Command::new("sh");
+        command.args(["-c", &script]);
+        let started = Instant::now();
+        let result = run_with_timeout(command, Duration::from_millis(200));
+        assert!(result.is_err());
+        assert!(started.elapsed() < Duration::from_secs(3));
+        let pid = std::fs::read_to_string(&pidfile)
+            .expect("pidfile")
+            .trim()
+            .parse::<i32>()
+            .expect("pid");
+        std::thread::sleep(Duration::from_millis(100));
+        // SAFETY: signal 0 only checks whether the process group member is alive.
+        let alive = unsafe { libc::kill(pid, 0) } == 0;
+        assert!(!alive, "el proceso nieto sobrevivió al watchdog");
+        let _ = std::fs::remove_file(&pidfile);
     }
 
     #[cfg(unix)]

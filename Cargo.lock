@@ -99,6 +99,7 @@ dependencies = [
  "ancleto-code-core",
  "base64 0.22.1",
  "flate2",
+ "libc",
  "reqwest 0.12.28",
  "serde",
  "serde_json",

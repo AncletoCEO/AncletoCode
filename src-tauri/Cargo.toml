@@ -21,6 +21,7 @@ tauri-build = { version = "2.7.4", features = [] }
 ancleto-code-core.workspace = true
 base64 = "0.22"
 flate2 = "1.1"
+libc = "0.2"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 sha2 = "0.10"
 tar = "0.4"
