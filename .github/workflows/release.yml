@@ -173,7 +173,7 @@ jobs:
           name: "AncletoCode ${{ env.VERSION }}"
           tag_name: "v${{ env.VERSION }}"
           body_path: "docs/release-notes/${{ env.VERSION }}.md"
-          prerelease: true
+          prerelease: false
           files: |
             dist/**/*.deb
             dist/**/*.AppImage
