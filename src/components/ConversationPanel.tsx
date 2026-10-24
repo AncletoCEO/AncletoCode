@@ -5,6 +5,7 @@ import { modelFromArguments, sessionLabel } from "../lib/session-model";
 import { useModelsStore } from "../stores/modelsStore";
 import { captureTranscriptAnchor } from "../../third_party/pandacode/src/transcript-scroll.ts";
 import Markdown from "./Markdown";
+import { turnText } from "../lib/turn-text";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { Project } from "../stores/projectsStore";
 import {
@@ -488,7 +489,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
                     {turn.mode} · {turn.durationMs} ms
                   </span>
                 </div>
-                <Markdown value={turn.text} />
+                <Markdown value={turnText(turn.text)} />
               </li>
             ))}
             {activeTurn ? (

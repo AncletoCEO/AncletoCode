@@ -528,6 +528,12 @@ fn parse_line(line: &str) -> Vec<AgentSignal> {
             }
         }
 
+        if let Some(response) = object.get("response").and_then(Value::as_str) {
+            return vec![AgentSignal::MessageComplete {
+                text: response.to_owned(),
+            }];
+        }
+
         if let Some(result) = object.get("result").and_then(Value::as_str) {
             return vec![AgentSignal::MessageComplete {
                 text: result.to_owned(),
@@ -670,6 +676,20 @@ mod tests {
             second,
             vec![AgentSignal::MessageComplete {
                 text: "fin".to_owned()
+            }]
+        );
+    }
+
+    #[test]
+    fn extracts_the_response_from_an_agy_envelope() {
+        let mut state = ParseState::default();
+        let mut input = br#"{"conversation_id":"c","status":"SUCCESS","response":"Hola\n\nMundo","usage":{"input_tokens":1}}"#.to_vec();
+        input.push(b'\n');
+        let signals = parse_chunk(&input, &mut state);
+        assert_eq!(
+            signals,
+            vec![AgentSignal::MessageComplete {
+                text: "Hola\n\nMundo".to_owned()
             }]
         );
     }
