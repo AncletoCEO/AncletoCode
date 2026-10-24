@@ -330,6 +330,7 @@ se registra en `docs/provenance.md`.
 - [x] 16.33 Error de conversación visible con guía para permisos headless y sin autoaprobación.
 - [x] 16.34 Host sidecar empaquetado con la app y protocolo v2; las sesiones exponen `program`, `args` y `cwd` para conversación.
 - [x] 16.35 Reparación de symlink Node roto al iniciar y uso del Node embebido para CLIs Node.
+- [x] 16.36 Usage usa binarios resueltos para OpenCode/Antigravity/Command Code; Command Code muestra autenticación y aclara que `/usage` no es legible en headless.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
 - [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) (en progreso: sidecar Node, paquete incluido, update administrado y UI; falta E2E/rollback) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.

@@ -1,5 +1,8 @@
+use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use ancleto_code_core::drivers::resolve_binary;
 
 use serde::Serialize;
 
@@ -41,8 +44,8 @@ fn now() -> u64 {
         .unwrap_or_default()
 }
 
-fn available(binary: &str) -> bool {
-    Command::new(binary).arg("--version").output().is_ok()
+fn resolved(binary: &str) -> Option<PathBuf> {
+    resolve_binary(binary)
 }
 
 fn compact_number(value: &str) -> Option<f64> {
@@ -82,12 +85,12 @@ fn opencode_usage() -> ProviderUsage {
         windows: Vec::new(),
         checked_at: now(),
     };
-    if !available("opencode") {
+    let Some(opencode) = resolved("opencode") else {
         usage.status = "unavailable".to_owned();
         usage.message = Some("OpenCode no está instalado.".to_owned());
         return usage;
-    }
-    let output = match Command::new("opencode")
+    };
+    let output = match Command::new(opencode)
         .args(["stats", "--days", "30"])
         .output()
     {
@@ -157,7 +160,7 @@ fn opencode_usage() -> ProviderUsage {
 }
 
 fn static_provider(provider: &str, label: &str, binary: &str) -> ProviderUsage {
-    let installed = available(binary);
+    let installed = resolved(binary).is_some();
     ProviderUsage {
         provider: provider.to_owned(),
         label: label.to_owned(),
@@ -219,7 +222,10 @@ fn antigravity_usage() -> ProviderUsage {
     if usage.status != "unsupported" {
         return usage;
     }
-    let output = Command::new("agy")
+    let Some(agy) = resolved("agy") else {
+        return usage;
+    };
+    let output = Command::new(agy)
         .args([
             "-p",
             "/usage",
@@ -296,12 +302,45 @@ fn antigravity_usage() -> ProviderUsage {
     usage
 }
 
+fn command_code_usage() -> ProviderUsage {
+    let Some(cmd) = resolved("cmd") else {
+        return static_provider("commandcode", "Command Code", "cmd");
+    };
+    let mut usage = static_provider("commandcode", "Command Code", "cmd");
+    usage.source = Some("cmd status".to_owned());
+    let output = match Command::new(cmd).arg("status").output() {
+        Ok(output) => output,
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(format!("No se pudo consultar Command Code: {error}"));
+            return usage;
+        }
+    };
+    let text = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    if text.contains("Not authenticated") {
+        usage.status = "signedOut".to_owned();
+        usage.message = Some("Command Code no está autenticado.".to_owned());
+    } else if text.contains("Authenticated") {
+        usage.status = "unsupported".to_owned();
+        usage.message = Some(
+            "Command Code está autenticado, pero su CLI no expone cuota de suscripción.".to_owned(),
+        );
+    } else {
+        usage.message = Some("Command Code no devolvió un estado reconocible.".to_owned());
+    }
+    usage
+}
+
 pub fn report() -> Vec<ProviderUsage> {
     vec![
         opencode_usage(),
         static_provider("claude", "Claude Code", "claude"),
         antigravity_usage(),
-        static_provider("commandcode", "Command Code", "cmd"),
+        command_code_usage(),
     ]
 }
 
