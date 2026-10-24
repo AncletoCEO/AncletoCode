@@ -1,7 +1,9 @@
-import { useEffect } from "react";
-import { Activity, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, ClipboardPaste, RefreshCw } from "lucide-react";
 import { useUsageStore, type ProviderUsage } from "../stores/usageStore";
 import { cn } from "../ui/cn";
+import CommandCodeUsageDialog from "./CommandCodeUsageDialog";
+import { useCommandCodeUsageStore } from "../stores/commandCodeUsageStore";
 
 const statusLabel: Record<ProviderUsage["status"], string> = {
   ready: "Con datos",
@@ -20,6 +22,8 @@ function compact(value: number): string {
 export default function UsageView() {
   const usage = useUsageStore();
   const load = usage.load;
+  const commandCode = useCommandCodeUsageStore();
+  const [pasteOpen, setPasteOpen] = useState(false);
 
   useEffect(() => {
     void load();
@@ -55,12 +59,92 @@ export default function UsageView() {
             <div className="shell-usage-card-head">
               <div>
                 <strong>{provider.label}</strong>
-                <span>{provider.source ?? "Fuente local"}</span>
+                <span>
+                  {provider.provider === "commandcode" && commandCode.usage
+                    ? "Pegado desde /usage"
+                    : (provider.source ?? "Fuente local")}
+                </span>
               </div>
-              <span className={cn("shell-usage-status", provider.status)}>
-                {statusLabel[provider.status]}
-              </span>
+              {provider.provider === "commandcode" ? (
+                <button
+                  type="button"
+                  className="shell-git-refresh shell-usage-paste-button"
+                  onClick={() => setPasteOpen(true)}
+                >
+                  <ClipboardPaste size={10} /> {commandCode.usage ? "Editar" : "Pegar /usage"}
+                </button>
+              ) : (
+                <span className={cn("shell-usage-status", provider.status)}>
+                  {statusLabel[provider.status]}
+                </span>
+              )}
             </div>
+
+            {provider.provider === "commandcode" && commandCode.usage ? (
+              <div className="shell-usage-manual">
+                <div className="shell-usage-manual-head">
+                  <strong>{commandCode.usage.plan ?? "Command Code"} Plan</strong>
+                  <span>{commandCode.usage.plan ? "activo" : "datos pegados"}</span>
+                </div>
+                {commandCode.usage.monthlyPercent != null ? (
+                  <div className="shell-usage-window">
+                    <div>
+                      <span>Monthly</span>
+                      <strong>{commandCode.usage.monthlyPercent}%</strong>
+                    </div>
+                    <span className="shell-usage-track">
+                      <span
+                        className={cn(
+                          "shell-usage-fill",
+                          commandCode.usage.monthlyPercent >= 80
+                            ? "is-danger"
+                            : commandCode.usage.monthlyPercent >= 60
+                              ? "is-warning"
+                              : "is-ok",
+                        )}
+                        style={{
+                          width: `${Math.min(100, Math.max(0, commandCode.usage.monthlyPercent))}%`,
+                        }}
+                      />
+                    </span>
+                  </div>
+                ) : null}
+                {commandCode.usage.windows.map((window) => (
+                  <div key={window.label} className="shell-usage-window">
+                    <div>
+                      <span>{window.label}</span>
+                      <strong>{window.percent}%</strong>
+                    </div>
+                    <span className="shell-usage-track">
+                      <span
+                        className={cn(
+                          "shell-usage-fill",
+                          window.percent >= 80
+                            ? "is-danger"
+                            : window.percent >= 60
+                              ? "is-warning"
+                              : "is-ok",
+                        )}
+                        style={{ width: `${Math.min(100, Math.max(0, window.percent))}%` }}
+                      />
+                    </span>
+                    {window.reset ? <small>reset {window.reset}</small> : null}
+                  </div>
+                ))}
+                <div className="shell-usage-details">
+                  {commandCode.usage.requests != null ? (
+                    <span>
+                      requests <strong>{commandCode.usage.requests}</strong>
+                    </span>
+                  ) : null}
+                  {commandCode.usage.renewDays != null ? (
+                    <span>
+                      renueva en <strong>{commandCode.usage.renewDays} días</strong>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             {provider.cost != null ? (
               <div className="shell-usage-cost">
@@ -121,9 +205,11 @@ export default function UsageView() {
       </div>
 
       <p className="shell-usage-note">
-        Orca inspira este panel: Antigravity reporta cuotas reales vía `agy -p /usage`; OpenCode
-        reporta tokens y costo local. Claude y Command Code todavía muestran estados explícitos.
+        Antigravity reporta cuotas reales vía `agy -p /usage`; OpenCode reporta tokens y costo
+        local. Command Code no expone cuota headless: podés pegar la salida de `/usage` para verla
+        acá.
       </p>
+      <CommandCodeUsageDialog open={pasteOpen} onOpenChange={setPasteOpen} />
     </div>
   );
 }
