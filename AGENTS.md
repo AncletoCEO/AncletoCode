@@ -101,3 +101,51 @@ los agregue.
 Conventional Commits, en inglés o español pero consistente, con alcance cuando
 aplique (`feat(core):`, `fix(host):`, `docs(compliance):`). Un commit no mezcla
 cambios de compliance con refactors de producto.
+<!-- LOCKED: validation-commands -->
+- **Validaciones antes de cerrar una tarea (declarativas)**: se corre **solo** lo que el proyecto
+  declare en `PRODUCT.md` → `## Project Commands`, usando el comando que el proyecto declaró. Si un
+  comando **no está declarado**, esa validación se **saltea y se registra la omisión**; **nunca se
+  inventa** ni se asume un runner, linter, formatter o typechecker.
+  - **Format check**: corre solo si el proyecto declara un formatter; si no lo declara, se reporta
+    `not-configured` (no es un fallo).
+  - **Tests**: por el comando declarado (p. ej. `npm test`) o con **rutas explícitas**; **nunca**
+    `node --test` sin acotar, que descubre archivos fuera de la suite declarada.
+<!-- /LOCKED: validation-commands -->
+
+<!-- LOCKED: memory-boundary -->
+### Frontera: memoria del repo vs memoria del agente
+
+Hay **dos memorias distintas** y no se mezclan:
+
+| Memoria | Qué guarda | Dónde vive | Herramientas |
+|---|---|---|---|
+| **Del repositorio** | Reglas y decisiones **del proyecto**: convenciones, contratos, por qué se eligió algo | `.ancleto/memory.db` (versionable con el equipo) | `searchMemory`, `recordRule`, `recordDecision` |
+| **Del agente** (si está habilitada) | Notas **de sesión/agente**: observaciones transitorias, contexto entre compactaciones | Servicio externo del agente | Las de ese servicio (p. ej. engram) |
+
+Regla: **una entrada vive en una sola memoria, nunca en ambas.** Si es una decisión o regla
+que un futuro agente del equipo debería encontrar → memoria del repo. Si es una nota personal
+de la sesión → memoria del agente. Ante la duda, va al repo: es la que sobrevive al repo y se
+comparte.
+<!-- /LOCKED: memory-boundary -->
+
+<!-- LOCKED: artifacts-language -->
+- **Idioma de los artifacts**: el contenido de `proposal.md`, `design.md`, `tasks.md` y `specs/` se escribe
+  en el idioma de la conversación con el usuario (o en el `language` configurado en `.ancletorc`).
+  Los keywords (`Requirement`, `Scenario`, `SHALL`, `WHEN`/`THEN`/`AND`, `ADDED/MODIFIED/REMOVED/RENAMED
+  Requirements`) y los nombres de archivos y directorios son literales en inglés y **no se traducen**.
+<!-- /LOCKED: artifacts-language -->
+
+<!-- LOCKED: seed-freshness -->
+### Frescura del technical seed al cerrar un change
+
+Al archivar un change, verificá la frescura del seed antes de cerrar: delegá el chequeo read-only del
+estado y, si está `STALE` con `impact: material`, avisá y ofrecé regenerarlo **sólo con aprobación
+explícita** del usuario — nunca de forma automática. Si el estado es `STALE` con `impact: minor`,
+continuá el archive normalmente y anotá la deriva en el resumen. Si el usuario declina, no bloquees:
+continuá y registralo.
+<!-- /LOCKED: seed-freshness -->
+
+<!-- LOCKED: test-block -->
+Contexto gestionado por @ancleto/spec — no editar: se re-aplica en cada actualizacion.
+<!-- /LOCKED: test-block -->
+

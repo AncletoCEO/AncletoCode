@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "root": ".",
+  "outputDir": ".ancleto/writer",
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".git",
+    ".ancleto",
+    "dist",
+    "build",
+    "coverage",
+    "aspec"
+  ],
+  "languages": [
+    "js",
+    "ts",
+    "jsx",
+    "tsx"
+  ],
+  "languagePack": {
+    "enabled": true,
+    "module": "@ancleto/writer-languages"
+  },
+  "unsupported": {
+    "enabled": true,
+    "maxFilesPerLanguage": 50
+  },
+  "maxFileSizeBytes": 1048576,
+  "maxDepth": 32,
+  "followSymlinks": false,
+  "resolve": {
+    "tsconfig": "auto",
+    "extensions": [
+      ".js",
+      ".mjs",
+      ".cjs",
+      ".jsx",
+      ".ts",
+      ".tsx",
+      ".json"
+    ]
+  },
+  "layers": {
+    "enabled": true,
+    "overrides": {}
+  },
+  "communities": {
+    "enabled": true,
+    "maxIterations": 50
+  },
+  "godNodes": {
+    "limit": 20
+  },
+  "bridges": {
+    "limit": 20
+  },
+  "uml": {
+    "maxClasses": 40
+  },
+  "orphans": {
+    "enabled": true,
+    "entrypoints": [],
+    "exclude": []
+  },
+  "docs": {
+    "enabled": true,
+    "minCoverage": 0.5
+  },
+  "apiDocs": {
+    "enabled": true
+  },
+  "outputReadme": {
+    "enabled": true
+  },
+  "lint": {
+    "cycles": true,
+    "layerViolations": true,
+    "unresolved": true,
+    "maxBlastRadius": null,
+    "orphanFiles": false
+  },
+  "impactSeeds": [],
+  "memory": {
+    "enabled": true,
+    "path": ".ancleto/memory.db",
+    "scope": "project"
+  },
+  "agentDocs": true
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "ancleto-memory": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "/usr/bin/node",
+        "/home/tendoucurien/.npm-global/lib/node_modules/@ancleto/spec/src/cli/index.js",
+        "mcp"
+      ]
+    },
+    "caveman": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "/home/tendoucurien/.caveman/bin/caveman-mcp"
+      ]
+    }
+  }
+}

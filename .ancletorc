@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "version": "0.14.0",
+  "installedAt": "2026-10-23T20:32:32.767Z",
+  "installedPaths": {
+    "templates": [
+      "AGENTS.md",
+      "PRODUCT.md"
+    ],
+    "agents": [
+      ".opencode/agents"
+    ],
+    "commands": [
+      ".opencode/commands"
+    ],
+    "skills": [
+      ".opencode/skills"
+    ]
+  },
+  "azure": {
+    "enabled": false
+  },
+  "discovery": {
+    "outputDir": "docs/technical-discovery",
+    "exclude": []
+  },
+  "agent": "opencode",
+  "language": "auto",
+  "profile": "general"
+}
