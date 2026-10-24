@@ -2402,6 +2402,48 @@
   font-size: 11px;
 }
 
+.shell-usage-freshness {
+  display: block;
+  margin-top: 3px;
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.shell-usage-skeleton-line {
+  display: block;
+  height: 10px;
+  margin-top: 16px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--bg-panel-rgb) / 70%),
+    rgb(var(--bg-panel-rgb) / 30%),
+    rgb(var(--bg-panel-rgb) / 70%)
+  );
+  background-size: 200% 100%;
+  animation: shell-usage-pulse 1.4s ease-in-out infinite;
+}
+
+.shell-usage-skeleton-line.is-short {
+  width: 55%;
+  margin-top: 8px;
+}
+
+@keyframes shell-usage-pulse {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-usage-skeleton-line {
+    animation: none;
+  }
+}
+
 .shell-usage-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -3093,75 +3135,4 @@
 .conversation-permission small {
   color: var(--danger);
   font-size: 8px;
-}
-
-.shell-usage-paste-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--shell-accent) !important;
-  border-color: color-mix(in srgb, var(--shell-accent) 40%, var(--border)) !important;
-}
-
-.shell-usage-manual {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 12px;
-}
-
-.shell-usage-manual-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.shell-usage-manual-head strong {
-  font-size: 12px;
-}
-
-.shell-usage-manual-head span {
-  color: var(--fg-muted);
-  font-size: 9px;
-}
-
-.shell-usage-paste-dialog {
-  position: fixed;
-  z-index: 71;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(720px, calc(100vw - 32px));
-  max-height: min(760px, calc(100vh - 48px));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: rgb(var(--bg-panel-rgb) / 98%);
-  box-shadow: 0 30px 90px rgb(0 0 0 / 48%);
-}
-
-.shell-usage-paste-body {
-  padding: 14px 16px;
-}
-
-.shell-usage-paste-body textarea {
-  width: 100%;
-  min-height: 260px;
-  resize: vertical;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgb(var(--bg-base-rgb) / 55%);
-  color: var(--fg);
-  padding: 9px;
-  outline: 0;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px;
-  line-height: 1.5;
-}
-
-.shell-usage-paste-body textarea:focus {
-  border-color: var(--shell-accent);
 }

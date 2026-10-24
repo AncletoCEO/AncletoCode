@@ -17,6 +17,11 @@ describe("markdown", () => {
     expect(html).toContain("<strong>ok</strong>");
   });
 
+  it("tipografía matemática sin cargar estilos en el arranque", async () => {
+    const html = await markdownHtml("$x^2$");
+    expect(html).toContain("katex");
+  });
+
   it("degrada a texto escapado ante fallas del parser", async () => {
     const html = await markdownHtml("<b>texto</b>");
     expect(html).toContain("texto");

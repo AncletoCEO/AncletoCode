@@ -1,4 +1,11 @@
-import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { titleForDate } from "../lib/window-title";
 import {
@@ -12,12 +19,7 @@ import {
 } from "lucide-react";
 import AboutDialog from "../components/AboutDialog";
 import AgentTabs from "../components/AgentTabs";
-import AppearancePanel from "../components/AppearancePanel";
-import ConversationPanel from "../components/ConversationPanel";
 import ProjectTabs from "../components/ProjectTabs";
-import SpecPanel from "../components/SpecPanel";
-import TerminalView from "../components/TerminalView";
-import WriterPanel from "../components/WriterPanel";
 import { defaultShell } from "../lib/shell";
 import {
   addProject,
@@ -46,13 +48,19 @@ import Composer from "./Composer";
 import Inspector from "./Inspector";
 import Sidebar from "./Sidebar";
 import SettingsDialog from "./SettingsDialog";
-import TasksView from "./TasksView";
 import UpdatesBanner from "./UpdatesBanner";
 import UsageView from "./UsageView";
 import TopBar from "./TopBar";
 import { useShellPreferences } from "./preferences";
 import { useUpdatesStore } from "../stores/updatesStore";
 import type { InspectorTab, ShellView } from "./types";
+
+const AppearancePanel = lazy(() => import("../components/AppearancePanel"));
+const ConversationPanel = lazy(() => import("../components/ConversationPanel"));
+const SpecPanel = lazy(() => import("../components/SpecPanel"));
+const TerminalView = lazy(() => import("../components/TerminalView"));
+const WriterPanel = lazy(() => import("../components/WriterPanel"));
+const TasksView = lazy(() => import("./TasksView"));
 
 export default function DesktopShell() {
   const projects = useSyncExternalStore(subscribeProjects, getProjects);
@@ -79,7 +87,24 @@ export default function DesktopShell() {
   useEffect(() => {
     void restoreSessions();
     void loadDrivers();
-    void checkUpdates();
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) {
+        void checkUpdates();
+      }
+    };
+    const handle =
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback(run, { timeout: 2000 })
+        : window.setTimeout(run, 0);
+    return () => {
+      cancelled = true;
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(handle);
+      } else {
+        window.clearTimeout(handle);
+      }
+    };
   }, [checkUpdates]);
 
   useEffect(() => {
@@ -196,135 +221,137 @@ export default function DesktopShell() {
 
         <div className="app-body">
           <section className="workspace-column">
-            {view === "workspace" ? (
-              project ? (
-                <div className="shell-thread">
-                  <div className="shell-tabs">
-                    <ProjectTabs />
-                    <AgentTabs project={project} />
-                    <div className="shell-thread-tools">
-                      <button
-                        type="button"
-                        className="shell-tool-button"
-                        onClick={() => openAux("spec")}
-                      >
-                        <ListTodo size={13} />
-                        Spec
-                      </button>
-                      <button
-                        type="button"
-                        className="shell-tool-button"
-                        onClick={() => openAux("writer")}
-                      >
-                        <BookOpen size={13} />
-                        Writer
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="shell-thread-scroll">
-                    {session ? (
-                      <div className="shell-terminal-host">
-                        <TerminalView key={session.id} sessionId={session.id} />
+            <Suspense fallback={<ViewFallback />}>
+              {view === "workspace" ? (
+                project ? (
+                  <div className="shell-thread">
+                    <div className="shell-tabs">
+                      <ProjectTabs />
+                      <AgentTabs project={project} />
+                      <div className="shell-thread-tools">
+                        <button
+                          type="button"
+                          className="shell-tool-button"
+                          onClick={() => openAux("spec")}
+                        >
+                          <ListTodo size={13} />
+                          Spec
+                        </button>
+                        <button
+                          type="button"
+                          className="shell-tool-button"
+                          onClick={() => openAux("writer")}
+                        >
+                          <BookOpen size={13} />
+                          Writer
+                        </button>
                       </div>
-                    ) : (
-                      <WelcomeEmpty
-                        projectName={project.name}
-                        onNewSession={() => void createSession("shell")}
-                        onOpenSpec={() => openAux("spec")}
-                        onOpenPalette={() => setPaletteOpen(true)}
-                      />
-                    )}
-                  </div>
+                    </div>
 
-                  <Composer session={session} onNewSession={() => void createSession("shell")} />
-                </div>
-              ) : (
-                <WelcomeProject
-                  onAdd={() => void addProjectFromPrompt()}
-                  onPalette={() => setPaletteOpen(true)}
-                />
-              )
-            ) : view === "conversation" ? (
-              project ? (
-                <ConversationPanel project={project} />
-              ) : (
-                <div className="shell-feature-view">
-                  <div className="shell-empty shell-empty-thread">
-                    <div className="shell-welcome-icon">
-                      <MessagesSquare size={22} />
+                    <div className="shell-thread-scroll">
+                      {session ? (
+                        <div className="shell-terminal-host">
+                          <TerminalView key={session.id} sessionId={session.id} />
+                        </div>
+                      ) : (
+                        <WelcomeEmpty
+                          projectName={project.name}
+                          onNewSession={() => void createSession("shell")}
+                          onOpenSpec={() => openAux("spec")}
+                          onOpenPalette={() => setPaletteOpen(true)}
+                        />
+                      )}
                     </div>
-                    <strong>Elegí un proyecto</strong>
-                    <p>La conversación necesita dos sesiones del mismo proyecto.</p>
+
+                    <Composer session={session} onNewSession={() => void createSession("shell")} />
                   </div>
-                </div>
-              )
-            ) : view === "usage" ? (
-              <UsageView />
-            ) : view === "knowledge" ? (
-              <AuxView
-                title={auxPanel === "spec" ? "Spec" : "Conocimiento"}
-                description={
-                  auxPanel === "spec"
-                    ? "Estado del SDD, discovery y memoria del proyecto."
-                    : "Grafo, hotspots y documentos del proyecto."
-                }
-                icon={auxPanel === "spec" ? <ListTodo size={20} /> : <BookOpen size={20} />}
-                onBack={() => setView("workspace")}
-              >
-                {project ? (
-                  <>
-                    <div className="shell-aux-switch">
-                      <button
-                        type="button"
-                        className={cn(auxPanel === "spec" && "is-active")}
-                        onClick={() => setAuxPanel("spec")}
-                      >
-                        Spec
-                      </button>
-                      <button
-                        type="button"
-                        className={cn(auxPanel === "writer" && "is-active")}
-                        onClick={() => setAuxPanel("writer")}
-                      >
-                        Writer
-                      </button>
+                ) : (
+                  <WelcomeProject
+                    onAdd={() => void addProjectFromPrompt()}
+                    onPalette={() => setPaletteOpen(true)}
+                  />
+                )
+              ) : view === "conversation" ? (
+                project ? (
+                  <ConversationPanel project={project} />
+                ) : (
+                  <div className="shell-feature-view">
+                    <div className="shell-empty shell-empty-thread">
+                      <div className="shell-welcome-icon">
+                        <MessagesSquare size={22} />
+                      </div>
+                      <strong>Elegí un proyecto</strong>
+                      <p>La conversación necesita dos sesiones del mismo proyecto.</p>
                     </div>
-                    {auxPanel === "spec" ? (
-                      <SpecPanel projectId={project.id} />
-                    ) : (
-                      <WriterPanel projectId={project.id} />
-                    )}
-                  </>
-                ) : (
-                  <p className="shell-muted">Seleccioná un proyecto.</p>
-                )}
-              </AuxView>
-            ) : view === "appearance" ? (
-              <AuxView
-                title="Apariencia"
-                description="Temas, fondos, transparencia y contraste."
-                icon={<Sparkles size={20} />}
-                onBack={() => setView("workspace")}
-              >
-                {project ? (
-                  <AppearancePanel projectId={project.id} />
-                ) : (
-                  <p className="shell-muted">
-                    Seleccioná un proyecto para usar la apariencia avanzada.
-                  </p>
-                )}
-              </AuxView>
-            ) : view === "tasks" ? (
-              <TasksView project={project} />
-            ) : (
-              <FeatureView
-                icon={<GitBranch size={22} />}
-                title="Git en preparación"
-                description="Ramas, worktrees, diffs y PRs se están diseñando sobre el nuevo shell."
-                onBack={() => setView("workspace")}
-              />
-            )}
+                  </div>
+                )
+              ) : view === "usage" ? (
+                <UsageView />
+              ) : view === "knowledge" ? (
+                <AuxView
+                  title={auxPanel === "spec" ? "Spec" : "Conocimiento"}
+                  description={
+                    auxPanel === "spec"
+                      ? "Estado del SDD, discovery y memoria del proyecto."
+                      : "Grafo, hotspots y documentos del proyecto."
+                  }
+                  icon={auxPanel === "spec" ? <ListTodo size={20} /> : <BookOpen size={20} />}
+                  onBack={() => setView("workspace")}
+                >
+                  {project ? (
+                    <>
+                      <div className="shell-aux-switch">
+                        <button
+                          type="button"
+                          className={cn(auxPanel === "spec" && "is-active")}
+                          onClick={() => setAuxPanel("spec")}
+                        >
+                          Spec
+                        </button>
+                        <button
+                          type="button"
+                          className={cn(auxPanel === "writer" && "is-active")}
+                          onClick={() => setAuxPanel("writer")}
+                        >
+                          Writer
+                        </button>
+                      </div>
+                      {auxPanel === "spec" ? (
+                        <SpecPanel projectId={project.id} />
+                      ) : (
+                        <WriterPanel projectId={project.id} />
+                      )}
+                    </>
+                  ) : (
+                    <p className="shell-muted">Seleccioná un proyecto.</p>
+                  )}
+                </AuxView>
+              ) : view === "appearance" ? (
+                <AuxView
+                  title="Apariencia"
+                  description="Temas, fondos, transparencia y contraste."
+                  icon={<Sparkles size={20} />}
+                  onBack={() => setView("workspace")}
+                >
+                  {project ? (
+                    <AppearancePanel projectId={project.id} />
+                  ) : (
+                    <p className="shell-muted">
+                      Seleccioná un proyecto para usar la apariencia avanzada.
+                    </p>
+                  )}
+                </AuxView>
+              ) : view === "tasks" ? (
+                <TasksView project={project} />
+              ) : (
+                <FeatureView
+                  icon={<GitBranch size={22} />}
+                  title="Git en preparación"
+                  description="Ramas, worktrees, diffs y PRs se están diseñando sobre el nuevo shell."
+                  onBack={() => setView("workspace")}
+                />
+              )}
+            </Suspense>
           </section>
 
           {preferences.inspectorOpen ? (
@@ -362,6 +389,16 @@ export default function DesktopShell() {
       />
       {aboutOpen ? <AboutDialog onClose={() => setAboutOpen(false)} /> : null}
     </main>
+  );
+}
+
+function ViewFallback() {
+  return (
+    <div className="shell-feature-view">
+      <div className="shell-empty shell-empty-thread">
+        <p>Cargando vista…</p>
+      </div>
+    </div>
   );
 }
 

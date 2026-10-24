@@ -1,4 +1,5 @@
 import DOMPurify from "dompurify";
+import { ensureMathStyles } from "./math-styles";
 import {
   parseMarkdown,
   renderMarkdown,
@@ -33,6 +34,7 @@ export async function markdownHtml(value: string): Promise<string> {
     FORBID_ATTR: ["style", "id", "name"],
   });
   try {
+    await ensureMathStyles();
     return await typesetMath(safe);
   } catch {
     return safe;

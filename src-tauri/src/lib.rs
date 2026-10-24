@@ -132,7 +132,12 @@ pub fn run() {
             let service = ProjectService::open(&database)?;
             let settings_store = Store::open(&database)?;
             let drivers = DriverRegistry::from_store(&settings_store);
+            let usage = Arc::new(usage::UsageService::new(
+                &config_directory,
+                usage::default_providers(),
+            ));
             let paths = HostPaths::discover(None);
+            let host_started = std::time::Instant::now();
             let (host, sessions): (Option<Arc<HostClient>>, Arc<dyn SessionBackend>) =
                 match HostClient::connect_or_start(&paths, &database) {
                     Ok(client) => {
@@ -148,6 +153,13 @@ pub fn run() {
                         (None, Arc::new(manager))
                     }
                 };
+            let host_elapsed = host_started.elapsed();
+            if host_elapsed > std::time::Duration::from_millis(150) {
+                eprintln!(
+                    "ancleto-code: el host tardó {} ms en conectar; evaluar inicialización perezosa",
+                    host_elapsed.as_millis()
+                );
+            }
             let handle = app.handle().clone();
             let sink: ancleto_code_core::orch::ConversationSink = Arc::new(move |event| {
                 let result = match event {
@@ -190,11 +202,12 @@ pub fn run() {
                 Some(sink),
             );
             app.manage(AppState {
-                projects: Mutex::new(service),
+                projects: Arc::new(Mutex::new(service)),
                 sessions,
                 host,
                 drivers,
                 orchestrator,
+                usage,
                 config_dir: config_directory,
                 resource_dir: resource_directory,
             });

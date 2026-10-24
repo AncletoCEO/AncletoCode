@@ -65,6 +65,11 @@ entran si su licencia permite redistribución, con origen y licencia registrados
   ni de AncletoCMD.
 - TypeScript: modo `strict`; sin `any` implícito. Prettier y ESLint se ejecutan
   antes del commit.
+- Comandos IPC: todo `#[tauri::command]` que inicie procesos, use red o haga IO de
+  disco sobre N archivos es `async` y ejecuta el cuerpo bloqueante en
+  `tauri::async_runtime::spawn_blocking`; los locks no se sostienen a través de un
+  `await`. Las excepciones se justifican en `docs/performance.md` y las verifica
+  `npm run check:commands`.
 - Reglas de negocio en el núcleo compartido. La app, AncletoCMD y la CLI son
   consumidores delgados.
 - El PTY es la fuente de verdad de las sesiones; el parseo nunca bloquea la

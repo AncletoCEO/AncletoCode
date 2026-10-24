@@ -1,49 +1,96 @@
+use std::io::Read;
 use std::path::PathBuf;
-use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant};
 
 use ancleto_code_core::drivers::resolve_binary;
 
+use super::{now_secs, ProviderUsage, UsageMetric, UsageWindow};
+
 const OPENCODE_GO_USAGE_URL: &str = "https://opencode.ai/zen/go/v1/usage";
+const COMMAND_CODE_API_URL: &str = "https://api.commandcode.ai";
+const HTTP_TIMEOUT: Duration = Duration::from_secs(5);
+const PROCESS_TIMEOUT: Duration = Duration::from_secs(14);
 
-use serde::Serialize;
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UsageMetric {
-    pub label: String,
-    pub value: String,
+pub trait UsageProvider: Send + Sync {
+    fn id(&self) -> &'static str;
+    fn label(&self) -> &'static str {
+        self.id()
+    }
+    fn collect(&self) -> ProviderUsage;
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UsageWindow {
-    pub label: String,
-    pub used_percent: f64,
-    pub resets_at: Option<String>,
+pub fn default_providers() -> Vec<Box<dyn UsageProvider>> {
+    vec![
+        Box::new(OpencodeProvider),
+        Box::new(ClaudeProvider),
+        Box::new(AntigravityProvider),
+        Box::new(CommandCodeProvider),
+    ]
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProviderUsage {
-    pub provider: String,
-    pub label: String,
-    pub status: String,
-    pub message: Option<String>,
-    pub source: Option<String>,
-    pub cost: Option<f64>,
-    pub tokens: Option<u64>,
-    pub sessions: Option<u64>,
-    pub details: Vec<UsageMetric>,
-    pub windows: Vec<UsageWindow>,
-    pub checked_at: u64,
+pub struct OpencodeProvider;
+
+impl UsageProvider for OpencodeProvider {
+    fn id(&self) -> &'static str {
+        "opencode"
+    }
+
+    fn label(&self) -> &'static str {
+        "OpenCode"
+    }
+
+    fn collect(&self) -> ProviderUsage {
+        opencode_usage()
+    }
 }
 
-fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or_default()
+pub struct ClaudeProvider;
+
+impl UsageProvider for ClaudeProvider {
+    fn id(&self) -> &'static str {
+        "claude"
+    }
+
+    fn label(&self) -> &'static str {
+        "Claude Code"
+    }
+
+    fn collect(&self) -> ProviderUsage {
+        static_provider("claude", "Claude Code", "claude")
+    }
+}
+
+pub struct AntigravityProvider;
+
+impl UsageProvider for AntigravityProvider {
+    fn id(&self) -> &'static str {
+        "antigravity"
+    }
+
+    fn label(&self) -> &'static str {
+        "Antigravity"
+    }
+
+    fn collect(&self) -> ProviderUsage {
+        antigravity_usage()
+    }
+}
+
+pub struct CommandCodeProvider;
+
+impl UsageProvider for CommandCodeProvider {
+    fn id(&self) -> &'static str {
+        "commandcode"
+    }
+
+    fn label(&self) -> &'static str {
+        "Command Code"
+    }
+
+    fn collect(&self) -> ProviderUsage {
+        command_code_usage()
+    }
 }
 
 fn resolved(binary: &str) -> Option<PathBuf> {
@@ -71,6 +118,227 @@ fn field<'a>(text: &'a str, label: &str) -> Option<&'a str> {
         let rest = line.strip_prefix(label)?;
         (!rest.trim().is_empty()).then_some(rest.trim())
     })
+}
+
+fn read_all(mut stream: Option<impl Read>) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    if let Some(stream) = stream.as_mut() {
+        let _ = stream.read_to_end(&mut buffer);
+    }
+    buffer
+}
+
+pub(crate) fn run_with_timeout(mut command: Command, timeout: Duration) -> Result<Output, String> {
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("no se pudo ejecutar el comando: {error}"))?;
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let stdout_reader = std::thread::spawn(move || read_all(stdout));
+    let stderr_reader = std::thread::spawn(move || read_all(stderr));
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err(format!(
+                    "excedió el tiempo límite de {} s",
+                    timeout.as_secs()
+                ));
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(20)),
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(error.to_string());
+            }
+        }
+    };
+    Ok(Output {
+        status,
+        stdout: stdout_reader.join().unwrap_or_default(),
+        stderr: stderr_reader.join().unwrap_or_default(),
+    })
+}
+
+fn command_code_auth_key() -> Option<String> {
+    if let Ok(key) = std::env::var("COMMAND_CODE_API_KEY") {
+        if !key.trim().is_empty() {
+            return Some(key);
+        }
+    }
+    let mut candidates = Vec::new();
+    if let Some(home) = std::env::var_os("HOME") {
+        candidates.push(PathBuf::from(home).join(".commandcode/auth.json"));
+    }
+    if cfg!(windows) {
+        if let Some(profile) = std::env::var_os("USERPROFILE") {
+            candidates.push(PathBuf::from(profile).join(".commandcode/auth.json"));
+        }
+    }
+    for path in candidates {
+        let Ok(text) = std::fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
+        if let Some(key) = value
+            .get("apiKey")
+            .and_then(|key| key.as_str())
+            .filter(|key| !key.trim().is_empty())
+        {
+            return Some(key.to_owned());
+        }
+    }
+    None
+}
+
+fn command_code_get(
+    client: &reqwest::blocking::Client,
+    key: &str,
+    endpoint: &str,
+) -> Result<serde_json::Value, String> {
+    let response = client
+        .get(format!("{COMMAND_CODE_API_URL}{endpoint}"))
+        .header("Authorization", format!("Bearer {key}"))
+        .header("Accept", "application/json")
+        .send()
+        .map_err(|_| "No se pudo consultar la API de Command Code.".to_owned())?;
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+        return Err("HTTP 401".to_owned());
+    }
+    if !response.status().is_success() {
+        return Err(format!("Command Code API respondió {}.", response.status()));
+    }
+    response
+        .json::<serde_json::Value>()
+        .map_err(|_| "Respuesta inválida de Command Code API.".to_owned())
+}
+
+fn command_code_usage() -> ProviderUsage {
+    let mut usage = static_provider("commandcode", "Command Code", "cmd");
+    let Some(key) = command_code_auth_key() else {
+        usage.status = "signedOut".to_owned();
+        usage.message = Some("Command Code no tiene una API key guardada.".to_owned());
+        return usage;
+    };
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(HTTP_TIMEOUT)
+        .build()
+    {
+        Ok(client) => client,
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(error.to_string());
+            return usage;
+        }
+    };
+    let credits = match command_code_get(&client, &key, "/alpha/billing/credits") {
+        Ok(value) => value,
+        Err(error) if error == "HTTP 401" => {
+            usage.status = "signedOut".to_owned();
+            usage.message = Some("La API key de Command Code no es válida.".to_owned());
+            return usage;
+        }
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(error);
+            return usage;
+        }
+    };
+    let subscription = command_code_get(&client, &key, "/alpha/billing/subscriptions").ok();
+    let summary = command_code_get(&client, &key, "/alpha/usage/summary").ok();
+    usage.source = Some("Command Code API".to_owned());
+
+    if let Some(limits) = credits.get("windowLimits") {
+        for (key, label) in [("fiveHour", "5-hour"), ("weekly", "Weekly")] {
+            let Some(window) = limits.get(key) else {
+                continue;
+            };
+            let used = window.get("used").and_then(|value| value.as_f64());
+            let cap = window.get("cap").and_then(|value| value.as_f64());
+            if let (Some(used), Some(cap)) = (used, cap) {
+                if cap > 0.0 {
+                    usage.windows.push(UsageWindow {
+                        label: label.to_owned(),
+                        used_percent: (used / cap * 100.0).clamp(0.0, 100.0),
+                        resets_at: window
+                            .get("resetAt")
+                            .and_then(|value| value.as_u64())
+                            .map(|value| value.to_string()),
+                    });
+                }
+            }
+        }
+    }
+    let total_cost = summary
+        .as_ref()
+        .and_then(|value| value.get("totalCost"))
+        .and_then(|value| value.as_f64());
+    let remaining = credits
+        .get("credits")
+        .and_then(|value| value.get("monthlyCredits"))
+        .and_then(|value| value.as_f64());
+    if let (Some(used), Some(remaining)) = (total_cost, remaining) {
+        let cap = used + remaining.max(0.0);
+        if cap > 0.0 {
+            usage.windows.push(UsageWindow {
+                label: "Monthly".to_owned(),
+                used_percent: (used / cap * 100.0).clamp(0.0, 100.0),
+                resets_at: subscription
+                    .as_ref()
+                    .and_then(|value| value.pointer("/data/currentPeriodEnd"))
+                    .and_then(|value| value.as_str())
+                    .map(str::to_owned),
+            });
+            usage.details.push(UsageMetric {
+                label: "Gasto".to_owned(),
+                value: format!("${used:.2} / ${cap:.2}"),
+            });
+        }
+    }
+    if let Some(plan_id) = subscription
+        .as_ref()
+        .and_then(|value| value.pointer("/data/planId"))
+        .and_then(|value| value.as_str())
+    {
+        let plan = plan_id
+            .rsplit('-')
+            .next()
+            .unwrap_or(plan_id)
+            .to_ascii_uppercase();
+        usage.details.insert(
+            0,
+            UsageMetric {
+                label: "Plan".to_owned(),
+                value: format!("{plan} Plan"),
+            },
+        );
+    }
+    if let Some(total) = summary
+        .as_ref()
+        .and_then(|value| value.get("totalCount"))
+        .and_then(|value| value.as_u64())
+    {
+        usage.details.push(UsageMetric {
+            label: "Requests este mes".to_owned(),
+            value: total.to_string(),
+        });
+    }
+    if usage.windows.is_empty() {
+        usage.status = "error".to_owned();
+        usage.message = Some("Command Code no devolvió límites de uso.".to_owned());
+    } else {
+        usage.status = "ready".to_owned();
+        usage.message = None;
+    }
+    usage
 }
 
 fn opencode_auth_key() -> Option<String> {
@@ -113,7 +381,7 @@ fn opencode_quota() -> (Vec<UsageWindow>, Option<String>) {
         return (Vec::new(), None);
     };
     let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
+        .timeout(HTTP_TIMEOUT)
         .build()
     {
         Ok(client) => client,
@@ -186,17 +454,20 @@ fn opencode_usage() -> ProviderUsage {
         sessions: None,
         details: Vec::new(),
         windows: Vec::new(),
-        checked_at: now(),
+        checked_at: now_secs(),
+        duration_ms: None,
     };
     let Some(opencode) = resolved("opencode") else {
         usage.status = "unavailable".to_owned();
         usage.message = Some("OpenCode no está instalado.".to_owned());
         return usage;
     };
-    let stats_error = match Command::new(opencode)
-        .args(["stats", "--days", "30"])
-        .output()
-    {
+    let stats = {
+        let mut command = Command::new(opencode);
+        command.args(["stats", "--days", "30"]);
+        run_with_timeout(command, PROCESS_TIMEOUT)
+    };
+    let stats_error = match stats {
         Ok(output) if output.status.success() => {
             let text = String::from_utf8_lossy(&output.stdout);
             usage.cost = field(&text, "Total Cost").and_then(|value| {
@@ -243,7 +514,7 @@ fn opencode_usage() -> ProviderUsage {
             None
         }
         Ok(output) => Some(String::from_utf8_lossy(&output.stderr).trim().to_owned()),
-        Err(error) => Some(error.to_string()),
+        Err(error) => Some(error),
     };
     let (windows, quota_error) = opencode_quota();
     usage.windows = windows;
@@ -281,7 +552,8 @@ fn static_provider(provider: &str, label: &str, binary: &str) -> ProviderUsage {
         sessions: None,
         details: Vec::new(),
         windows: Vec::new(),
-        checked_at: now(),
+        checked_at: now_secs(),
+        duration_ms: None,
     }
 }
 
@@ -325,21 +597,24 @@ fn antigravity_usage() -> ProviderUsage {
     let Some(agy) = resolved("agy") else {
         return usage;
     };
-    let output = Command::new(agy)
+    let mut command = Command::new(agy);
+    command
         .args([
             "-p",
             "/usage",
             "--output-format",
             "json",
             "--print-timeout",
-            "20s",
+            "12s",
         ])
-        .env("AGY_CLI_DISABLE_AUTO_UPDATE", "true")
-        .output();
-    let Ok(output) = output else {
-        usage.status = "error".to_owned();
-        usage.message = Some("No se pudo ejecutar agy /usage.".to_owned());
-        return usage;
+        .env("AGY_CLI_DISABLE_AUTO_UPDATE", "true");
+    let output = match run_with_timeout(command, PROCESS_TIMEOUT) {
+        Ok(output) => output,
+        Err(error) => {
+            usage.status = "error".to_owned();
+            usage.message = Some(format!("No se pudo ejecutar agy /usage: {error}"));
+            return usage;
+        }
     };
     if !output.status.success() {
         usage.status = "error".to_owned();
@@ -402,48 +677,6 @@ fn antigravity_usage() -> ProviderUsage {
     usage
 }
 
-fn command_code_usage() -> ProviderUsage {
-    let Some(cmd) = resolved("cmd") else {
-        return static_provider("commandcode", "Command Code", "cmd");
-    };
-    let mut usage = static_provider("commandcode", "Command Code", "cmd");
-    usage.source = Some("cmd status".to_owned());
-    let output = match Command::new(cmd).arg("status").output() {
-        Ok(output) => output,
-        Err(error) => {
-            usage.status = "error".to_owned();
-            usage.message = Some(format!("No se pudo consultar Command Code: {error}"));
-            return usage;
-        }
-    };
-    let text = format!(
-        "{}\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    if text.contains("Not authenticated") {
-        usage.status = "signedOut".to_owned();
-        usage.message = Some("Command Code no está autenticado.".to_owned());
-    } else if text.contains("Authenticated") {
-        usage.status = "unsupported".to_owned();
-        usage.message = Some(
-            "Command Code está autenticado, pero su CLI no expone cuota de suscripción.".to_owned(),
-        );
-    } else {
-        usage.message = Some("Command Code no devolvió un estado reconocible.".to_owned());
-    }
-    usage
-}
-
-pub fn report() -> Vec<ProviderUsage> {
-    vec![
-        opencode_usage(),
-        static_provider("claude", "Claude Code", "claude"),
-        antigravity_usage(),
-        command_code_usage(),
-    ]
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -462,5 +695,26 @@ mod tests {
             compact_number(field(text, "Input").expect("input field")),
             Some(44_200_000.0)
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn watchdog_kills_processes_that_exceed_the_budget() {
+        let mut command = Command::new("sh");
+        command.args(["-c", "sleep 5"]);
+        let started = Instant::now();
+        let result = run_with_timeout(command, Duration::from_millis(150));
+        assert!(result.is_err());
+        assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn watchdog_returns_output_of_fast_processes() {
+        let mut command = Command::new("sh");
+        command.args(["-c", "printf hola"]);
+        let output = run_with_timeout(command, Duration::from_secs(5)).expect("output");
+        assert!(output.status.success());
+        assert_eq!(String::from_utf8_lossy(&output.stdout), "hola");
     }
 }
