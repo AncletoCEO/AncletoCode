@@ -116,6 +116,8 @@ React 19 + Vite + Tailwind/Radix
 ```bash
 npm ci
 npm run prepare:ancleto
+cargo build -p ancleto-code-host
+npm run prepare:host
 npm run tauri dev
 ```
 

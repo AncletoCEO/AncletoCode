@@ -274,6 +274,24 @@ pub fn update(config_dir: &Path, resource_dir: &Path) -> Result<AncletoRuntimeSt
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn repairs_a_broken_node_symlink() {
+        use std::os::unix::fs::symlink;
+
+        let root =
+            std::env::temp_dir().join(format!("ancleto-node-link-test-{}", std::process::id()));
+        let bin = root.join("ancleto/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let node = root.join("embedded-node");
+        std::fs::write(&node, b"node").unwrap();
+        symlink("/tmp/does-not-exist", bin.join("node")).unwrap();
+        expose_node_on_path(&root, &node).unwrap();
+        assert_eq!(std::fs::read_link(bin.join("node")).unwrap(), node);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
     #[test]
     fn reports_the_bundled_package_version() {
         let resource_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

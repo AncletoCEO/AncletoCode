@@ -43,6 +43,8 @@ jobs:
             src-tauri/resources/ancleto
           key: ${{ runner.os }}-ancleto-runtime-${{ hashFiles('scripts/prepare-ancleto-runtime.mjs') }}
       - run: npm run prepare:ancleto
+      - run: cargo build -p ancleto-code-host
+      - run: npm run prepare:host
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets

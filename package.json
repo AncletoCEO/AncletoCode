@@ -30,7 +30,8 @@
     "perf:cmd": "node scripts/perf-cmd.mjs",
     "package:desktop": "node scripts/package-desktop-tarball.mjs",
     "package:aur": "node scripts/package-aur.mjs",
-    "prepare:ancleto": "node scripts/prepare-ancleto-runtime.mjs"
+    "prepare:ancleto": "node scripts/prepare-ancleto-runtime.mjs",
+    "prepare:host": "node scripts/prepare-host-sidecar.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.3.1",

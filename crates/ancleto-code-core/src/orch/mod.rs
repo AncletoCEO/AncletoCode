@@ -22,6 +22,8 @@ const DEFAULT_TURN_BUDGET_MS: u64 = 60_000;
 const MIN_TURN_BUDGET_MS: u64 = 1_000;
 const MAX_TURN_BUDGET_MS: u64 = 600_000;
 const POLL_INTERVAL_MS: u64 = 25;
+
+type ProcessOutput = (Vec<u8>, Vec<u8>, Option<std::process::ExitStatus>);
 const QUIESCENCE_MS: u64 = 400;
 
 pub type ConversationSink = Arc<dyn Fn(ConversationEvent) + Send + Sync>;
@@ -311,12 +313,23 @@ impl Orchestrator {
 
         if capabilities.one_shot_prompt && driver.descriptor().id != "raw" {
             if let Some(spec) = driver.one_shot(&context, prompt) {
-                let (stdout, stderr) = self.run_process(conversation, &spec, &current.cwd)?;
+                let (stdout, stderr, status) =
+                    self.run_process(conversation, &spec, &current.cwd)?;
                 let text = extract_text(driver.as_ref(), &stdout);
-                if text.is_empty() && !stderr.is_empty() {
-                    return Err(TurnError::Failed(
-                        String::from_utf8_lossy(&stderr).trim().to_owned(),
-                    ));
+                let detail = String::from_utf8_lossy(&stderr).trim().to_owned();
+                if !status.map(|status| status.success()).unwrap_or(true) {
+                    return Err(TurnError::Failed(if detail.is_empty() {
+                        "El agente terminó con error sin explicar el motivo.".to_owned()
+                    } else {
+                        detail
+                    }));
+                }
+                if text.is_empty() {
+                    return Err(TurnError::Failed(if detail.is_empty() {
+                        "El agente terminó sin producir una respuesta. Si fue por permisos headless, configurá la regla del CLI o usá una sesión interactiva.".to_owned()
+                    } else {
+                        detail
+                    }));
                 }
                 return Ok((text, TurnMode::OneShot));
             }
@@ -331,7 +344,7 @@ impl Orchestrator {
         conversation: &Conversation,
         spec: &CommandSpec,
         cwd: &str,
-    ) -> std::result::Result<(Vec<u8>, Vec<u8>), TurnError> {
+    ) -> std::result::Result<ProcessOutput, TurnError> {
         let mut child = Command::new(&spec.program)
             .args(&spec.args)
             .current_dir(cwd)
@@ -354,7 +367,7 @@ impl Orchestrator {
         let err_handle = thread::spawn(move || read_all(stderr));
         let deadline = Instant::now() + Duration::from_millis(conversation.turn_budget_ms);
 
-        loop {
+        let exit_status = loop {
             if self.control(&conversation.id) == Control::Aborted {
                 let _ = child.kill();
                 let _ = child.wait();
@@ -362,7 +375,7 @@ impl Orchestrator {
             }
 
             match child.try_wait() {
-                Ok(Some(_)) => break,
+                Ok(Some(status)) => break Some(status),
                 Ok(None) => {}
                 Err(error) => {
                     let _ = child.kill();
@@ -381,11 +394,11 @@ impl Orchestrator {
             }
 
             thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
-        }
+        };
 
         let stdout = out_handle.join().unwrap_or_default();
         let stderr = err_handle.join().unwrap_or_default();
-        Ok((stdout, stderr))
+        Ok((stdout, stderr, exit_status))
     }
 
     fn run_pty(
@@ -752,6 +765,14 @@ mod tests {
         }
     }
 
+    fn silent_driver() -> FakeDriver {
+        FakeDriver {
+            id: "silent".to_owned(),
+            program: "/bin/true".to_owned(),
+            fixed_args: None,
+        }
+    }
+
     fn echo_driver() -> FakeDriver {
         FakeDriver {
             id: "echo".to_owned(),
@@ -870,6 +891,22 @@ mod tests {
         assert_eq!(orchestrator.turns(&conversation.id).unwrap().len(), 3);
 
         sessions.kill_all_sessions().unwrap();
+    }
+
+    #[test]
+    fn fails_fast_when_an_agent_produces_no_output() {
+        let (_directory, orchestrator, _sessions, first, second) = setup(silent_driver());
+        let conversation = orchestrator.start(request(&first, &second, 6)).unwrap();
+        assert!(wait_for_state(
+            &orchestrator,
+            &conversation.id,
+            ConversationState::Failed
+        ));
+        let stored = orchestrator.conversation(&conversation.id).unwrap();
+        assert!(stored
+            .reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("sin producir una respuesta")));
     }
 
     #[test]

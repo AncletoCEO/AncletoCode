@@ -50,6 +50,10 @@ jobs:
           key: ${{ runner.os }}-ancleto-runtime-${{ hashFiles('scripts/prepare-ancleto-runtime.mjs') }}
       - name: Prepare embedded Ancleto runtime
         run: npm run prepare:ancleto
+      - name: Build host sidecar
+        run: cargo build -p ancleto-code-host
+      - name: Prepare host sidecar
+        run: npm run prepare:host
       - name: License and dependency checks
         run: |
           npm run license:check
@@ -80,6 +84,10 @@ jobs:
       - name: Resolve version
         shell: bash
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Build host sidecar
+        run: cargo build --release -p ancleto-code-host
+      - name: Prepare host sidecar
+        run: npm run prepare:host
       - name: Build Linux app (.deb and AppImage)
         run: npm run tauri -- build --bundles deb,appimage
       - name: Collect release assets
@@ -110,6 +118,8 @@ jobs:
         run: echo "VERSION=${RELEASE_VERSION#v}" >> "$GITHUB_ENV"
       - name: Build host for portable sessions
         run: cargo build --release -p ancleto-code-host
+      - name: Prepare host sidecar
+        run: npm run prepare:host
       - name: Build NSIS installer
         run: npm run tauri -- build --bundles nsis
       - name: Build MSI installer
