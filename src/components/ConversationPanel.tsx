@@ -473,6 +473,19 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
               </button>
             </div>
           </div>
+          {conversation.state === "failed" && conversation.reason ? (
+            <div className="conversation-failure" role="alert">
+              <strong>La conversación se detuvo</strong>
+              <p>{conversation.reason}</p>
+              {/permission|allow-rule|headless|permission/i.test(conversation.reason) ? (
+                <small>
+                  El agente intentó usar una herramienta que requiere aprobación y el modo one-shot
+                  no puede pedirla. Configurá la regla de permisos del CLI o usá una sesión
+                  interactiva; AncletoCode no aprueba herramientas automáticamente.
+                </small>
+              ) : null}
+            </div>
+          ) : null}
           <div className="conversation-objective-bar">
             <span>Objetivo</span>
             <p>{conversation.objective}</p>

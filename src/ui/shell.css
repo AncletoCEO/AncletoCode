@@ -3039,3 +3039,32 @@
   border-radius: 50%;
   animation: spec-spin 800ms linear infinite;
 }
+
+.conversation-failure {
+  margin: 9px 12px 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.conversation-failure strong {
+  display: block;
+  color: var(--danger);
+  margin-bottom: 3px;
+}
+
+.conversation-failure p {
+  margin: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.conversation-failure small {
+  display: block;
+  margin-top: 5px;
+  color: var(--fg-muted);
+}

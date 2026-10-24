@@ -159,6 +159,7 @@ fn parse_cmd(text: &str) -> Vec<DriverModel> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -180,6 +181,24 @@ mod tests {
         assert_eq!(humanize_model_id("xiaomi/mimo-v2.6-pro"), "MiMo V2.6 Pro");
         assert_eq!(humanize_model_id("z-ai/glm-5.3-flash"), "GLM 5.3 Flash");
         assert_eq!(humanize_model_id("moonshotai/kimi-k3"), "Kimi K3");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lists_models_from_an_absolute_binary() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let executable = directory.path().join("fake-opencode");
+        std::fs::write(
+            &executable,
+            "#!/bin/sh\nprintf 'opencode/a\\nopencode-go/b\\n'\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let models = list("opencode", executable.to_str().unwrap()).unwrap();
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[1].id, "opencode-go/b");
     }
 
     #[test]

@@ -166,7 +166,12 @@ fn expose_node_on_path(config_dir: &Path, node: &Path) -> Result<(), String> {
     let bin = config_dir.join("ancleto/bin");
     fs::create_dir_all(&bin).map_err(|error| error.to_string())?;
     let target = bin.join(if cfg!(windows) { "node.exe" } else { "node" });
-    if !target.is_file() {
+    let needs_link = match fs::read_link(&target) {
+        Ok(current) => current != node,
+        Err(_) => !target.is_file(),
+    };
+    if needs_link {
+        let _ = fs::remove_file(&target);
         #[cfg(unix)]
         std::os::unix::fs::symlink(node, &target).map_err(|error| error.to_string())?;
         #[cfg(windows)]

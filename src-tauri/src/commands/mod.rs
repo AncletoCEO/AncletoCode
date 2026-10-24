@@ -784,10 +784,10 @@ pub fn driver_models(
 ) -> Result<Vec<ancleto_code_core::DriverModel>, String> {
     let binary = state
         .drivers
-        .descriptors()
+        .detect_all()
         .into_iter()
-        .find(|descriptor| descriptor.id == id)
-        .map(|descriptor| descriptor.binary)
+        .find(|driver| driver.id == id)
+        .map(|driver| driver.binary_path.unwrap_or(driver.binary))
         .ok_or_else(|| "driver desconocido".to_owned())?;
     ancleto_code_core::models::list(&id, &binary).map_err(|error| error.to_string())
 }

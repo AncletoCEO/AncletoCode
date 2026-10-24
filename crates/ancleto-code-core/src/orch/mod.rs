@@ -220,9 +220,13 @@ impl Orchestrator {
                 return;
             }
 
-            let prompt = last_message
-                .clone()
-                .unwrap_or_else(|| conversation.objective.clone());
+            let prompt = conversation_prompt(
+                &conversation,
+                &current,
+                &other,
+                index,
+                last_message.as_deref(),
+            );
             let started = Instant::now();
             let model = if current.id == conversation.session_a {
                 conversation.model_a.as_deref()
@@ -547,6 +551,41 @@ fn extract_text(driver: &dyn AgentDriver, output: &[u8]) -> String {
     text.trim().to_owned()
 }
 
+fn conversation_prompt(
+    conversation: &Conversation,
+    current: &SessionInfo,
+    other: &SessionInfo,
+    index: u32,
+    previous: Option<&str>,
+) -> String {
+    let turn = index + 1;
+    let remaining = conversation.max_turns.saturating_sub(turn);
+    let closing = if remaining == 0 {
+        "Este es el último turno: cerrá con una conclusión clara y accionable.".to_owned()
+    } else {
+        format!("Quedan {remaining} turnos después de este.")
+    };
+    let previous = previous
+        .map(|message| format!("Mensaje anterior de tu interlocutor:\n{message}"))
+        .unwrap_or_else(|| {
+            "Este es el primer turno: abrí la conversación con una propuesta concreta.".to_owned()
+        });
+    format!(
+        "Estás participando en una conversación deliberada entre dos agentes, no en un bucle.\n         Objetivo compartido: {}\n         Vos sos {}; tu interlocutor es {}.\n         Turno {} de {}. {}\n         Respondé al objetivo y al mensaje anterior con un aporte nuevo. No repitas el texto del otro agente ni asumas que la conversación está trabada.\n\n{}",
+        conversation.objective,
+        short_id(&current.id),
+        short_id(&other.id),
+        turn,
+        conversation.max_turns,
+        closing,
+        previous
+    )
+}
+
+fn short_id(id: &str) -> &str {
+    id.get(..8).unwrap_or(id)
+}
+
 fn resolve_program(program: &str, fallback: &str) -> String {
     let candidate = if program.trim().is_empty() {
         fallback
@@ -744,6 +783,44 @@ mod tests {
             thread::sleep(Duration::from_millis(50));
         }
         false
+    }
+
+    #[test]
+    fn conversation_prompt_makes_roles_and_remaining_turns_explicit() {
+        let first = SessionInfo {
+            id: "session-a".to_owned(),
+            project_id: "project".to_owned(),
+            driver_id: "agy".to_owned(),
+            status: crate::session::SessionStatus::Ready,
+            pid: None,
+            cwd: "/tmp".to_owned(),
+            buffer_bytes: 0,
+            program: "agy".to_owned(),
+            args: Vec::new(),
+        };
+        let second = SessionInfo {
+            id: "session-b".to_owned(),
+            ..first.clone()
+        };
+        let conversation = Conversation {
+            id: "c".to_owned(),
+            session_a: first.id.clone(),
+            session_b: second.id.clone(),
+            objective: "decidir el diseño".to_owned(),
+            max_turns: 3,
+            turn_budget_ms: 1000,
+            state: ConversationState::Running,
+            reason: None,
+            created_at: 0,
+            model_a: None,
+            model_b: None,
+        };
+        let prompt =
+            conversation_prompt(&conversation, &first, &second, 2, Some("respuesta previa"));
+        assert!(prompt.contains("Objetivo compartido: decidir el diseño"));
+        assert!(prompt.contains("Turno 3 de 3"));
+        assert!(prompt.contains("último turno"));
+        assert!(prompt.contains("respuesta previa"));
     }
 
     #[test]

@@ -325,6 +325,9 @@ se registra en `docs/provenance.md`.
 - [x] 16.28 Feedback de regeneración de discovery: mensaje de progreso, tiempo transcurrido y salida/errores de repomix visibles en el panel.
 - [x] 16.29 Botón en Ajustes para instalar `@ancleto/writer-languages` bajo demanda y exponerlo a writer vía `NODE_PATH`.
 - [x] 16.30 Indicador de turno en curso en conversación: agente, modelo, turno y tiempo; además de polling y carga inicial de turnos.
+- [x] 16.31 Listado de modelos con `binaryPath` resuelto y test de ejecución absoluta; refresco y error visible.
+- [x] 16.32 Prompt de conversación con objetivo, roles, turno actual, restantes y cierre en el último turno.
+- [x] 16.33 Error de conversación visible con guía para permisos headless y sin autoaprobación.
 - [ ] 16.21 Documentación y rollout: guía de Git/worktrees/providers, feature flags para GitHub/GitLab, y checklist de release desktop-only.
 - [x] 16.22 Chequeo de actualizaciones de la app al iniciar: consulta GitHub Releases, muestra banner no bloqueante y permite buscar desde Ajustes.
 - [ ] 16.23 ([#18](https://github.com/AncletoCEO/AncletoCode/issues/18)) (en progreso: sidecar Node, paquete incluido, update administrado y UI; falta E2E/rollback) Ancleto embebido: runtime Node + `@ancleto/spec` incluidos en la app, actualización administrada desde Ajustes y fallback a la versión incluida.
