@@ -1,8 +1,8 @@
 # Plan de release
 
-## Versión 0.0.6 — desktop-only
+## Versión 0.0.7 — desktop-only
 
-`0.0.6` es un release **interno/beta** para validar la app de escritorio en Linux
+`0.0.7` es un release **interno/beta** para validar la app de escritorio en Linux
 y Windows. El release anterior fue retirado; este es el primero del nuevo
 producto desktop-only.
 
@@ -13,7 +13,7 @@ producto desktop-only.
 | Linux x86_64 | `.deb`, `.AppImage` | Build en Ubuntu 22.04 |
 | Arch/EndeavourOS | AppImage | Probar FUSE y `--appimage-extract-and-run` |
 | Windows x64 | NSIS, MSI, ZIP portable | Build en CI; falta smoke manual |
-| Fuente | `AncletoCode-0.0.6-source.tar.gz` | Generada desde el tag |
+| Fuente | `AncletoCode-0.0.7-source.tar.gz` | Generada desde el tag |
 | Integridad | `SHA256SUMS` | Generado en CI |
 
 Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
@@ -26,7 +26,7 @@ Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
 3. **desktop-windows:** Windows; prepara runtime; construye NSIS/MSI y ZIP
    portable.
 4. **release:** fuente, checksums y GitHub Release con
-   `docs/release-notes/0.0.6.md`.
+   `docs/release-notes/0.0.7.md`.
 5. **Aprobación:** entorno `release` de GitHub.
 
 ## Verificación
