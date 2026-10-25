@@ -65,6 +65,7 @@ pub struct CommandSpec {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgentSignal {
     Text(String),
+    TextDelta(String),
     MessageComplete { text: String },
     Ready,
     Error(String),
@@ -514,42 +515,23 @@ fn parse_chunk(chunk: &[u8], state: &mut ParseState) -> Vec<AgentSignal> {
 
 fn parse_line(line: &str) -> Vec<AgentSignal> {
     let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return Vec::new();
+    }
 
-    if let Ok(Value::Object(object)) = serde_json::from_str::<Value>(trimmed) {
-        if let Some(error) = object.get("error").and_then(Value::as_str) {
-            return vec![AgentSignal::Error(error.to_owned())];
-        }
-
-        if object.get("type").and_then(Value::as_str) == Some("result") {
-            if let Some(result) = object.get("result").and_then(Value::as_str) {
-                return vec![AgentSignal::MessageComplete {
-                    text: result.to_owned(),
-                }];
+    let mut signals = Vec::new();
+    let mut parsed = false;
+    for value in serde_json::Deserializer::from_str(trimmed).into_iter::<Value>() {
+        match value {
+            Ok(value) => {
+                parsed = true;
+                signals.extend(signals_from_value(value));
             }
+            Err(_) => break,
         }
-
-        if let Some(response) = object.get("response").and_then(Value::as_str) {
-            return vec![AgentSignal::MessageComplete {
-                text: response.to_owned(),
-            }];
-        }
-
-        if let Some(result) = object.get("result").and_then(Value::as_str) {
-            return vec![AgentSignal::MessageComplete {
-                text: result.to_owned(),
-            }];
-        }
-
-        if let Some(text) = object
-            .get("delta")
-            .or_else(|| object.get("text"))
-            .or_else(|| object.get("content"))
-            .and_then(Value::as_str)
-        {
-            return vec![AgentSignal::Text(text.to_owned())];
-        }
-
-        return vec![AgentSignal::Text(trimmed.to_owned())];
+    }
+    if parsed {
+        return signals;
     }
 
     if trimmed.eq_ignore_ascii_case("ready") {
@@ -557,6 +539,82 @@ fn parse_line(line: &str) -> Vec<AgentSignal> {
     }
 
     vec![AgentSignal::Text(trimmed.to_owned())]
+}
+
+fn signals_from_value(value: Value) -> Vec<AgentSignal> {
+    let Value::Object(object) = value else {
+        return Vec::new();
+    };
+
+    if let Some(error) = object.get("error").and_then(Value::as_str) {
+        return vec![AgentSignal::Error(error.to_owned())];
+    }
+
+    match object.get("type").and_then(Value::as_str) {
+        Some("event") => object
+            .get("event")
+            .map(signals_from_event)
+            .unwrap_or_default(),
+        Some("result") => object
+            .get("finalText")
+            .or_else(|| object.get("result"))
+            .and_then(Value::as_str)
+            .map(|text| {
+                vec![AgentSignal::MessageComplete {
+                    text: text.to_owned(),
+                }]
+            })
+            .unwrap_or_default(),
+        _ => {
+            if let Some(response) = object.get("response").and_then(Value::as_str) {
+                return vec![AgentSignal::MessageComplete {
+                    text: response.to_owned(),
+                }];
+            }
+            if let Some(result) = object.get("result").and_then(Value::as_str) {
+                return vec![AgentSignal::MessageComplete {
+                    text: result.to_owned(),
+                }];
+            }
+            if let Some(text) = object
+                .get("delta")
+                .or_else(|| object.get("text"))
+                .or_else(|| object.get("content"))
+                .and_then(Value::as_str)
+            {
+                return vec![AgentSignal::Text(text.to_owned())];
+            }
+            vec![AgentSignal::Text(
+                serde_json::to_string(&object).unwrap_or_default(),
+            )]
+        }
+    }
+}
+
+fn signals_from_event(event: &Value) -> Vec<AgentSignal> {
+    match event.get("type").and_then(Value::as_str) {
+        Some("text_delta") => event
+            .get("delta")
+            .and_then(Value::as_str)
+            .map(|delta| vec![AgentSignal::TextDelta(delta.to_owned())])
+            .unwrap_or_default(),
+        Some("run_end") => event
+            .pointer("/result/finalText")
+            .and_then(Value::as_str)
+            .map(|text| {
+                vec![AgentSignal::MessageComplete {
+                    text: text.to_owned(),
+                }]
+            })
+            .unwrap_or_default(),
+        Some("error") => event
+            .get("message")
+            .or_else(|| event.get("error"))
+            .and_then(Value::as_str)
+            .map(|message| vec![AgentSignal::Error(message.to_owned())])
+            .unwrap_or_default(),
+        _ => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -749,5 +807,64 @@ mod tests {
         );
         assert_eq!(missing.status, ToolStatus::Missing);
         assert!(missing.binary_path.is_none());
+    }
+
+    #[test]
+    fn parses_command_code_event_stream_without_raw_json() {
+        let registry = DriverRegistry::new();
+        let driver = registry.resolve("cmd");
+        let mut state = ParseState::default();
+        let stream = concat!(
+            "{\"type\":\"event\",\"event\":{\"type\":\"run_start\",\"sessionId\":\"s\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"thinking_delta\",\"delta\":\"pensando\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"Ho\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"tool_queued\",\"toolName\":\"read_file\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"la\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"run_end\",\"result\":{\"finalText\":\"Hola\"}}}\n",
+            "{\"type\":\"result\",\"subtype\":\"success\",\"finalText\":\"Hola\"}\n",
+        );
+        let signals = driver.parse(stream.as_bytes(), &mut state);
+        assert_eq!(
+            signals,
+            vec![
+                AgentSignal::TextDelta("Ho".to_owned()),
+                AgentSignal::TextDelta("la".to_owned()),
+                AgentSignal::MessageComplete {
+                    text: "Hola".to_owned()
+                },
+                AgentSignal::MessageComplete {
+                    text: "Hola".to_owned()
+                },
+            ]
+        );
+        assert!(!signals
+            .iter()
+            .any(|signal| matches!(signal, AgentSignal::Text(text) if text.contains("\"type\""))));
+    }
+
+    #[test]
+    fn parses_concatenated_json_values_on_a_single_line() {
+        let mut state = ParseState::default();
+        let signals = parse_chunk(
+            b"{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"a\"}} {\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"b\"}}\n",
+            &mut state,
+        );
+        assert_eq!(
+            signals,
+            vec![
+                AgentSignal::TextDelta("a".to_owned()),
+                AgentSignal::TextDelta("b".to_owned()),
+            ]
+        );
+    }
+
+    #[test]
+    fn ignores_unknown_command_code_events_and_maps_errors() {
+        let mut state = ParseState::default();
+        let signals = parse_chunk(
+            b"{\"type\":\"event\",\"event\":{\"type\":\"tool_completed\",\"result\":[{\"type\":\"text\",\"text\":\"ok\"}]}}\n{\"type\":\"event\",\"event\":{\"type\":\"error\",\"message\":\"sin cuota\"}}\n",
+            &mut state,
+        );
+        assert_eq!(signals, vec![AgentSignal::Error("sin cuota".to_owned())]);
     }
 }

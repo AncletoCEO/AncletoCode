@@ -994,6 +994,7 @@ fn extract_text(driver: &dyn ancleto_code_core::AgentDriver, output: &[u8]) -> S
     for signal in driver.parse(&bytes, &mut state) {
         match signal {
             AgentSignal::MessageComplete { text: complete } => text = complete,
+            AgentSignal::TextDelta(chunk) => text.push_str(&chunk),
             AgentSignal::Text(chunk) => {
                 if !text.is_empty() {
                     text.push('\n');

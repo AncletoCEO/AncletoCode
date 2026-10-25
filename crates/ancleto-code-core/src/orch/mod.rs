@@ -557,6 +557,7 @@ fn extract_text(driver: &dyn AgentDriver, output: &[u8]) -> String {
     for signal in driver.parse(&bytes, &mut state) {
         match signal {
             AgentSignal::MessageComplete { text: complete } => text = complete,
+            AgentSignal::TextDelta(chunk) => text.push_str(&chunk),
             AgentSignal::Text(chunk) => {
                 if !text.is_empty() {
                     text.push('\n');
@@ -1015,5 +1016,29 @@ mod tests {
         assert!(matches!(same, CoreError::InvalidInput(_)));
 
         sessions.kill_all_sessions().unwrap();
+    }
+
+    #[test]
+    fn extract_text_uses_the_command_code_final_result() {
+        let registry = crate::drivers::DriverRegistry::new();
+        let driver = registry.resolve("cmd");
+        let output = concat!(
+            "{\"type\":\"event\",\"event\":{\"type\":\"thinking_delta\",\"delta\":\"pensando\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"Ho\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"la\"}}\n",
+            "{\"type\":\"result\",\"subtype\":\"success\",\"finalText\":\"Hola\"}\n",
+        );
+        assert_eq!(extract_text(driver.as_ref(), output.as_bytes()), "Hola");
+    }
+
+    #[test]
+    fn extract_text_joins_command_code_deltas_without_newlines() {
+        let registry = crate::drivers::DriverRegistry::new();
+        let driver = registry.resolve("cmd");
+        let output = concat!(
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"Ho\"}}\n",
+            "{\"type\":\"event\",\"event\":{\"type\":\"text_delta\",\"delta\":\"la\"}}\n",
+        );
+        assert_eq!(extract_text(driver.as_ref(), output.as_bytes()), "Hola");
     }
 }
