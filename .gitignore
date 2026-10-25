@@ -48,6 +48,7 @@ Desktop.ini
 # Estado local de Ancleto (memoria, working context, artefactos)
 .ancleto/
 .discovery-map.json
+.commandcode/
 docs/technical-discovery/.discovery-state.json
 
 # Archivos locales
