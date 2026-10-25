@@ -1,11 +1,11 @@
 # Plan de release
 
-## Versión 0.1.0 — release estable desktop-only
+## Versión 0.1.1 — release estable desktop-only
 
-`0.1.0` es el primer release **estable** de AncletoCode para escritorio. Cierra el
-trabajo de rendimiento y usage: la app no bloquea la interfaz durante tareas de red
-o procesos, la pestaña Uso responde con caché y progreso, y el runtime Ancleto
-embebido tiene actualización administrada con rollback.
+`0.1.1` es un release estable de mantenimiento sobre `0.1.0`. Incluye el parseo
+correcto del stream de Command Code, la detección de drivers en segundo plano con
+caché, la persistencia SQLite con `busy_timeout` y Store único, y la conversación
+incremental sin polling.
 
 El release se publica como **normal** (`prerelease: false`), con artefactos,
 checksums y fuente correspondiente.
@@ -17,7 +17,7 @@ checksums y fuente correspondiente.
 | Linux x86_64 | `.deb`, `.AppImage` | Build en Ubuntu 22.04 |
 | Arch/EndeavourOS | AppImage | Probar FUSE y `--appimage-extract-and-run` |
 | Windows x64 | NSIS, MSI, ZIP portable | Build en CI; falta smoke manual |
-| Fuente | `AncletoCode-0.1.0-source.tar.gz` | Generada desde el tag |
+| Fuente | `AncletoCode-0.1.1-source.tar.gz` | Generada desde el tag |
 | Integridad | `SHA256SUMS` | Generado en CI |
 
 Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
@@ -30,7 +30,7 @@ Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
 3. **desktop-windows:** Windows; prepara runtime; construye NSIS/MSI y ZIP
    portable.
 4. **release:** fuente, checksums y GitHub Release normal con
-   `docs/release-notes/0.1.0.md`.
+   `docs/release-notes/0.1.1.md`.
 5. **Aprobación:** entorno `release` de GitHub.
 
 ## Verificación
@@ -39,7 +39,9 @@ Fuera del release: AncletoCMD, CLI `acode`, npm y AUR.
   `check:commands` y licencias.
 - `.deb` en Debian/Ubuntu y AppImage en Arch/EndeavourOS con y sin FUSE.
 - Instalador NSIS/MSI y ZIP portable en Windows.
-- Uso: apertura con caché, primer proveedor y refresco acotado; ventana operable.
+- Arranque: shell interactivo sin bloqueo por detección de drivers.
+- Conversación: stream de Command Code sin JSON crudo y reconciliación incremental.
+- SQLite: sin `database is locked` y sin turnos no persistidos.
 - Ancleto embebido: `ancleto --version`, actualización y fallback offline.
 - Chequeo de updates al iniciar.
 
