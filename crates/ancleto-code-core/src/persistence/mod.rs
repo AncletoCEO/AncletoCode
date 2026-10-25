@@ -17,6 +17,8 @@ pub struct SavedSession {
     pub created_at: i64,
 }
 
+const SCHEMA_VERSION: i64 = 5;
+
 pub struct Store {
     connection: Connection,
 }
@@ -31,11 +33,20 @@ impl Store {
         connection.execute_batch(
             "PRAGMA journal_mode=WAL;
              PRAGMA foreign_keys=ON;
+             PRAGMA busy_timeout=5000;
              CREATE TABLE IF NOT EXISTS schema_migrations (
                  version INTEGER PRIMARY KEY,
                  applied_at INTEGER NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS projects (
+             );",
+        )?;
+        let applied: i64 = connection.query_row(
+            "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
+            [],
+            |row| row.get(0),
+        )?;
+        if applied < SCHEMA_VERSION {
+            connection.execute_batch(
+                "CREATE TABLE IF NOT EXISTS projects (
                  id TEXT PRIMARY KEY,
                  name TEXT NOT NULL,
                  root_path TEXT NOT NULL UNIQUE,
@@ -101,19 +112,20 @@ impl Store {
              );
              CREATE INDEX IF NOT EXISTS tasks_project_updated
                  ON tasks (project_id, updated_at DESC);
-             INSERT OR IGNORE INTO schema_migrations (version, applied_at)
-                 VALUES (4, unixepoch());",
-        )?;
-        let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_a TEXT", []);
-        let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_b TEXT", []);
-        let _ = connection.execute(
-            "ALTER TABLE conversations ADD COLUMN allow_tools INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = connection.execute(
-            "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (5, unixepoch())",
-            [],
-        );
+                 INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+                     VALUES (4, unixepoch());",
+            )?;
+            let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_a TEXT", []);
+            let _ = connection.execute("ALTER TABLE conversations ADD COLUMN model_b TEXT", []);
+            let _ = connection.execute(
+                "ALTER TABLE conversations ADD COLUMN allow_tools INTEGER NOT NULL DEFAULT 0",
+                [],
+            );
+            let _ = connection.execute(
+                "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (5, unixepoch())",
+                [],
+            );
+        }
 
         Ok(Self { connection })
     }
@@ -358,6 +370,21 @@ impl Store {
         Ok(turns)
     }
 
+    pub fn list_turns_since(&self, conversation_id: &str, since_index: u32) -> Result<Vec<Turn>> {
+        let mut statement = self.connection.prepare(
+            "SELECT conversation_id, turn_index, from_session, to_session, text, mode,
+                    duration_ms, created_at
+             FROM turns WHERE conversation_id = ?1 AND turn_index >= ?2
+             ORDER BY turn_index ASC",
+        )?;
+        let rows = statement.query_map(params![conversation_id, since_index], map_turn)?;
+        let mut turns = Vec::new();
+        for row in rows {
+            turns.push(row?);
+        }
+        Ok(turns)
+    }
+
     pub fn save_session(&self, session: &SavedSession) -> Result<()> {
         let spec = serde_json::to_string(&session.spec)
             .map_err(|error| crate::domain::CoreError::InvalidInput(error.to_string()))?;
@@ -586,5 +613,102 @@ mod tests {
 
         let store = Store::open(&database).unwrap();
         assert_eq!(store.list_projects().unwrap(), vec![project]);
+    }
+
+    fn turn(conversation: &str, index: u32) -> Turn {
+        Turn {
+            conversation_id: conversation.to_owned(),
+            index,
+            from_session: "a".to_owned(),
+            to_session: "b".to_owned(),
+            text: format!("turno {index} con texto breve"),
+            mode: crate::domain::TurnMode::OneShot,
+            duration_ms: 1,
+            created_at: 1,
+        }
+    }
+
+    #[test]
+    fn records_schema_version_and_busy_timeout() {
+        let directory = tempfile::tempdir().unwrap();
+        let database = directory.path().join("state.sqlite");
+        let store = Store::open(&database).unwrap();
+        let version: i64 = store
+            .connection
+            .query_row("SELECT MAX(version) FROM schema_migrations", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
+        let busy: i64 = store
+            .connection
+            .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(busy, 5000);
+        drop(store);
+        Store::open(&database).unwrap();
+    }
+
+    #[test]
+    fn lists_turns_since_an_index() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::open(&directory.path().join("state.sqlite")).unwrap();
+        for index in 0..3 {
+            store.add_turn(&turn("c", index)).unwrap();
+        }
+        assert_eq!(store.list_turns_since("c", 0).unwrap().len(), 3);
+        assert_eq!(store.list_turns_since("c", 2).unwrap().len(), 1);
+        assert!(store.list_turns_since("c", 3).unwrap().is_empty());
+    }
+
+    #[test]
+    fn incremental_turn_query_stays_small_and_fast() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Store::open(&directory.path().join("state.sqlite")).unwrap();
+        for index in 0..800 {
+            store.add_turn(&turn("c", index)).unwrap();
+        }
+        let started = std::time::Instant::now();
+        let turns = store.list_turns_since("c", 790).unwrap();
+        let elapsed = started.elapsed();
+        assert_eq!(turns.len(), 10);
+        let bytes = serde_json::to_vec(&turns).unwrap().len();
+        assert!(bytes <= 32 * 1024, "transferencia de {bytes} bytes");
+        assert!(
+            elapsed < std::time::Duration::from_millis(100),
+            "{elapsed:?}"
+        );
+    }
+
+    #[test]
+    fn concurrent_writers_do_not_fail_or_lose_turns() {
+        use std::sync::{Arc, Barrier};
+
+        let directory = tempfile::tempdir().unwrap();
+        let database = directory.path().join("state.sqlite");
+        Store::open(&database).unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let handles: Vec<_> = ["a", "b"]
+            .into_iter()
+            .map(|suffix| {
+                let database = database.clone();
+                let barrier = Arc::clone(&barrier);
+                std::thread::spawn(move || {
+                    let store = Store::open(&database).unwrap();
+                    barrier.wait();
+                    for index in 0..50 {
+                        store
+                            .add_turn(&turn(&format!("c-{suffix}"), index))
+                            .unwrap();
+                    }
+                })
+            })
+            .collect();
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        let store = Store::open(&database).unwrap();
+        assert_eq!(store.list_turns("c-a").unwrap().len(), 50);
+        assert_eq!(store.list_turns("c-b").unwrap().len(), 50);
     }
 }

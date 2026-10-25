@@ -129,9 +129,14 @@ pub fn run() {
             ancleto_runtime::configure(&config_directory, &resource_directory);
             writer_languages::configure(&config_directory);
             let database = ancleto_code_core::host::transport::default_database_path();
-            let service = ProjectService::open(&database)?;
-            let settings_store = Store::open(&database)?;
-            let drivers = DriverRegistry::from_store(&settings_store);
+            let store = Arc::new(Mutex::new(Store::open(&database)?));
+            let service = ProjectService::with_store(Arc::clone(&store));
+            let drivers = {
+                let guard = store
+                    .lock()
+                    .map_err(|_| std::io::Error::other("store bloqueado"))?;
+                DriverRegistry::from_store(&guard)
+            };
             let usage = Arc::new(usage::UsageService::new(
                 &config_directory,
                 usage::default_providers(),
@@ -195,8 +200,8 @@ pub fn run() {
                     eprintln!("no se pudo emitir un evento de conversación: {error}");
                 }
             });
-            let orchestrator = Orchestrator::new(
-                settings_store,
+            let orchestrator = Orchestrator::with_store(
+                Arc::clone(&store),
                 sessions.clone(),
                 drivers.clone(),
                 Some(sink),
@@ -267,6 +272,7 @@ pub fn run() {
             commands::conversation_get,
             commands::conversation_turns,
             commands::conversation_list,
+            commands::conversation_turns_since,
             commands::spec_status,
             commands::spec_init,
             commands::spec_install,

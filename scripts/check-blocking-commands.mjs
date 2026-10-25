@@ -23,7 +23,7 @@ const blockingCommands = new Set([
 ]);
 
 const blockingMarkers =
-  /(\bCommand::new\b|\breqwest::|std::fs::|std::process::|\.spawn\(|\.output\(|read_to_string|write_all\()/;
+  /(\bCommand::new\b|\breqwest::|std::fs::|std::process::|\.spawn\(|\.output\(|read_to_string|write_all\(|\bstate\.(projects|orchestrator|sessions|host|drivers)\b|\bproject_root\b|\bStore::open\b|\.lock\(\)|\b(list_turns|list_projects|insert_|update_task|delete_task|add_turn|get_setting|set_setting)\b)/;
 
 function extractBody(source, start) {
   let depth = 0;

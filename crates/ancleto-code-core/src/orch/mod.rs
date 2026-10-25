@@ -76,7 +76,7 @@ enum TurnError {
 }
 
 struct Inner {
-    store: Mutex<Store>,
+    store: Arc<Mutex<Store>>,
     sessions: Arc<dyn SessionBackend>,
     drivers: DriverRegistry,
     sink: Option<ConversationSink>,
@@ -95,9 +95,18 @@ impl Orchestrator {
         drivers: DriverRegistry,
         sink: Option<ConversationSink>,
     ) -> Self {
+        Self::with_store(Arc::new(Mutex::new(store)), sessions, drivers, sink)
+    }
+
+    pub fn with_store(
+        store: Arc<Mutex<Store>>,
+        sessions: Arc<dyn SessionBackend>,
+        drivers: DriverRegistry,
+        sink: Option<ConversationSink>,
+    ) -> Self {
         Self {
             inner: Arc::new(Inner {
-                store: Mutex::new(store),
+                store,
                 sessions,
                 drivers,
                 sink,
@@ -173,6 +182,10 @@ impl Orchestrator {
 
     pub fn turns(&self, id: &str) -> Result<Vec<Turn>> {
         self.store()?.list_turns(id)
+    }
+
+    pub fn turns_since(&self, id: &str, since_index: u32) -> Result<Vec<Turn>> {
+        self.store()?.list_turns_since(id, since_index)
     }
 
     pub fn pause(&self, id: &str) -> Result<ConversationState> {
@@ -258,8 +271,14 @@ impl Orchestrator {
                         created_at: unix_timestamp(),
                     };
 
-                    if let Ok(store) = self.store() {
-                        let _ = store.add_turn(&turn);
+                    let stored = self.store().and_then(|store| store.add_turn(&turn));
+                    if let Err(error) = stored {
+                        self.finalize(
+                            &id,
+                            ConversationState::Failed,
+                            &format!("no se pudo persistir el turno: {error}"),
+                        );
+                        return;
                     }
                     self.emit(ConversationEvent::Turn {
                         conversation_id: id.clone(),

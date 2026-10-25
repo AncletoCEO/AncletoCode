@@ -108,27 +108,43 @@ pub fn core_version() -> &'static str {
 }
 
 #[tauri::command]
-pub fn project_add(state: State<'_, AppState>, path: String) -> Result<Project, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.add(&path).map_err(|error| error.to_string())
+pub async fn project_add(state: State<'_, AppState>, path: String) -> Result<Project, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.add(&path).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn project_list(state: State<'_, AppState>) -> Result<Vec<Project>, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.list().map_err(|error| error.to_string())
+pub async fn project_list(state: State<'_, AppState>) -> Result<Vec<Project>, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.list().map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn project_remove(state: State<'_, AppState>, id: String) -> Result<bool, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.remove(&id).map_err(|error| error.to_string())
+pub async fn project_remove(state: State<'_, AppState>, id: String) -> Result<bool, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.remove(&id).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn project_open(state: State<'_, AppState>, id: String) -> Result<Project, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.open_project(&id).map_err(|error| error.to_string())
+pub async fn project_open(state: State<'_, AppState>, id: String) -> Result<Project, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.open_project(&id).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -213,8 +229,9 @@ pub async fn session_saved(state: State<'_, AppState>) -> Result<Vec<SavedSessio
 }
 
 #[tauri::command]
-pub fn drivers_list(state: State<'_, AppState>) -> Vec<DriverStatus> {
-    state.drivers.detect_all()
+pub async fn drivers_list(state: State<'_, AppState>) -> Result<Vec<DriverStatus>, String> {
+    let drivers = state.drivers.clone();
+    run_blocking(move || Ok(drivers.detect_all())).await
 }
 
 fn project_root(state: &State<'_, AppState>, id: &str) -> Result<String, String> {
@@ -246,7 +263,7 @@ pub async fn ide_sync_antigravity(
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
-pub fn conversation_start(
+pub async fn conversation_start(
     state: State<'_, AppState>,
     session_a: String,
     session_b: String,
@@ -257,76 +274,98 @@ pub fn conversation_start(
     model_b: Option<String>,
     allow_tools: Option<bool>,
 ) -> Result<Conversation, String> {
-    state
-        .orchestrator
-        .start(StartConversation {
-            session_a,
-            session_b,
-            objective,
-            max_turns,
-            turn_budget_ms,
-            model_a,
-            model_b,
-            allow_tools: allow_tools.unwrap_or(false),
-        })
-        .map_err(|error| error.to_string())
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || {
+        orchestrator
+            .start(StartConversation {
+                session_a,
+                session_b,
+                objective,
+                max_turns,
+                turn_budget_ms,
+                model_a,
+                model_b,
+                allow_tools: allow_tools.unwrap_or(false),
+            })
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn conversation_pause(
+pub async fn conversation_pause(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ConversationState, String> {
-    state
-        .orchestrator
-        .pause(&id)
-        .map_err(|error| error.to_string())
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || orchestrator.pause(&id).map_err(|error| error.to_string())).await
 }
 
 #[tauri::command]
-pub fn conversation_resume(
+pub async fn conversation_resume(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ConversationState, String> {
-    state
-        .orchestrator
-        .resume(&id)
-        .map_err(|error| error.to_string())
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || orchestrator.resume(&id).map_err(|error| error.to_string())).await
 }
 
 #[tauri::command]
-pub fn conversation_abort(
+pub async fn conversation_abort(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<ConversationState, String> {
-    state
-        .orchestrator
-        .abort(&id)
-        .map_err(|error| error.to_string())
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || orchestrator.abort(&id).map_err(|error| error.to_string())).await
 }
 
 #[tauri::command]
-pub fn conversation_get(state: State<'_, AppState>, id: String) -> Result<Conversation, String> {
-    state
-        .orchestrator
-        .conversation(&id)
-        .map_err(|error| error.to_string())
+pub async fn conversation_get(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Conversation, String> {
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || {
+        orchestrator
+            .conversation(&id)
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn conversation_turns(state: State<'_, AppState>, id: String) -> Result<Vec<Turn>, String> {
-    state
-        .orchestrator
-        .turns(&id)
-        .map_err(|error| error.to_string())
+pub async fn conversation_turns(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<Vec<Turn>, String> {
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || orchestrator.turns(&id).map_err(|error| error.to_string())).await
 }
 
 #[tauri::command]
-pub fn conversation_list(state: State<'_, AppState>) -> Result<Vec<Conversation>, String> {
-    state
-        .orchestrator
-        .conversations()
-        .map_err(|error| error.to_string())
+pub async fn conversation_list(state: State<'_, AppState>) -> Result<Vec<Conversation>, String> {
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || {
+        orchestrator
+            .conversations()
+            .map_err(|error| error.to_string())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn conversation_turns_since(
+    state: State<'_, AppState>,
+    id: String,
+    since_index: u32,
+) -> Result<Vec<Turn>, String> {
+    let orchestrator = state.orchestrator.clone();
+    run_blocking(move || {
+        orchestrator
+            .turns_since(&id, since_index)
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -561,17 +600,32 @@ pub async fn writer_open_human(state: State<'_, AppState>, id: String) -> Result
 }
 
 #[tauri::command]
-pub fn settings_get(state: State<'_, AppState>, key: String) -> Result<Option<String>, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.get_setting(&key).map_err(|error| error.to_string())
+pub async fn settings_get(
+    state: State<'_, AppState>,
+    key: String,
+) -> Result<Option<String>, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.get_setting(&key).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn settings_put(state: State<'_, AppState>, key: String, value: String) -> Result<(), String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service
-        .set_setting(&key, &value)
-        .map_err(|error| error.to_string())
+pub async fn settings_put(
+    state: State<'_, AppState>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service
+            .set_setting(&key, &value)
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -847,31 +901,51 @@ pub async fn task_list(state: State<'_, AppState>, id: String) -> Result<Vec<Tas
 }
 
 #[tauri::command]
-pub fn task_create(state: State<'_, AppState>, id: String, title: String) -> Result<Task, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service
-        .create_task(&id, &title)
-        .map_err(|error| error.to_string())
+pub async fn task_create(
+    state: State<'_, AppState>,
+    id: String,
+    title: String,
+) -> Result<Task, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service
+            .create_task(&id, &title)
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn task_update(state: State<'_, AppState>, task: Task) -> Result<Task, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service
-        .update_task(&task)
-        .map_err(|error| error.to_string())
+pub async fn task_update(state: State<'_, AppState>, task: Task) -> Result<Task, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service
+            .update_task(&task)
+            .map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn task_delete(state: State<'_, AppState>, id: String) -> Result<bool, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.remove_task(&id).map_err(|error| error.to_string())
+pub async fn task_delete(state: State<'_, AppState>, id: String) -> Result<bool, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.remove_task(&id).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn task_start(state: State<'_, AppState>, id: String) -> Result<Task, String> {
-    let service = state.projects.lock().map_err(|_| lock_error())?;
-    service.start_task(&id).map_err(|error| error.to_string())
+pub async fn task_start(state: State<'_, AppState>, id: String) -> Result<Task, String> {
+    let service = Arc::clone(&state.projects);
+    run_blocking(move || {
+        let service = service.lock().map_err(|_| lock_error())?;
+        service.start_task(&id).map_err(|error| error.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -944,9 +1018,7 @@ pub async fn driver_models(
     let drivers = state.drivers.clone();
     run_blocking(move || {
         let binary = drivers
-            .detect_all()
-            .into_iter()
-            .find(|driver| driver.id == id)
+            .status_of(&id)
             .map(|driver| driver.binary_path.unwrap_or(driver.binary))
             .ok_or_else(|| "driver desconocido".to_owned())?;
         ancleto_code_core::models::list(&id, &binary).map_err(|error| error.to_string())

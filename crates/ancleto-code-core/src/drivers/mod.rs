@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::env;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::sync::Arc;
+use std::process::{Command, Output, Stdio};
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -214,10 +216,20 @@ impl AgentDriver for RawDriver {
     }
 }
 
+const DETECTION_TTL: Duration = Duration::from_secs(60);
+const VERSION_TIMEOUT: Duration = Duration::from_secs(3);
+
+#[derive(Clone)]
+struct DetectionCache {
+    at: Instant,
+    statuses: Vec<DriverStatus>,
+}
+
 #[derive(Clone)]
 pub struct DriverRegistry {
     drivers: HashMap<String, Arc<dyn AgentDriver>>,
     fallback: Arc<dyn AgentDriver>,
+    cache: Arc<RwLock<Option<DetectionCache>>>,
 }
 
 impl Default for DriverRegistry {
@@ -269,6 +281,7 @@ impl DriverRegistry {
         let mut registry = Self {
             drivers: HashMap::new(),
             fallback,
+            cache: Arc::new(RwLock::new(None)),
         };
 
         registry.register(Arc::new(CliDriver::new(
@@ -346,13 +359,32 @@ impl DriverRegistry {
     }
 
     pub fn detect_all(&self) -> Vec<DriverStatus> {
+        if let Some(statuses) = self.cached_detection() {
+            return statuses;
+        }
         let mut statuses: Vec<_> = self
             .drivers
             .values()
             .map(|driver| driver.detect())
             .collect();
         statuses.sort_by(|left, right| left.id.cmp(&right.id));
+        if let Ok(mut cache) = self.cache.write() {
+            *cache = Some(DetectionCache {
+                at: Instant::now(),
+                statuses: statuses.clone(),
+            });
+        }
         statuses
+    }
+
+    pub fn cached_detection(&self) -> Option<Vec<DriverStatus>> {
+        let cache = self.cache.read().ok()?;
+        let cached = cache.as_ref()?;
+        (cached.at.elapsed() < DETECTION_TTL).then(|| cached.statuses.clone())
+    }
+
+    pub fn status_of(&self, id: &str) -> Option<DriverStatus> {
+        self.detect_all().into_iter().find(|status| status.id == id)
     }
 }
 
@@ -408,8 +440,8 @@ pub fn detect_binary(
         return status;
     };
 
-    match Command::new(&path).arg("--version").output() {
-        Ok(output) => {
+    match probe_version(&path, VERSION_TIMEOUT) {
+        VersionProbe::Output(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
             status.version = first_line(&stdout).or_else(|| first_line(&stderr));
@@ -419,10 +451,64 @@ pub fn detect_binary(
                 ToolStatus::Error
             };
         }
-        Err(_) => status.status = ToolStatus::Error,
+        VersionProbe::TimedOut => status.status = ToolStatus::Available,
+        VersionProbe::Failed => status.status = ToolStatus::Error,
     }
 
     status
+}
+
+enum VersionProbe {
+    Output(Output),
+    TimedOut,
+    Failed,
+}
+
+fn probe_version(path: &Path, timeout: Duration) -> VersionProbe {
+    let mut child = match Command::new(path)
+        .arg("--version")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(_) => return VersionProbe::Failed,
+    };
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let stdout_reader = std::thread::spawn(move || read_pipe(stdout));
+    let stderr_reader = std::thread::spawn(move || read_pipe(stderr));
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                return VersionProbe::Output(Output {
+                    status,
+                    stdout: stdout_reader.join().unwrap_or_default(),
+                    stderr: stderr_reader.join().unwrap_or_default(),
+                });
+            }
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return VersionProbe::TimedOut;
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(20)),
+            Err(_) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return VersionProbe::Failed;
+            }
+        }
+    }
+}
+
+fn read_pipe(mut stream: Option<impl Read>) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    if let Some(stream) = stream.as_mut() {
+        let _ = stream.read_to_end(&mut buffer);
+    }
+    buffer
 }
 
 fn first_line(text: &str) -> Option<String> {
@@ -807,6 +893,42 @@ mod tests {
         );
         assert_eq!(missing.status, ToolStatus::Missing);
         assert!(missing.binary_path.is_none());
+    }
+
+    #[test]
+    fn caches_driver_detection() {
+        let registry = DriverRegistry::new();
+        let first = registry.detect_all();
+        let started = Instant::now();
+        let second = registry.detect_all();
+        assert!(started.elapsed() < Duration::from_millis(20));
+        assert_eq!(first.len(), second.len());
+        assert!(registry.cached_detection().is_some());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn detect_binary_times_out_and_keeps_the_driver_available() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let script = directory.path().join("slow-cli");
+        std::fs::write(&script, "#!/bin/sh\nexec sleep 30\n").unwrap();
+        let mut permissions = std::fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&script, permissions).unwrap();
+
+        let descriptor = descriptor(
+            "slow",
+            "Slow",
+            script.to_str().unwrap(),
+            capabilities(true, true, false, false, false),
+        );
+        let started = Instant::now();
+        let status = detect_binary(&descriptor, None);
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert_eq!(status.status, ToolStatus::Available);
+        assert!(status.version.is_none());
     }
 
     #[test]

@@ -158,6 +158,26 @@ node scripts/check-blocking-commands.mjs --check  # falla si hay violaciones
 La guarda lee la tabla de allowlist de este documento. Una excepción sin fila acá
 hace fallar el check.
 
+## Rutas calientes (app-performance-2)
+
+- **Detección de drivers**: `drivers_list` es `async` y corre en
+  `spawn_blocking`. `DriverRegistry` cachea el resultado 60 s; cada binario se
+  sondea con `--version` y timeout de 3 s. Si el sondeo vence pero el binario
+  resuelve, el driver queda `available` sin versión en lugar de `error`.
+  `driver_models` reutiliza la caché y no repite la detección.
+- **SQLite**: `Store::open` configura `PRAGMA busy_timeout=5000`, ejecuta el DDL
+  solo si `schema_migrations` no llegó a la versión actual y la app comparte un
+  único `Arc<Mutex<Store>>` entre `ProjectService` y `Orchestrator`. El fallo al
+  persistir un turno finaliza la conversación en `failed` en vez de emitir un
+  turno que no existe en la base.
+- **Conversación**: `conversation_turns_since` devuelve solo los turnos nuevos
+  (`turn_index >= since_index`). El panel ya no hace polling cada 1,5 s:
+  reconcilia al recuperar foco y con un watchdog de 10 s solo si la conversación
+  sigue `running`.
+- **Guarda**: `check:blocking-commands` también marca comandos sincrónicos que
+  tocan `state.projects`, `state.orchestrator`, `state.sessions`, `state.host`,
+  `state.drivers`, `Store` o helpers como `project_root`.
+
 ## Allowlist de comandos sincrónicos
 
 | Comando | Motivo |
@@ -168,22 +188,4 @@ hace fallar el check.
 | `session_kill` | Señal de cierre al PTY; operación corta de control. |
 | `session_create` | Creación de sesión en el backend; el arranque del PTY es asíncrono aguas abajo. |
 | `session_list` | Lista en memoria del backend de sesiones. |
-| `project_add` | Alta en SQLite local; sin escaneo de árbol. |
-| `project_list` | Lista en memoria/SQLite de proyectos registrados. |
-| `project_remove` | Baja en SQLite local. |
-| `project_open` | Lookup y persistencia de la selección; el escaneo es `project_tree`. |
-| `settings_get` | Lectura de una clave en SQLite. |
-| `settings_put` | Escritura de una clave en SQLite. |
-| `task_create` | Inserción de una fila en SQLite. |
-| `task_update` | Actualización de una fila en SQLite. |
-| `task_delete` | Borrado de una fila en SQLite. |
-| `task_start` | Actualización de estado de una tarea en SQLite. |
-| `drivers_list` | Resolución de binarios en PATH; sin spawn. |
 | `appearance_native_effect` | Efecto nativo de ventana; requiere el hilo principal. |
-| `conversation_start` | Orquestador en memoria que delega a hilos propios. |
-| `conversation_pause` | Cambio de estado en memoria. |
-| `conversation_resume` | Cambio de estado en memoria. |
-| `conversation_abort` | Cambio de estado en memoria y señal a hilos existentes. |
-| `conversation_get` | Lectura en memoria. |
-| `conversation_turns` | Lectura en memoria. |
-| `conversation_list` | Lectura en memoria. |

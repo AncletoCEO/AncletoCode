@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeftRight, MessageSquare, Pause, Play, Square } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { modelFromArguments, sessionLabel } from "../lib/session-model";
@@ -119,13 +119,54 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
   }, [sessionAInfo, sessionBInfo, loadModels]);
 
   const conversationId = conversation?.id;
+  const turnsRef = useRef<Turn[]>([]);
+  const lastEventAt = useRef(0);
+
+  useEffect(() => {
+    turnsRef.current = turns;
+  }, [turns]);
+
+  useEffect(() => {
+    lastEventAt.current = Date.now();
+  }, [turns.length, conversation?.state]);
+
+  const reconcile = useCallback(async () => {
+    if (!conversationId) {
+      return;
+    }
+    try {
+      let since = 0;
+      for (const turn of turnsRef.current) {
+        if (turn.index !== since) {
+          break;
+        }
+        since += 1;
+      }
+      const [loaded, current] = await Promise.all([
+        invoke<Turn[]>("conversation_turns_since", {
+          id: conversationId,
+          sinceIndex: since,
+        }),
+        invoke<Conversation>("conversation_get", { id: conversationId }),
+      ]);
+      setConversation(current);
+      setTurns((existing) => {
+        const indexes = new Set(existing.map((turn) => turn.index));
+        return [...existing, ...loaded.filter((turn) => !indexes.has(turn.index))].sort(
+          (left, right) => left.index - right.index,
+        );
+      });
+    } catch {
+      // Los eventos IPC siguen siendo la fuente principal.
+    }
+  }, [conversationId]);
 
   useEffect(() => {
     if (!conversationId) {
       return;
     }
     let disposed = false;
-    const loadExisting = async () => {
+    void (async () => {
       try {
         const [loaded, current] = await Promise.all([
           invoke<Turn[]>("conversation_turns", { id: conversationId }),
@@ -144,19 +185,35 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
       } catch {
         // El listener sigue siendo la fuente principal.
       }
-    };
-    void loadExisting();
-    if (conversation?.state !== "running") {
-      return () => {
-        disposed = true;
-      };
-    }
-    const timer = window.setInterval(() => void loadExisting(), 1500);
+    })();
     return () => {
       disposed = true;
-      window.clearInterval(timer);
     };
-  }, [conversationId, conversation?.state]);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+    const onFocus = () => void reconcile();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [conversationId, reconcile]);
+
+  useEffect(() => {
+    if (!conversationId || conversation?.state !== "running") {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      if (lastEventAt.current > 0 && now - lastEventAt.current < 10_000) {
+        return;
+      }
+      lastEventAt.current = now;
+      void reconcile();
+    }, 5_000);
+    return () => window.clearInterval(timer);
+  }, [conversationId, conversation?.state, reconcile]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -166,6 +223,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     let disposed = false;
 
     void listen<TurnStartedPayload>(`conversation://turn-started/${id}`, (event) => {
+      lastEventAt.current = Date.now();
       setActiveTurn(event.payload);
       setActiveSince(Date.now());
       setActiveElapsed(0);
@@ -178,8 +236,13 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     });
 
     void listen<Turn>(`conversation://turn/${id}`, (event) => {
+      lastEventAt.current = Date.now();
       const restore = listRef.current ? captureTranscriptAnchor(listRef.current) : null;
-      setTurns((current) => [...current, event.payload]);
+      setTurns((current) =>
+        current.some((turn) => turn.index === event.payload.index)
+          ? current
+          : [...current, event.payload],
+      );
       setActiveTurn(null);
       requestAnimationFrame(() => restore?.());
     }).then((stop) => {
@@ -191,6 +254,7 @@ export default function ConversationPanel({ project }: ConversationPanelProps) {
     });
 
     void listen<StatePayload>(`conversation://state/${id}`, (event) => {
+      lastEventAt.current = Date.now();
       setConversation((current) =>
         current
           ? { ...current, state: event.payload.state, reason: event.payload.reason }

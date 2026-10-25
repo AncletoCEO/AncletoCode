@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use uuid::Uuid;
@@ -35,14 +36,24 @@ const MAX_DEPTH: usize = 6;
 const SKIPPED_DIRECTORIES: [&str; 4] = [".git", ".ancleto", "node_modules", "target"];
 
 pub struct ProjectService {
-    store: Store,
+    store: Arc<Mutex<Store>>,
 }
 
 impl ProjectService {
     pub fn open(database_path: &Path) -> Result<Self> {
         Ok(Self {
-            store: Store::open(database_path)?,
+            store: Arc::new(Mutex::new(Store::open(database_path)?)),
         })
+    }
+
+    pub fn with_store(store: Arc<Mutex<Store>>) -> Self {
+        Self { store }
+    }
+
+    fn lock_store(&self) -> Result<MutexGuard<'_, Store>> {
+        self.store
+            .lock()
+            .map_err(|_| CoreError::Process("el store de proyectos está bloqueado".to_owned()))
     }
 
     pub fn add(&self, path: &str) -> Result<Project> {
@@ -57,9 +68,9 @@ impl ProjectService {
 
         let root_path = canonical.to_string_lossy().into_owned();
 
-        if let Some(existing) = self.store.find_project_by_root(&root_path)? {
+        if let Some(existing) = self.lock_store()?.find_project_by_root(&root_path)? {
             return self
-                .store
+                .lock_store()?
                 .touch_project(&existing.id, unix_timestamp())?
                 .ok_or(CoreError::ProjectNotFound(existing.id));
         }
@@ -78,16 +89,16 @@ impl ProjectService {
             last_opened_at: now,
         };
 
-        self.store.insert_project(&project)?;
+        self.lock_store()?.insert_project(&project)?;
         Ok(project)
     }
 
     pub fn list(&self) -> Result<Vec<Project>> {
-        self.store.list_projects()
+        self.lock_store()?.list_projects()
     }
 
     pub fn remove(&self, id: &str) -> Result<bool> {
-        self.store.remove_project(id)
+        self.lock_store()?.remove_project(id)
     }
 
     pub fn search(&self, id: &str, query: &str, limit: Option<usize>) -> Result<Vec<FileEntry>> {
@@ -97,19 +108,19 @@ impl ProjectService {
     }
 
     pub fn get(&self, id: &str) -> Result<Project> {
-        self.store
+        self.lock_store()?
             .find_project_by_id(id)?
             .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))
     }
 
     pub fn open_project(&self, id: &str) -> Result<Project> {
-        self.store
+        self.lock_store()?
             .touch_project(id, unix_timestamp())?
             .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))
     }
 
     pub fn tasks(&self, project_id: &str) -> Result<Vec<Task>> {
-        self.store.list_tasks(project_id)
+        self.lock_store()?.list_tasks(project_id)
     }
 
     pub fn create_task(&self, project_id: &str, title: &str) -> Result<Task> {
@@ -127,13 +138,13 @@ impl ProjectService {
             created_at: now,
             updated_at: now,
         };
-        self.store.insert_task(&task)?;
+        self.lock_store()?.insert_task(&task)?;
         Ok(task)
     }
 
     pub fn start_task(&self, id: &str) -> Result<Task> {
         let mut task = self
-            .store
+            .lock_store()?
             .find_task(id)?
             .ok_or_else(|| CoreError::Process("tarea no encontrada".to_owned()))?;
         if task.worktree_path.is_some() {
@@ -161,32 +172,32 @@ impl ProjectService {
         task.worktree_path = Some(worktree.path);
         task.status = TaskStatus::InProgress;
         task.updated_at = unix_timestamp();
-        self.store.update_task(&task)?;
+        self.lock_store()?.update_task(&task)?;
         Ok(task)
     }
 
     pub fn update_task(&self, task: &Task) -> Result<Task> {
         let mut next = task.clone();
         next.updated_at = unix_timestamp();
-        self.store.update_task(&next)?;
+        self.lock_store()?.update_task(&next)?;
         Ok(next)
     }
 
     pub fn remove_task(&self, id: &str) -> Result<bool> {
-        self.store.delete_task(id)
+        self.lock_store()?.delete_task(id)
     }
 
     pub fn get_setting(&self, key: &str) -> Result<Option<String>> {
-        self.store.get_setting(key)
+        self.lock_store()?.get_setting(key)
     }
 
     pub fn set_setting(&self, key: &str, value: &str) -> Result<()> {
-        self.store.set_setting(key, value)
+        self.lock_store()?.set_setting(key, value)
     }
 
     pub fn tree(&self, id: &str, limit: Option<usize>) -> Result<FileNode> {
         let project = self
-            .store
+            .lock_store()?
             .find_project_by_id(id)?
             .ok_or_else(|| CoreError::ProjectNotFound(id.to_owned()))?;
         let mut budget = limit.unwrap_or(MAX_ENTRIES).min(MAX_ENTRIES);
@@ -267,6 +278,21 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let service = ProjectService::open(&directory.path().join("state.sqlite")).unwrap();
         (directory, service)
+    }
+
+    #[test]
+    fn shares_a_store_between_services() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = Arc::new(Mutex::new(
+            Store::open(&directory.path().join("state.sqlite")).unwrap(),
+        ));
+        let first = ProjectService::with_store(Arc::clone(&store));
+        let second = ProjectService::with_store(Arc::clone(&store));
+        first.set_setting("theme", "nord").unwrap();
+        assert_eq!(
+            second.get_setting("theme").unwrap().as_deref(),
+            Some("nord")
+        );
     }
 
     fn project_directory(parent: &Path, name: &str) -> PathBuf {

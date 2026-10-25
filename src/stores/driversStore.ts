@@ -67,12 +67,22 @@ export function resetDriversStore() {
   emit();
 }
 
+let inflight: Promise<void> | null = null;
+
 export async function loadDrivers(): Promise<void> {
-  update({ loading: true, error: null });
-  try {
-    const drivers = await invoke<DriverStatus[]>("drivers_list");
-    update({ drivers, loading: false });
-  } catch (error) {
-    update({ loading: false, error: messageOf(error) });
+  if (inflight) {
+    return inflight;
   }
+  inflight = (async () => {
+    update({ loading: true, error: null });
+    try {
+      const drivers = await invoke<DriverStatus[]>("drivers_list");
+      update({ drivers, loading: false });
+    } catch (error) {
+      update({ loading: false, error: messageOf(error) });
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
 }

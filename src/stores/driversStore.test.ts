@@ -47,4 +47,22 @@ describe("driversStore", () => {
 
     expect(getSnapshot().error).toContain("sin acceso");
   });
+
+  it("deduplica cargas concurrentes", async () => {
+    let resolve: (drivers: (typeof driver)[]) => void = () => undefined;
+    invokeMock.mockImplementation(
+      () =>
+        new Promise<(typeof driver)[]>((done) => {
+          resolve = done;
+        }),
+    );
+
+    const first = loadDrivers();
+    const second = loadDrivers();
+    resolve([driver]);
+    await Promise.all([first, second]);
+
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+    expect(getSnapshot().drivers).toEqual([driver]);
+  });
 });
